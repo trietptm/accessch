@@ -83,6 +83,14 @@ PortMessageNotify (
     __out PULONG ReturnOutputBufferLength
     );
 
+FLT_POSTOP_CALLBACK_STATUS
+PostCreate (
+	__inout PFLT_CALLBACK_DATA Data,
+	__in PCFLT_RELATED_OBJECTS FltObjects,
+	__in PVOID CompletionContext,
+	__in FLT_POST_OPERATION_FLAGS Flags
+    );
+
 // ----------------------------------------------------------------------------
 // end init block
 GLOBALS Globals;
@@ -133,8 +141,6 @@ DriverEntry (
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-    PAGED_CODE();
-
     RtlZeroMemory( &Globals, sizeof( Globals) );
 
     Globals.m_FilterDriverObject = DriverObject;
@@ -143,12 +149,14 @@ DriverEntry (
         status = FltRegisterFilter( DriverObject, ( PFLT_REGISTRATION )&filterRegistration, &Globals.m_Filter );
         if ( !NT_SUCCESS( status ) )
         {
+            Globals.m_Filter = NULL;
             __leave;
         }
 
         status = PortCreate( Globals.m_Filter, &Globals.m_Port );
         if ( !NT_SUCCESS( status ) )
         {
+            Globals.m_Port = NULL;
             __leave;
         }
 
@@ -165,14 +173,21 @@ DriverEntry (
         if ( !NT_SUCCESS( status ) )
         {
             if ( Globals.m_Port )
+            {
                 FltCloseCommunicationPort( Globals.m_Port );
+            }
+            
             if ( Globals.m_Filter )
+            {
                 FltUnregisterFilter( Globals.m_Filter );
+            }
         }
     }
 
     return status;
 }
+
+// ----------------------------------------------------------------------------
 
 void
 ContextCleanup (
@@ -205,6 +220,8 @@ ContextCleanup (
     }
 }
 
+// ----------------------------------------------------------------------------
+// communications
 
 NTSTATUS
 PortCreate (
@@ -214,9 +231,7 @@ PortCreate (
 {
     NTSTATUS status;
 
-    PAGED_CODE();
-
-       PSECURITY_DESCRIPTOR sd;
+    PSECURITY_DESCRIPTOR sd;
     status = FltBuildDefaultSecurityDescriptor( &sd, FLT_PORT_ALL_ACCESS );
 
     if ( NT_SUCCESS( status ) )
@@ -279,7 +294,6 @@ PortConnect (
     return STATUS_SUCCESS;
 }
 
-
 void
 PortDisconnect (
     __in PVOID ConnectionCookie
@@ -315,4 +329,108 @@ PortMessageNotify (
     }
 
     return status;
+}
+
+// ----------------------------------------------------------------------------
+// file
+
+FORCEINLINE
+void
+ReleaseContext (
+    __in_opt PFLT_CONTEXT* ppContext
+    )
+{
+    if ( !*ppContext )
+        return;
+
+	FltReleaseContext( *ppContext );
+    *ppContext = NULL;
+}
+
+FORCEINLINE
+BOOLEAN
+IsPassThrough (
+	__in PCFLT_RELATED_OBJECTS FltObjects,
+	__in FLT_POST_OPERATION_FLAGS Flags
+	)
+{
+	if ( FlagOn( Flags, FLTFL_POST_OPERATION_DRAINING ) )
+    {
+        return TRUE;
+    }
+
+	if ( !FltObjects->Instance )
+    {
+        return TRUE;
+    }
+
+	if ( !FltObjects->FileObject )
+    {
+        return TRUE;
+    }
+
+	if ( FlagOn( FltObjects->FileObject->Flags, FO_NAMED_PIPE ) )
+    {
+        return TRUE;
+    }
+
+    PIRP pTopLevelIrp = IoGetTopLevelIrp();
+    if ( pTopLevelIrp )
+    {
+        return TRUE;
+    }
+
+	return FALSE;
+}
+
+FLT_POSTOP_CALLBACK_STATUS
+PostCreate (
+	__inout PFLT_CALLBACK_DATA Data,
+	__in PCFLT_RELATED_OBJECTS FltObjects,
+	__in PVOID CompletionContext,
+	__in FLT_POST_OPERATION_FLAGS Flags
+    )
+{
+    FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
+    NTSTATUS status;
+
+    PINSTANCE_CONTEXT pInstanceContext = NULL;
+    STREAM_CONTEXT StreamContext;
+    PSTREAM_HANDLE_CONTEXT pHandleContext = NULL;
+    PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
+
+    LUID sysluid = SYSTEM_LUID;
+
+    if ( IsPassThrough( FltObjects, Flags ) )
+    {
+        // wrong state
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+	
+    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+	{
+		// skip failed op
+        return FLT_POSTOP_FINISHED_PROCESSING;
+	}
+	
+    if ( STATUS_REPARSE == Data->IoStatus.Status )
+    {
+        // skip reparse op
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    __try
+    {
+        if ( !NT_SUCCESS( FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext ) ) )
+        {
+            pInstanceContext = NULL;
+            __leave;
+        }
+    }
+    __finally
+    {
+        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
+    }
+    
+    return fltStatus;
 }
