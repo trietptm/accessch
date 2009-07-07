@@ -1,3 +1,7 @@
+// author - Andrey Sobko (andrey.sobko@gmail.com)
+// date - 06.07.2009
+// description - sample driver
+
 #include "main.h"
 
 #define ACCESSCH_PORT_NAME          L"accessch_port"
