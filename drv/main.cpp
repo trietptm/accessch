@@ -31,6 +31,7 @@ typedef struct _INSTANCE_CONTEXT
 
 typedef struct _STREAM_CONTEXT
 {
+    PFLT_FILE_NAME_INFORMATION m_pFileNameInfo;
 } STREAM_CONTEXT, *PSTREAM_CONTEXT;
 
 typedef struct _STREAM_HANDLE_CONTEXT
@@ -219,6 +220,17 @@ DriverEntry (
 }
 
 // ----------------------------------------------------------------------------
+void
+ReleaseFileNameInfo (
+    __in_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    )
+{
+    if ( ppFileNameInfo )
+    {
+        FltReleaseFileNameInformation( *ppFileNameInfo );
+        *ppFileNameInfo = NULL;
+    };
+}
 
 void
 ContextCleanup (
@@ -226,9 +238,7 @@ ContextCleanup (
     __in FLT_CONTEXT_TYPE ContextType
     )
 {
-    UNREFERENCED_PARAMETER( Pool );
-
-    switch (ContextType)
+     switch (ContextType)
     {
     case FLT_INSTANCE_CONTEXT:
         {
@@ -237,6 +247,9 @@ ContextCleanup (
 
     case FLT_STREAM_CONTEXT:
         {
+            PSTREAM_CONTEXT pStreamContext = (PSTREAM_CONTEXT) Pool;
+            ASSERT ( pStreamContext );
+            ReleaseFileNameInfo( &pStreamContext->m_pFileNameInfo );
         }
         break;
 
@@ -256,6 +269,7 @@ ContextCleanup (
 // ----------------------------------------------------------------------------
 // communications
 
+__checkReturn
 NTSTATUS
 PortCreate (
     __in PFLT_FILTER pFilter,
@@ -505,6 +519,75 @@ InstanceSetup (
 	return STATUS_SUCCESS;
 }
 
+__checkReturn
+NTSTATUS
+GenerateFileNameInfo (
+    __in PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    )
+{
+    //todo: query filename info
+    UNREFERENCED_PARAMETER( Data );
+    UNREFERENCED_PARAMETER( FltObjects );
+    UNREFERENCED_PARAMETER( ppFileNameInfo );
+    
+    return STATUS_NOT_IMPLEMENTED;
+}
+
+__checkReturn
+NTSTATUS
+GenerateStreamContext (
+    __in PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PSTREAM_CONTEXT* ppStreamContext
+    )
+{
+    NTSTATUS status;
+    PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
+
+    if ( !FsRtlSupportsPerStreamContexts( FltObjects->FileObject ) )
+		return STATUS_NOT_SUPPORTED;;
+
+	status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) ppStreamContext );
+    
+    if ( NT_SUCCESS( status ) )
+        return status;
+
+    status = FltAllocateContext (
+        Globals.m_Filter,
+        FLT_STREAM_CONTEXT,
+        sizeof(STREAM_CONTEXT),
+        NonPagedPool,
+        (PFLT_CONTEXT*) ppStreamContext
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        //todo: stream context func
+        RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
+
+        status = GenerateFileNameInfo( Data, FltObjects, &pFileNameInfo );
+        if ( NT_SUCCESS( status ) )
+        {
+            (*ppStreamContext)->m_pFileNameInfo = pFileNameInfo;
+
+            status = FltSetStreamContext (
+                FltObjects->Instance,
+                FltObjects->FileObject,
+                FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
+                *ppStreamContext,
+                NULL
+                );
+        }
+
+        if ( !NT_SUCCESS( status ) )
+            ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
+    }
+
+    return status;
+}
+
 FLT_POSTOP_CALLBACK_STATUS
 PostCreate (
 	__inout PFLT_CALLBACK_DATA Data,
@@ -516,10 +599,10 @@ PostCreate (
     UNREFERENCED_PARAMETER( CompletionContext );
 
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
-    //NTSTATUS status;
+    NTSTATUS status;
 
     PINSTANCE_CONTEXT pInstanceContext = NULL;
-    //STREAM_CONTEXT StreamContext;
+    PSTREAM_CONTEXT pStreamContext = NULL;
     //PSTREAM_HANDLE_CONTEXT pHandleContext = NULL;
     //PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
 
@@ -545,14 +628,24 @@ PostCreate (
 
     __try
     {
-        if ( !NT_SUCCESS( FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext ) ) )
+        status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
+        if ( !NT_SUCCESS( status ) )
         {
             pInstanceContext = NULL;
             __leave;
         }
+
+        status = GenerateStreamContext( Data, FltObjects, &pStreamContext );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pStreamContext = NULL;
+            __leave;
+        }
+
     }
     __finally
     {
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
         ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
     }
     
