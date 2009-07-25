@@ -26,7 +26,7 @@ typedef struct _PORT_CONTEXT
 typedef struct _INSTANCE_CONTEXT
 {
     DEVICE_TYPE             m_VolumeDeviceType;
-	FLT_FILESYSTEM_TYPE     m_VolumeFilesystemType;
+    FLT_FILESYSTEM_TYPE     m_VolumeFilesystemType;
 } INSTANCE_CONTEXT, *PINSTANCE_CONTEXT;
 
 typedef struct _STREAM_CONTEXT
@@ -92,34 +92,34 @@ PortMessageNotify (
 
 NTSTATUS
 InstanceSetup (
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__in FLT_INSTANCE_SETUP_FLAGS Flags,
-	__in DEVICE_TYPE VolumeDeviceType,
-	__in FLT_FILESYSTEM_TYPE VolumeFilesystemType
-	);
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in FLT_INSTANCE_SETUP_FLAGS Flags,
+    __in DEVICE_TYPE VolumeDeviceType,
+    __in FLT_FILESYSTEM_TYPE VolumeFilesystemType
+    );
 
 FLT_POSTOP_CALLBACK_STATUS
 PostCreate (
-	__inout PFLT_CALLBACK_DATA Data,
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__in PVOID CompletionContext,
-	__in FLT_POST_OPERATION_FLAGS Flags
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PVOID CompletionContext,
+    __in FLT_POST_OPERATION_FLAGS Flags
     );
 
 FLT_PREOP_CALLBACK_STATUS
 PreCleanup (
-	__inout PFLT_CALLBACK_DATA Data,
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__out PVOID *CompletionContext
-	);
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __out PVOID *CompletionContext
+    );
 
 FLT_POSTOP_CALLBACK_STATUS
 PostWrite (
-	__inout PFLT_CALLBACK_DATA Data,
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__in PVOID CompletionContext,
-	__in FLT_POST_OPERATION_FLAGS Flags
-	);
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PVOID CompletionContext,
+    __in FLT_POST_OPERATION_FLAGS Flags
+    );
 
 // ----------------------------------------------------------------------------
 // end init block
@@ -230,6 +230,19 @@ ReleaseFileNameInfo (
         FltReleaseFileNameInformation( *ppFileNameInfo );
         *ppFileNameInfo = NULL;
     };
+}
+
+FORCEINLINE
+void
+ReleaseContext (
+    __in_opt PFLT_CONTEXT* ppContext
+    )
+{
+    if ( !*ppContext )
+        return;
+
+    FltReleaseContext( *ppContext );
+    *ppContext = NULL;
 }
 
 void
@@ -384,45 +397,69 @@ PortMessageNotify (
     return status;
 }
 
+NTSTATUS
+PortAskUser (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects
+    )
+{
+    UNREFERENCED_PARAMETER( Data );
+
+    NTSTATUS status;
+    PINSTANCE_CONTEXT pInstanceContext = NULL;
+    PSTREAM_CONTEXT pStreamContext = NULL;
+
+    __try
+    {
+        status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pInstanceContext = NULL;
+            __leave;
+        }
+
+        status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) &pStreamContext );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pStreamContext = NULL;
+            __leave;
+        }
+    }
+    __finally
+    {
+        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+    }
+
+    return STATUS_SUCCESS;
+}
+
 // ----------------------------------------------------------------------------
 // file
 
 FORCEINLINE
-void
-ReleaseContext (
-    __in_opt PFLT_CONTEXT* ppContext
-    )
-{
-    if ( !*ppContext )
-        return;
-
-	FltReleaseContext( *ppContext );
-    *ppContext = NULL;
-}
-
-FORCEINLINE
 BOOLEAN
 IsPassThrough (
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__in FLT_POST_OPERATION_FLAGS Flags
-	)
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in FLT_POST_OPERATION_FLAGS Flags
+    )
 {
-	if ( FlagOn( Flags, FLTFL_POST_OPERATION_DRAINING ) )
+    if ( FlagOn( Flags, FLTFL_POST_OPERATION_DRAINING ) )
     {
         return TRUE;
     }
 
-	if ( !FltObjects->Instance )
+    if ( !FltObjects->Instance )
     {
         return TRUE;
     }
 
-	if ( !FltObjects->FileObject )
+    if ( !FltObjects->FileObject )
     {
         return TRUE;
     }
 
-	if ( FlagOn( FltObjects->FileObject->Flags, FO_NAMED_PIPE ) )
+    if ( FlagOn( FltObjects->FileObject->Flags, FO_NAMED_PIPE ) )
     {
         return TRUE;
     }
@@ -433,106 +470,113 @@ IsPassThrough (
         return TRUE;
     }
 
-	return FALSE;
+    return FALSE;
 }
 
 NTSTATUS
 InstanceSetup (
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__in FLT_INSTANCE_SETUP_FLAGS Flags,
-	__in DEVICE_TYPE VolumeDeviceType,
-	__in FLT_FILESYSTEM_TYPE VolumeFilesystemType
-	)
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in FLT_INSTANCE_SETUP_FLAGS Flags,
+    __in DEVICE_TYPE VolumeDeviceType,
+    __in FLT_FILESYSTEM_TYPE VolumeFilesystemType
+    )
 {
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	PINSTANCE_CONTEXT pInstanceContext = NULL;
-	PVOLUME_CONTEXT pVolumeContext = NULL;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    PINSTANCE_CONTEXT pInstanceContext = NULL;
+    PVOLUME_CONTEXT pVolumeContext = NULL;
 
-	UNREFERENCED_PARAMETER( Flags );
+    UNREFERENCED_PARAMETER( Flags );
 
-	ASSERT( FltObjects->Filter == Globals.m_Filter );
+    ASSERT( FltObjects->Filter == Globals.m_Filter );
 
-	if (FLT_FSTYPE_RAW == VolumeFilesystemType)
-	{
-		return STATUS_FLT_DO_NOT_ATTACH;
-	}
+    if (FLT_FSTYPE_RAW == VolumeFilesystemType)
+    {
+        return STATUS_FLT_DO_NOT_ATTACH;
+    }
 
-	if ( FILE_DEVICE_NETWORK_FILE_SYSTEM == VolumeDeviceType )
-	{
-		return STATUS_FLT_DO_NOT_ATTACH;
-	}
+    if ( FILE_DEVICE_NETWORK_FILE_SYSTEM == VolumeDeviceType )
+    {
+        return STATUS_FLT_DO_NOT_ATTACH;
+    }
 
     __try
     {
-	    status = FltAllocateContext (
-		    Globals.m_Filter,
-		    FLT_INSTANCE_CONTEXT,
-		    sizeof( INSTANCE_CONTEXT ),
-		    NonPagedPool,
-		    (PFLT_CONTEXT*) &pInstanceContext
-		    );
+        status = FltAllocateContext (
+            Globals.m_Filter,
+            FLT_INSTANCE_CONTEXT,
+            sizeof( INSTANCE_CONTEXT ),
+            NonPagedPool,
+            (PFLT_CONTEXT*) &pInstanceContext
+            );
 
-	    if ( !NT_SUCCESS( status ) )
-	    {
-		    pInstanceContext = NULL;
+        if ( !NT_SUCCESS( status ) )
+        {
+            pInstanceContext = NULL;
             __leave;
-	    }
-	
-	    RtlZeroMemory( pInstanceContext, sizeof( INSTANCE_CONTEXT ) );
+        }
+    
+        RtlZeroMemory( pInstanceContext, sizeof( INSTANCE_CONTEXT ) );
 
-	    status = FltAllocateContext (
-		    Globals.m_Filter,
-		    FLT_VOLUME_CONTEXT,
-		    sizeof(VOLUME_CONTEXT),
-		    NonPagedPool,
-		    (PFLT_CONTEXT*) &pVolumeContext
-		    );
-    	
-	    if ( !NT_SUCCESS( status ) )
-	    {
-		    pVolumeContext = NULL;
+        status = FltAllocateContext (
+            Globals.m_Filter,
+            FLT_VOLUME_CONTEXT,
+            sizeof(VOLUME_CONTEXT),
+            NonPagedPool,
+            (PFLT_CONTEXT*) &pVolumeContext
+            );
+        
+        if ( !NT_SUCCESS( status ) )
+        {
+            pVolumeContext = NULL;
             __leave;
-	    }
+        }
 
         // just for fun
         pInstanceContext->m_VolumeDeviceType = VolumeDeviceType;
-	    pInstanceContext->m_VolumeFilesystemType = VolumeFilesystemType;
+        pInstanceContext->m_VolumeFilesystemType = VolumeFilesystemType;
 
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
 
-	    status = FltSetInstanceContext (
+        status = FltSetInstanceContext (
             FltObjects->Instance,
-		    FLT_SET_CONTEXT_KEEP_IF_EXISTS,
-		    pInstanceContext,
-		    NULL
+            FLT_SET_CONTEXT_KEEP_IF_EXISTS,
+            pInstanceContext,
+            NULL
             );
 
-       	pVolumeContext->m_Instance = FltObjects->Instance;
-    	status = FltSetVolumeContext( FltObjects->Volume, FLT_SET_CONTEXT_KEEP_IF_EXISTS, pVolumeContext, NULL );
-	}
-	__finally
+           pVolumeContext->m_Instance = FltObjects->Instance;
+        status = FltSetVolumeContext( FltObjects->Volume, FLT_SET_CONTEXT_KEEP_IF_EXISTS, pVolumeContext, NULL );
+    }
+    __finally
     {
         ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
         ReleaseContext( (PFLT_CONTEXT*) &pVolumeContext );
     }
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 __checkReturn
 NTSTATUS
 GenerateFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
-    __in PCFLT_RELATED_OBJECTS FltObjects,
     __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
     )
 {
-    //todo: query filename info
-    UNREFERENCED_PARAMETER( Data );
-    UNREFERENCED_PARAMETER( FltObjects );
-    UNREFERENCED_PARAMETER( ppFileNameInfo );
+    ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT;
+    NTSTATUS status = FltGetFileNameInformation( Data, QueryNameFlags, ppFileNameInfo );
+    if ( !NT_SUCCESS( status ) )
+    {
+        ppFileNameInfo = NULL;
+       
+        return status;
+    }
+
+    status = FltParseFileNameInformation( *ppFileNameInfo );
+
+    ASSERT( !NT_SUCCESS( status ) );
     
-    return STATUS_NOT_IMPLEMENTED;
+    return STATUS_SUCCESS;
 }
 
 __checkReturn
@@ -547,9 +591,9 @@ GenerateStreamContext (
     PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
 
     if ( !FsRtlSupportsPerStreamContexts( FltObjects->FileObject ) )
-		return STATUS_NOT_SUPPORTED;;
+        return STATUS_NOT_SUPPORTED;;
 
-	status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) ppStreamContext );
+    status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) ppStreamContext );
     
     if ( NT_SUCCESS( status ) )
         return status;
@@ -567,7 +611,7 @@ GenerateStreamContext (
         //todo: stream context func
         RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
 
-        status = GenerateFileNameInfo( Data, FltObjects, &pFileNameInfo );
+        status = GenerateFileNameInfo( Data, &pFileNameInfo );
         if ( NT_SUCCESS( status ) )
         {
             (*ppStreamContext)->m_pFileNameInfo = pFileNameInfo;
@@ -590,10 +634,10 @@ GenerateStreamContext (
 
 FLT_POSTOP_CALLBACK_STATUS
 PostCreate (
-	__inout PFLT_CALLBACK_DATA Data,
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__in PVOID CompletionContext,
-	__in FLT_POST_OPERATION_FLAGS Flags
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PVOID CompletionContext,
+    __in FLT_POST_OPERATION_FLAGS Flags
     )
 {
     UNREFERENCED_PARAMETER( CompletionContext );
@@ -601,40 +645,28 @@ PostCreate (
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
     NTSTATUS status;
 
-    PINSTANCE_CONTEXT pInstanceContext = NULL;
     PSTREAM_CONTEXT pStreamContext = NULL;
-    //PSTREAM_HANDLE_CONTEXT pHandleContext = NULL;
-    //PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
-
-    //LUID sysluid = SYSTEM_LUID;
-
+ 
     if ( IsPassThrough( FltObjects, Flags ) )
     {
         // wrong state
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
-	
-    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
-	{
-		// skip failed op
-        return FLT_POSTOP_FINISHED_PROCESSING;
-	}
-	
+
     if ( STATUS_REPARSE == Data->IoStatus.Status )
     {
         // skip reparse op
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
+    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+    {
+        // skip failed op
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+    
     __try
     {
-        status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pInstanceContext = NULL;
-            __leave;
-        }
-
         status = GenerateStreamContext( Data, FltObjects, &pStreamContext );
         if ( !NT_SUCCESS( status ) )
         {
@@ -642,11 +674,11 @@ PostCreate (
             __leave;
         }
 
+        PortAskUser( Data, FltObjects );
     }
     __finally
     {
         ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
-        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
     }
     
     return fltStatus;
@@ -654,58 +686,34 @@ PostCreate (
 
 FLT_PREOP_CALLBACK_STATUS
 PreCleanup (
-	__inout PFLT_CALLBACK_DATA Data,
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__out PVOID *CompletionContext
-	)
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __out PVOID *CompletionContext
+    )
 {
     UNREFERENCED_PARAMETER( Data );
     UNREFERENCED_PARAMETER( CompletionContext );
 
-	FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
-    NTSTATUS status;
+    FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
+    NTSTATUS status = PortAskUser( Data, FltObjects );
 
-    PINSTANCE_CONTEXT pInstanceContext = NULL;
-	PSTREAM_CONTEXT pContext = NULL;
-	PSTREAM_HANDLE_CONTEXT pHandleContext = NULL;
-
-    __try
-    {
-
-        status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pInstanceContext = NULL;
-            __leave;
-        }
-
-	    //pContext = GetStreamContext( FltObjects->Instance, FltObjects->FileObject );
-	    //pHandleContext = GetStreamHandleContext( FltObjects->Instance, FltObjects->FileObject );
-    }
-    __finally
-    {
-	    ReleaseContext( (PFLT_CONTEXT*) &pHandleContext );
-	    ReleaseContext( (PFLT_CONTEXT*) &pContext );
-	    ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
-    }
-
-	return fltStatus;
+    return fltStatus;
 }
 
 FLT_POSTOP_CALLBACK_STATUS
 PostWrite (
-	__inout PFLT_CALLBACK_DATA Data,
-	__in PCFLT_RELATED_OBJECTS FltObjects,
-	__in PVOID CompletionContext,
-	__in FLT_POST_OPERATION_FLAGS Flags
-	)
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PVOID CompletionContext,
+    __in FLT_POST_OPERATION_FLAGS Flags
+    )
 {
     UNREFERENCED_PARAMETER( Data );
     UNREFERENCED_PARAMETER( FltObjects );
     UNREFERENCED_PARAMETER( CompletionContext );
     UNREFERENCED_PARAMETER( Flags );
 
-	FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
+    FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
 
     return fltStatus;
 }
