@@ -31,7 +31,7 @@ typedef struct _INSTANCE_CONTEXT
 
 typedef struct _STREAM_CONTEXT
 {
-    PFLT_FILE_NAME_INFORMATION m_pFileNameInfo;
+    LUID                    m_Luid;
 } STREAM_CONTEXT, *PSTREAM_CONTEXT;
 
 typedef struct _STREAM_HANDLE_CONTEXT
@@ -225,6 +225,8 @@ ReleaseFileNameInfo (
     __in_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
     )
 {
+    ASSERT( ppFileNameInfo );
+
     if ( ppFileNameInfo )
     {
         FltReleaseFileNameInformation( *ppFileNameInfo );
@@ -262,7 +264,6 @@ ContextCleanup (
         {
             PSTREAM_CONTEXT pStreamContext = (PSTREAM_CONTEXT) Pool;
             ASSERT ( pStreamContext );
-            ReleaseFileNameInfo( &pStreamContext->m_pFileNameInfo );
         }
         break;
 
@@ -558,7 +559,7 @@ InstanceSetup (
 
 __checkReturn
 NTSTATUS
-GenerateFileNameInfo (
+QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
     __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
     )
@@ -567,14 +568,12 @@ GenerateFileNameInfo (
     NTSTATUS status = FltGetFileNameInformation( Data, QueryNameFlags, ppFileNameInfo );
     if ( !NT_SUCCESS( status ) )
     {
-        ppFileNameInfo = NULL;
-       
         return status;
     }
 
     status = FltParseFileNameInformation( *ppFileNameInfo );
 
-    ASSERT( !NT_SUCCESS( status ) );
+    ASSERT( !NT_SUCCESS( status ) ); //ignore unsuccessful parse
     
     return STATUS_SUCCESS;
 }
@@ -588,7 +587,6 @@ GenerateStreamContext (
     )
 {
     NTSTATUS status;
-    PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
 
     if ( !FsRtlSupportsPerStreamContexts( FltObjects->FileObject ) )
         return STATUS_NOT_SUPPORTED;;
@@ -611,18 +609,13 @@ GenerateStreamContext (
         //todo: stream context func
         RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
 
-        status = GenerateFileNameInfo( Data, &pFileNameInfo );
-        if ( NT_SUCCESS( status ) )
-        {
-            (*ppStreamContext)->m_pFileNameInfo = pFileNameInfo;
-
-            status = FltSetStreamContext (
-                FltObjects->Instance,
-                FltObjects->FileObject,
-                FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
-                *ppStreamContext,
-                NULL
-                );
+        status = FltSetStreamContext (
+            FltObjects->Instance,
+            FltObjects->FileObject,
+            FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
+            *ppStreamContext,
+            NULL
+            );
         }
 
         if ( !NT_SUCCESS( status ) )
@@ -646,6 +639,7 @@ PostCreate (
     NTSTATUS status;
 
     PSTREAM_CONTEXT pStreamContext = NULL;
+    PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
  
     if ( IsPassThrough( FltObjects, Flags ) )
     {
@@ -674,11 +668,19 @@ PostCreate (
             __leave;
         }
 
+        status = QueryFileNameInfo( Data, &pFileNameInfo );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pFileNameInfo = NULL;
+            __leave
+        }
+
         PortAskUser( Data, FltObjects );
     }
     __finally
     {
         ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+        ReleaseFileNameInfo( &pFileNameInfo ); 
     }
     
     return fltStatus;
