@@ -1,15 +1,18 @@
-// author - Andrey Sobko (andrey.sobko@gmail.com)
-// date - 06.07.2009
-// description - sample driver
+//!
+//	\author - Andrey Sobko (andrey.sobko@gmail.com)
+//	\date - 06.07.2009
+//	\description - sample driver
+//!
 
 #include "main.h"
+#include "common.h"
 
 #define ACCESSCH_PORT_NAME          L"accessch_port"
 #define _ALLOC_TAG                  'hcca'
 #define _ACCESSCH_MAX_CONNECTIONS   1
 
 // ----------------------------------------------------------------------------
-// structs
+// 
 
 typedef struct _GLOBALS
 {
@@ -325,6 +328,7 @@ PortCreate (
     return status;
 }
 
+__checkReturn
 NTSTATUS
 PortConnect (
     __in PFLT_PORT ClientPort,
@@ -368,6 +372,7 @@ PortDisconnect (
     ExFreePool( pPortContext );
 }
 
+__checkReturn
 NTSTATUS
 PortMessageNotify (
     __in PVOID ConnectionCookie,
@@ -398,46 +403,30 @@ PortMessageNotify (
     return status;
 }
 
+__checkReturn
 NTSTATUS
-PortAskUser (
-    __inout PFLT_CALLBACK_DATA Data,
-    __in PCFLT_RELATED_OBJECTS FltObjects
-    )
+PortQueryConnected (
+	__deref_out_opt PFLT_PORT* ppPort
+	)
 {
-    UNREFERENCED_PARAMETER( Data );
+	//! \todo
+	*ppPort = Globals.m_Port;
+	return STATUS_UNSUCCESSFUL;
+}
 
-    NTSTATUS status;
-    PINSTANCE_CONTEXT pInstanceContext = NULL;
-    PSTREAM_CONTEXT pStreamContext = NULL;
-
-    __try
-    {
-        status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pInstanceContext = NULL;
-            __leave;
-        }
-
-        status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) &pStreamContext );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pStreamContext = NULL;
-            __leave;
-        }
-    }
-    __finally
-    {
-        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
-        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
-    }
-
-    return STATUS_SUCCESS;
+void
+PortRelease (
+	__deref_in PFLT_PORT* ppPort
+	)
+{
+	if ( *ppPort )
+		*ppPort = NULL;
 }
 
 // ----------------------------------------------------------------------------
 // file
 
+__checkReturn
 FORCEINLINE
 BOOLEAN
 IsPassThrough (
@@ -474,6 +463,7 @@ IsPassThrough (
     return FALSE;
 }
 
+__checkReturn
 NTSTATUS
 InstanceSetup (
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -545,7 +535,7 @@ InstanceSetup (
             NULL
             );
 
-           pVolumeContext->m_Instance = FltObjects->Instance;
+		pVolumeContext->m_Instance = FltObjects->Instance;
         status = FltSetVolumeContext( FltObjects->Volume, FLT_SET_CONTEXT_KEEP_IF_EXISTS, pVolumeContext, NULL );
     }
     __finally
@@ -581,12 +571,11 @@ QueryFileNameInfo (
 __checkReturn
 NTSTATUS
 GenerateStreamContext (
-    __in PFLT_CALLBACK_DATA Data,
-    __in PCFLT_RELATED_OBJECTS FltObjects,
+	__in PCFLT_RELATED_OBJECTS FltObjects,
     __deref_out_opt PSTREAM_CONTEXT* ppStreamContext
     )
 {
-    NTSTATUS status;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
 
     if ( !FsRtlSupportsPerStreamContexts( FltObjects->FileObject ) )
         return STATUS_NOT_SUPPORTED;;
@@ -616,15 +605,290 @@ GenerateStreamContext (
             *ppStreamContext,
             NULL
             );
-        }
 
-        if ( !NT_SUCCESS( status ) )
-            ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
+		ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
     }
 
     return status;
 }
 
+__checkReturn
+NTSTATUS
+SecurityGetLuid (
+	__out PLUID pLuid
+	)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	PACCESS_TOKEN pToken = 0;
+
+	SECURITY_SUBJECT_CONTEXT SubjectContext;
+
+	SeCaptureSubjectContext( &SubjectContext );
+
+	pToken = SeQuerySubjectContextToken( &SubjectContext );
+
+	if ( pToken )
+		status = SeQueryAuthenticationIdToken( pToken, pLuid );
+
+	SeReleaseSubjectContext( &SubjectContext );
+
+	return status;
+}
+
+__checkReturn
+NTSTATUS
+SecurityAllocateCopySid (
+	__in PSID pSid,
+	__deref_out_opt PSID* ppSid
+	)
+{
+	NTSTATUS status;
+	ASSERT( RtlValidSid( pSid ) );
+
+	ULONG SidLength = RtlLengthSid( pSid );
+
+	*ppSid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
+	if ( !*ppSid )
+		return STATUS_NO_MEMORY;
+
+	status = RtlCopySid( SidLength, *ppSid, pSid );
+	if ( !NT_SUCCESS( status ) )
+	{
+		ExFreePool( *ppSid );
+	}
+
+	return status;
+}
+
+void
+SecurityFreeSid (
+	__in PSID* ppSid
+	)
+{
+	if ( !*ppSid )
+		return;
+
+	ExFreePool( *ppSid );
+	*ppSid = NULL;
+}
+
+__checkReturn
+NTSTATUS
+SecurityGetSid (
+	 __in_opt PFLT_CALLBACK_DATA Data,
+	__deref_out_opt PSID *ppSid
+	)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+	PACCESS_TOKEN pAccessToken = NULL;
+	PTOKEN_USER pTokenUser = NULL;
+
+	BOOLEAN CopyOnOpen;
+	BOOLEAN EffectiveOnly;
+	SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
+
+	PSID pSid = NULL;
+	__try
+	{
+		if ( PsIsThreadTerminating( PsGetCurrentThread() ) )
+			__leave;
+
+		pAccessToken = PsReferenceImpersonationToken( Data->Thread, &CopyOnOpen, &EffectiveOnly, &ImpersonationLevel );
+		if ( !pAccessToken )
+			pAccessToken = PsReferencePrimaryToken( FltGetRequestorProcess( Data ) );
+
+		if ( !pAccessToken )
+			pAccessToken = PsReferencePrimaryToken( PsGetCurrentProcess() );
+
+		if ( !pAccessToken )
+			__leave;
+
+		status = SeQueryInformationToken( pAccessToken, TokenUser, (PVOID*) &pTokenUser );
+		if( !NT_SUCCESS( status ) )
+		{
+			pTokenUser = NULL;
+			__leave;
+		}
+
+		status = SecurityAllocateCopySid( pTokenUser->User.Sid, &pSid );
+		if( !NT_SUCCESS( status ) )
+		{
+			pSid = NULL;
+			__leave;
+		}
+
+		*ppSid = pSid;
+		pSid = NULL;
+	}
+	__finally
+	{
+		if ( pTokenUser )
+		{
+			ExFreePool( pTokenUser );
+			pTokenUser = NULL;
+		}
+
+		if ( pAccessToken )
+		{
+			PsDereferenceImpersonationToken( pAccessToken );
+			pAccessToken = NULL;
+		}
+
+		SecurityFreeSid( &pSid );
+	}
+
+	return status;
+}
+
+__checkReturn
+NTSTATUS
+PortAllocateMessage (
+	__in_opt ULONG ProcessId,
+	__in_opt ULONG ThreadId,
+	__in PFLT_FILE_NAME_INFORMATION pFileNameInfo,
+	__in PSID pSid,
+	__in PLUID pLuid,
+	__deref_out_opt PVOID* ppMessage,
+	__out_opt PULONG pMessageSize
+	)
+{
+	UNREFERENCED_PARAMETER( ProcessId );
+	UNREFERENCED_PARAMETER( ThreadId );
+	UNREFERENCED_PARAMETER( pFileNameInfo );
+	UNREFERENCED_PARAMETER( pSid );
+	UNREFERENCED_PARAMETER( pLuid );
+	UNREFERENCED_PARAMETER( ppMessage );
+	UNREFERENCED_PARAMETER( pMessageSize );
+
+	ASSERT( pSid );
+	ASSERT( pLuid );
+
+	return STATUS_NO_MEMORY;
+}
+
+void
+PortReleaseMessage (
+	__deref_in PVOID* ppMessage
+	)
+{
+	if ( !*ppMessage )
+		return;
+
+	ExFreePool( *ppMessage );
+	*ppMessage = NULL;
+}
+
+__checkReturn
+NTSTATUS
+PortAskUser (
+	__inout PFLT_CALLBACK_DATA Data,
+	__in PCFLT_RELATED_OBJECTS FltObjects
+	)
+{
+	NTSTATUS status;
+	PINSTANCE_CONTEXT pInstanceContext = NULL;
+	PSTREAM_CONTEXT pStreamContext = NULL;
+	PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
+	PFLT_PORT pPort = NULL;
+	PSID pSid = NULL;
+	PVOID pMessage = NULL;
+
+	__try
+	{
+		status = PortQueryConnected( &pPort );
+		if ( !NT_SUCCESS( status ) )
+		{
+			pPort = NULL;
+			__leave;
+		}
+
+		status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
+		if ( !NT_SUCCESS( status ) )
+		{
+			pInstanceContext = NULL;
+			__leave;
+		}
+
+		status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) &pStreamContext );
+		if ( !NT_SUCCESS( status ) )
+		{
+			pStreamContext = NULL;
+			__leave;
+		}
+
+		status = QueryFileNameInfo( Data, &pFileNameInfo );
+		if ( !NT_SUCCESS( status ) )
+		{
+			pFileNameInfo = NULL;
+			__leave;
+		}
+
+		ULONG ProcessId = FltGetRequestorProcessId( Data );
+		ULONG ThreadId = HandleToUlong( PsGetCurrentThreadId() );
+		LUID Luid;
+		
+		status = SecurityGetLuid( &Luid );
+		if ( !NT_SUCCESS( status ) )
+			__leave;
+
+		status = SecurityGetSid( Data, &pSid );
+		if ( !NT_SUCCESS( status ) )
+		{
+			pSid = NULL;
+			__leave;
+		}
+
+		//! send data to R3
+		REPLY_RESULT ReplyResult;
+		ULONG ReplyLength = sizeof( ReplyResult );
+		ULONG MessageSize = 0;
+
+		status = PortAllocateMessage (
+			ProcessId,
+			ThreadId,
+			pFileNameInfo,
+			pSid,
+			&Luid,
+			&pMessage,
+			&MessageSize
+			);
+		
+		if ( !NT_SUCCESS( status ) )
+		{
+			pMessage = NULL;
+			__leave;
+		}
+
+		status = FltSendMessage (
+			Globals.m_Filter,
+			&pPort,
+			pMessage,
+			MessageSize,
+			&ReplyResult,
+			&ReplyLength,
+			NULL
+			);
+
+		if ( !NT_SUCCESS( status ) || ReplyLength != sizeof( ReplyResult) )
+		{
+			RtlZeroMemory( &ReplyResult, sizeof( ReplyResult) );
+		}
+	}
+	__finally
+	{
+		ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
+		ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+		ReleaseFileNameInfo( &pFileNameInfo );
+		PortRelease( &pPort );
+		SecurityFreeSid( &pSid );
+		PortReleaseMessage( &pMessage );
+	}
+
+	return STATUS_SUCCESS;
+}
+
+__checkReturn
 FLT_POSTOP_CALLBACK_STATUS
 PostCreate (
     __inout PFLT_CALLBACK_DATA Data,
@@ -639,40 +903,32 @@ PostCreate (
     NTSTATUS status;
 
     PSTREAM_CONTEXT pStreamContext = NULL;
-    PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
  
+	if ( STATUS_REPARSE == Data->IoStatus.Status )
+	{
+		// skip reparse op
+		return FLT_POSTOP_FINISHED_PROCESSING;
+	}
+
+	if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+	{
+		// skip failed op
+		return FLT_POSTOP_FINISHED_PROCESSING;
+	}
+
     if ( IsPassThrough( FltObjects, Flags ) )
     {
         // wrong state
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
-    if ( STATUS_REPARSE == Data->IoStatus.Status )
-    {
-        // skip reparse op
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
-    {
-        // skip failed op
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-    
     __try
     {
-        status = GenerateStreamContext( Data, FltObjects, &pStreamContext );
+        status = GenerateStreamContext( FltObjects, &pStreamContext );
         if ( !NT_SUCCESS( status ) )
         {
             pStreamContext = NULL;
             __leave;
-        }
-
-        status = QueryFileNameInfo( Data, &pFileNameInfo );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pFileNameInfo = NULL;
-            __leave
         }
 
         PortAskUser( Data, FltObjects );
@@ -680,12 +936,12 @@ PostCreate (
     __finally
     {
         ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
-        ReleaseFileNameInfo( &pFileNameInfo ); 
     }
     
     return fltStatus;
 }
 
+__checkReturn
 FLT_PREOP_CALLBACK_STATUS
 PreCleanup (
     __inout PFLT_CALLBACK_DATA Data,
@@ -698,10 +954,15 @@ PreCleanup (
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
     NTSTATUS status = PortAskUser( Data, FltObjects );
+	if ( NT_SUCCESS( status ) )
+	{
+		//! \todo
+	}
 
     return fltStatus;
 }
 
+__checkReturn
 FLT_POSTOP_CALLBACK_STATUS
 PostWrite (
     __inout PFLT_CALLBACK_DATA Data,
