@@ -7,7 +7,7 @@
 #include "main.h"
 #include "common.h"
 
-#define ACCESSCH_PORT_NAME          L"accessch_port"
+#define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define _ALLOC_TAG                  'hcca'
 #define _ACCESSCH_MAX_CONNECTIONS   1
 
@@ -35,6 +35,7 @@ typedef struct _INSTANCE_CONTEXT
 typedef struct _STREAM_CONTEXT
 {
     LUID                    m_Luid;
+	LONG					m_Flags;
 } STREAM_CONTEXT, *PSTREAM_CONTEXT;
 
 typedef struct _STREAM_HANDLE_CONTEXT
@@ -56,6 +57,11 @@ DriverEntry (
     __in PUNICODE_STRING RegistryPath
     );
 }
+
+NTSTATUS
+Unload (
+	__in FLT_FILTER_UNLOAD_FLAGS Flags
+	);
 
 void
 ContextCleanup (
@@ -153,7 +159,7 @@ FLT_REGISTRATION filterRegistration = {
     FLTFL_REGISTRATION_DO_NOT_SUPPORT_SERVICE_STOP,  // Flags
     ContextRegistration,                             // Context
     Callbacks,                                       // Operation callbacks
-    NULL,                                            //
+    Unload,                                            //
     InstanceSetup,                                   // InstanceSetup
     NULL,                                            // InstanceQueryTeardown
     NULL,                                            // InstanceTeardownStart
@@ -222,6 +228,25 @@ DriverEntry (
     return status;
 }
 
+__checkReturn
+NTSTATUS
+Unload (
+	__in FLT_FILTER_UNLOAD_FLAGS Flags
+	)
+{
+	if ( !FlagOn(Flags, FLTFL_FILTER_UNLOAD_MANDATORY) )
+	{
+		//! \todo check
+		//return STATUS_FLT_DO_NOT_DETACH;
+	}
+
+	FltCloseCommunicationPort( Globals.m_Port );
+	FltUnregisterFilter( Globals.m_Filter );
+
+	return STATUS_SUCCESS;
+}
+
+
 // ----------------------------------------------------------------------------
 void
 ReleaseFileNameInfo (
@@ -230,7 +255,7 @@ ReleaseFileNameInfo (
 {
     ASSERT( ppFileNameInfo );
 
-    if ( ppFileNameInfo )
+    if ( *ppFileNameInfo )
     {
         FltReleaseFileNameInformation( *ppFileNameInfo );
         *ppFileNameInfo = NULL;
@@ -410,8 +435,12 @@ PortQueryConnected (
 	)
 {
 	//! \todo
+	if ( !Globals.m_Port )
+		return STATUS_UNSUCCESSFUL;
+
 	*ppPort = Globals.m_Port;
-	return STATUS_UNSUCCESSFUL;
+	
+	return STATUS_SUCCESS;
 }
 
 void
@@ -563,7 +592,7 @@ QueryFileNameInfo (
 
     status = FltParseFileNameInformation( *ppFileNameInfo );
 
-    ASSERT( !NT_SUCCESS( status ) ); //ignore unsuccessful parse
+    ASSERT( NT_SUCCESS( status ) ); //ignore unsuccessful parse
     
     return STATUS_SUCCESS;
 }
@@ -595,8 +624,16 @@ GenerateStreamContext (
 
     if ( NT_SUCCESS( status ) )
     {
-        //todo: stream context func
-        RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
+		RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
+
+		BOOLEAN bIsDirectory;
+
+		status = FltIsDirectory( FltObjects->FileObject, FltObjects->Instance, &bIsDirectory );
+		if ( NT_SUCCESS( status ) )
+		{
+			if ( bIsDirectory )
+				InterlockedOr( &(*ppStreamContext)->m_Flags, _STREAM_FLAGS_DIRECTORY );
+		}
 
         status = FltSetStreamContext (
             FltObjects->Instance,
@@ -753,18 +790,61 @@ PortAllocateMessage (
 	__out_opt PULONG pMessageSize
 	)
 {
-	UNREFERENCED_PARAMETER( ProcessId );
-	UNREFERENCED_PARAMETER( ThreadId );
-	UNREFERENCED_PARAMETER( pFileNameInfo );
-	UNREFERENCED_PARAMETER( pSid );
-	UNREFERENCED_PARAMETER( pLuid );
-	UNREFERENCED_PARAMETER( ppMessage );
-	UNREFERENCED_PARAMETER( pMessageSize );
-
 	ASSERT( pSid );
 	ASSERT( pLuid );
 
-	return STATUS_NO_MEMORY;
+	PMESSAGE_DATA pMsg;
+	ULONG MessageSize = sizeof(MESSAGE_DATA);
+
+	MessageSize += pFileNameInfo->Name.Length + sizeof(WCHAR);
+	MessageSize += pFileNameInfo->Volume.Length + sizeof(WCHAR);
+	MessageSize += RtlLengthSid( pSid );
+
+	pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
+		PagedPool,
+		MessageSize,
+		_ALLOC_TAG
+		);
+
+	if ( !pMsg )
+		return STATUS_NO_MEMORY;
+
+	RtlZeroMemory( pMsg, MessageSize );		//! \todo
+
+	pMsg->m_ProcessId = ProcessId;
+	pMsg->m_ThreadId = ThreadId;
+	pMsg->m_Luid = *pLuid;
+	
+	pMsg->m_FileNameOffset = sizeof(MESSAGE_DATA);
+	pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof(WCHAR);
+
+	PVOID pFN = Add2Ptr( pMsg, pMsg->m_FileNameOffset );
+	RtlCopyMemory (
+		pFN,
+		pFileNameInfo->Name.Buffer,
+		pFileNameInfo->Name.Length
+		);
+
+	pMsg->m_VolumeNameOffset = pMsg->m_FileNameOffset + pMsg->m_FileNameLen;
+	pMsg->m_VolumeNameLen = pFileNameInfo->Volume.Length + sizeof(WCHAR);
+
+	PVOID pVN = Add2Ptr( pFN, pMsg->m_FileNameLen );
+	RtlCopyMemory (
+		pVN,
+		pFileNameInfo->Volume.Buffer,
+		pFileNameInfo->Volume.Length
+		);
+	
+	pMsg->m_SidOffset = pMsg->m_VolumeNameOffset + pMsg->m_VolumeNameLen;
+	pMsg->m_SidLength = RtlLengthSid( pSid );
+
+	PVOID pS = Add2Ptr( pVN, pMsg->m_VolumeNameLen );
+	RtlCopySid( RtlLengthSid( pSid ), pS, pSid );
+
+	*ppMessage = pMsg;
+	*pMessageSize = MessageSize;
+
+	return STATUS_SUCCESS;
 }
 
 void
@@ -839,7 +919,7 @@ PortAskUser (
 			__leave;
 		}
 
-		//! send data to R3
+		// send data to R3
 		REPLY_RESULT ReplyResult;
 		ULONG ReplyLength = sizeof( ReplyResult );
 		ULONG MessageSize = 0;
