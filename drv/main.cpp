@@ -1056,12 +1056,14 @@ PostWrite (
     __in FLT_POST_OPERATION_FLAGS Flags
     )
 {
-    UNREFERENCED_PARAMETER( Data );
     UNREFERENCED_PARAMETER( FltObjects );
     UNREFERENCED_PARAMETER( CompletionContext );
     UNREFERENCED_PARAMETER( Flags );
 
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
+
+	if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+		return FLT_POSTOP_FINISHED_PROCESSING;
 
     return fltStatus;
 }
