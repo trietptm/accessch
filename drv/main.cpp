@@ -1002,6 +1002,11 @@ PostCreate (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
+	if ( FlagOn( FltObjects->FileObject->Flags,  FO_VOLUME_OPEN ) )
+	{
+		// volume open
+	}
+
     __try
     {
         status = GenerateStreamContext( FltObjects, &pStreamContext );
