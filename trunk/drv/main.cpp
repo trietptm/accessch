@@ -783,6 +783,8 @@ NTSTATUS
 PortAllocateMessage (
 	__in_opt ULONG ProcessId,
 	__in_opt ULONG ThreadId,
+	__in ULONG StreamFlags,
+	__in ULONG HandleFlags,
 	__in PFLT_FILE_NAME_INFORMATION pFileNameInfo,
 	__in PSID pSid,
 	__in PLUID pLuid,
@@ -814,6 +816,8 @@ PortAllocateMessage (
 	pMsg->m_ProcessId = ProcessId;
 	pMsg->m_ThreadId = ThreadId;
 	pMsg->m_Luid = *pLuid;
+	pMsg->m_FlagsStream = StreamFlags;
+	pMsg->m_FlagsHandle = HandleFlags;
 	
 	pMsg->m_FileNameOffset = sizeof(MESSAGE_DATA);
 	pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof(WCHAR);
@@ -927,6 +931,8 @@ PortAskUser (
 		status = PortAllocateMessage (
 			ProcessId,
 			ThreadId,
+			pStreamContext->m_Flags,
+			0,
 			pFileNameInfo,
 			pSid,
 			&Luid,

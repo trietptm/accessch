@@ -16,6 +16,8 @@ typedef struct _MESSAGE_DATA
 	ULONG			m_ProcessId;
 	ULONG			m_ThreadId;
 	LUID			m_Luid;
+	ULONG			m_FlagsStream;
+	ULONG			m_FlagsHandle;
 	ULONG			m_FileNameOffset;
 	ULONG			m_FileNameLen;
 	ULONG			m_VolumeNameOffset;
