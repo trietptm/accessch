@@ -19,6 +19,7 @@ typedef struct _GLOBALS
     PDRIVER_OBJECT          m_FilterDriverObject;
     PFLT_FILTER             m_Filter;
     PFLT_PORT               m_Port;
+	PFLT_PORT               m_ClientPort;
 }GLOBALS, *PGLOBALS;
 
 typedef struct _PORT_CONTEXT
@@ -378,6 +379,9 @@ PortConnect (
     RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) ); 
 
     pPortContext->m_Connection = ClientPort;
+	
+	//! \todo
+	Globals.m_ClientPort = ClientPort;
 
     *ConnectionCookie = pPortContext;
 
@@ -394,6 +398,10 @@ PortDisconnect (
     ASSERT( pPortContext != NULL );
 
     FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
+
+	//! \todo
+	Globals.m_ClientPort = NULL;
+
     ExFreePool( pPortContext );
 }
 
@@ -435,10 +443,10 @@ PortQueryConnected (
 	)
 {
 	//! \todo
-	if ( !Globals.m_Port )
+	if ( !Globals.m_ClientPort)
 		return STATUS_UNSUCCESSFUL;
 
-	*ppPort = Globals.m_Port;
+	*ppPort = Globals.m_ClientPort;
 	
 	return STATUS_SUCCESS;
 }
