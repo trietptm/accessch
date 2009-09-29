@@ -19,6 +19,7 @@ typedef struct _GLOBALS
     PDRIVER_OBJECT          m_FilterDriverObject;
     PFLT_FILTER             m_Filter;
     PFLT_PORT               m_Port;
+	EX_PUSH_LOCK			m_ClientPortLock;
 	PFLT_PORT               m_ClientPort;
 }GLOBALS, *PGLOBALS;
 
@@ -186,6 +187,7 @@ DriverEntry (
     RtlZeroMemory( &Globals, sizeof( Globals) );
 
     Globals.m_FilterDriverObject = DriverObject;
+	FltInitializePushLock( &Globals.m_ClientPortLock );
     __try
     {
         status = FltRegisterFilter( DriverObject, ( PFLT_REGISTRATION )&filterRegistration, &Globals.m_Filter );
@@ -243,6 +245,7 @@ Unload (
 
 	FltCloseCommunicationPort( Globals.m_Port );
 	FltUnregisterFilter( Globals.m_Filter );
+	FltDeletePushLock( &Globals.m_ClientPortLock );
 
 	return STATUS_SUCCESS;
 }
@@ -364,28 +367,44 @@ PortConnect (
     __deref_out_opt PVOID *ConnectionCookie
     )
 {
+	NTSTATUS status = STATUS_SUCCESS;
     PPORT_CONTEXT pPortContext = NULL;
 
     UNREFERENCED_PARAMETER( ServerPortCookie );
     UNREFERENCED_PARAMETER( ConnectionContext );
     UNREFERENCED_PARAMETER( SizeOfContext );
 
-    pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag( NonPagedPool, sizeof(PORT_CONTEXT), _ALLOC_TAG );
-    if ( !pPortContext )
-    {
-        return STATUS_NO_MEMORY;
-    }
-    
-    RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) ); 
+	FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
+	__try
+	{
+		if ( Globals.m_ClientPort )
+		{
+			status = STATUS_ALREADY_REGISTERED;
+			__leave;
+		}
 
-    pPortContext->m_Connection = ClientPort;
-	
-	//! \todo
-	Globals.m_ClientPort = ClientPort;
+		pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag( NonPagedPool, sizeof(PORT_CONTEXT), _ALLOC_TAG );
+		if ( !pPortContext )
+		{
+			status = STATUS_NO_MEMORY;
+			__leave;
+		}
+	    
+		RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) ); 
 
-    *ConnectionCookie = pPortContext;
+		pPortContext->m_Connection = ClientPort;
+		
+		//! \todo
+		Globals.m_ClientPort = ClientPort;
 
-    return STATUS_SUCCESS;
+		*ConnectionCookie = pPortContext;
+	}
+	__finally
+	{
+		FltReleasePushLock( &Globals.m_ClientPortLock );
+	}
+
+    return status;
 }
 
 void
@@ -400,7 +419,9 @@ PortDisconnect (
     FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
 
 	//! \todo
+	FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
 	Globals.m_ClientPort = NULL;
+	FltReleasePushLock( &Globals.m_ClientPortLock );
 
     ExFreePool( pPortContext );
 }
@@ -442,13 +463,18 @@ PortQueryConnected (
 	__deref_out_opt PFLT_PORT* ppPort
 	)
 {
-	//! \todo
-	if ( !Globals.m_ClientPort)
-		return STATUS_UNSUCCESSFUL;
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-	*ppPort = Globals.m_ClientPort;
+	FltAcquirePushLockShared( &Globals.m_ClientPortLock );
+	if ( Globals.m_ClientPort)
+	{
+		*ppPort = Globals.m_ClientPort;
+		status = STATUS_SUCCESS;
+	}
 	
-	return STATUS_SUCCESS;
+	FltReleasePushLock( &Globals.m_ClientPortLock );
+
+	return status;
 }
 
 void
