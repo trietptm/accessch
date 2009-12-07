@@ -5,15 +5,86 @@
 
 #define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define THREAD_MAXCOUNT_WAITERS     8
+#define DRV_EVENT_CONTENT_SIZE      0x1000 
+
+#include <pshpack1.h>
+typedef struct _DRVEVENT {
+    UCHAR			m_Content[DRV_EVENT_CONTENT_SIZE];
+} DRVEVENT, *PDRVEVENT;
+
+typedef struct _DRVEVENT_OVLP {
+    FILTER_MESSAGE_HEADER	m_Header;
+    DRVEVENT				m_Event;
+    OVERLAPPED				m_Ovlp;
+} DRVEVENT_OVLP, *PDRVEVENT_OVLP;
+#include <poppack.h>
 
 HRESULT
 WaitForSingleMessage (
-    __in HANDLE hCompletion
+    __in HANDLE hPort,
+    __in HANDLE hCompletion,
+    __deref_out_opt PDRVEVENT_OVLP *ppEvent
     )
 {
-    UNREFERENCED_PARAMETER( hCompletion );
+    assert( hPort );
+    assert( hCompletion );
+    assert( ppEvent );
 
-    return S_OK;
+    *ppEvent = 0;
+
+    PDRVEVENT_OVLP pEvent = (PDRVEVENT_OVLP) HeapAlloc (
+        GetProcessHeap(),
+        0,
+        sizeof(DRVEVENT_OVLP)
+        );
+
+    if ( !pEvent )
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    memset( &pEvent->m_Ovlp, 0, sizeof( OVERLAPPED ) );
+
+    HRESULT hResult = FilterGetMessage (
+        hPort,
+        &pEvent->m_Header,
+        FIELD_OFFSET( DRVEVENT_OVLP, m_Ovlp ),
+        &pEvent->m_Ovlp
+        );
+
+    assert( !SUCCEEDED( hResult ) );
+   
+    if ( HRESULT_FROM_WIN32( ERROR_IO_PENDING ) == hResult )
+    {
+        ULONG_PTR key = 0;
+        LPOVERLAPPED pOvlp = NULL;
+        DWORD NumbersOfByte = 0;
+
+        BOOL Queued = GetQueuedCompletionStatus (
+            hCompletion,
+            &NumbersOfByte,
+            &key,
+            &pOvlp,
+            INFINITE
+            );
+
+        PDRVEVENT_OVLP pEventTmp = CONTAINING_RECORD( pOvlp, DRVEVENT_OVLP, m_Ovlp );
+
+        if ( Queued )
+        {
+            *ppEvent = pEventTmp;
+            return S_OK;
+        }
+        else
+        {
+            assert( pOvlp );
+            hResult = E_FAIL;
+        }
+    }
+
+    HeapFree( GetProcessHeap(), 0, pEvent );
+
+    return hResult;
 }
 
 DWORD
@@ -22,17 +93,22 @@ WaiterThread (
     __in  LPVOID lpParameter
     )
 {
-    HANDLE hCompletion = const_cast<HANDLE> (lpParameter);
-    assert( hCompletion );
+    HANDLE hPort = const_cast<HANDLE> (lpParameter);
+    assert( hPort );
 
     HRESULT hResult;
     do
     {
-        hResult = WaitForSingleMessage( hCompletion );
+        PDRVEVENT_OVLP pEvent;
+        hResult = WaitForSingleMessage( hPort, 0, &pEvent );
         if ( IS_ERROR( hResult ) )
         {
             break;
         }
+        
+        //todo: reply
+        HeapFree( GetProcessHeap(), 0, pEvent );
+
     } while ( SUCCEEDED( hResult ) );
 
     return 0;
@@ -85,7 +161,7 @@ main (
 
         for ( int thc = 0; thc < THREAD_MAXCOUNT_WAITERS; thc++ )
         {
-            hThreads[thc] = CreateThread ( NULL, 0, WaiterThread, hCompletion, 0, &ThreadsId[thc] );
+            hThreads[thc] = CreateThread ( NULL, 0, WaiterThread, hPort, 0, &ThreadsId[thc] );
 
             if ( !hThreads[thc] )
             {
