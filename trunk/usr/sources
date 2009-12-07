@@ -4,12 +4,14 @@ TARGETTYPE = PROGRAM
 TARGETPATH=..\out\$(BUILD_ALT_DIR)
 
 INCLUDES=$(INCLUDES);         \
-         $(DBGSDK_INC_PATH);  \
+         $(IFSKIT_INC_PATH);  \
+         $(DDK_INC_PATH);
 
 TARGETLIBS = \
-        $(SDK_LIB_PATH)\user32.lib\
-        $(SDK_LIB_PATH)\gdi32.lib\
-        $(SDK_LIB_PATH)\kernel32.lib
+        $(SDK_LIB_PATH)\user32.lib \
+        $(SDK_LIB_PATH)\gdi32.lib \
+        $(SDK_LIB_PATH)\kernel32.lib \
+        $(SDK_LIB_PATH)\fltlib.lib
 
 USE_MSVCRT = 1
 
