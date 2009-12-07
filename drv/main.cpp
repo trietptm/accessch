@@ -416,12 +416,12 @@ PortDisconnect (
 
     ASSERT( pPortContext != NULL );
 
-    FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
+    //! \todo
+    FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
+    Globals.m_ClientPort = NULL;
+    FltReleasePushLock( &Globals.m_ClientPortLock );
 
-	//! \todo
-	FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
-	Globals.m_ClientPort = NULL;
-	FltReleasePushLock( &Globals.m_ClientPortLock );
+    FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
 
     ExFreePool( pPortContext );
 }
