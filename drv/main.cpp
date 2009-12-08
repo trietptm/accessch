@@ -835,6 +835,12 @@ PortAllocateMessage (
 	MessageSize += pFileNameInfo->Volume.Length + sizeof(WCHAR);
 	MessageSize += RtlLengthSid( pSid );
 
+    if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
+    {
+        ASSERT( !MessageSize );
+        return STATUS_NOT_SUPPORTED;
+    }
+
 	pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
 		PagedPool,
 		MessageSize,
@@ -842,7 +848,9 @@ PortAllocateMessage (
 		);
 
 	if ( !pMsg )
-		return STATUS_NO_MEMORY;
+    {
+        return STATUS_NO_MEMORY;
+    }
 
 	RtlZeroMemory( pMsg, MessageSize );		//! \todo
 

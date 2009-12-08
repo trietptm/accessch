@@ -2,6 +2,7 @@
 #define __accesscheck_h
 
 #define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
+#define DRV_EVENT_CONTENT_SIZE      0x1000
 
 #define _STREAM_FLAGS_DIRECTORY		0x00000001
 
