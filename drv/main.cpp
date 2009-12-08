@@ -5,9 +5,8 @@
 //!
 
 #include "main.h"
-#include "common.h"
+#include "../inc/accessch.h"
 
-#define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define _ALLOC_TAG                  'hcca'
 #define _ACCESSCH_MAX_CONNECTIONS   1
 

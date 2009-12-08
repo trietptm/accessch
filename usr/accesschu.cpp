@@ -3,13 +3,18 @@
 #include <strsafe.h>
 #include <fltUser.h>
 
-#define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define THREAD_MAXCOUNT_WAITERS     8
 #define DRV_EVENT_CONTENT_SIZE      0x1000 
 
+typedef struct _COMMUNICATIONS {
+    HANDLE                  m_hPort;
+    HANDLE                  m_hCompletion;
+} COMMUNICATIONS, *PCOMMUNICATIONS;
+
 #include <pshpack1.h>
+
 typedef struct _DRVEVENT {
-    UCHAR			m_Content[DRV_EVENT_CONTENT_SIZE];
+    UCHAR			        m_Content[DRV_EVENT_CONTENT_SIZE];
 } DRVEVENT, *PDRVEVENT;
 
 typedef struct _DRVEVENT_OVLP {
@@ -17,6 +22,12 @@ typedef struct _DRVEVENT_OVLP {
     DRVEVENT				m_Event;
     OVERLAPPED				m_Ovlp;
 } DRVEVENT_OVLP, *PDRVEVENT_OVLP;
+
+typedef struct _REPLY_MESSAGE {
+    FILTER_REPLY_HEADER		m_ReplyHeader;
+    ULONG                   m_Verdict;
+} REPLY_MESSAGE, *PREPLY_MESSAGE;
+
 #include <poppack.h>
 
 HRESULT
@@ -93,20 +104,33 @@ WaiterThread (
     __in  LPVOID lpParameter
     )
 {
-    HANDLE hPort = const_cast<HANDLE> (lpParameter);
-    assert( hPort );
+    PCOMMUNICATIONS pComm = (PCOMMUNICATIONS) lpParameter;
+    assert( pComm );
 
     HRESULT hResult;
     do
     {
         PDRVEVENT_OVLP pEvent;
-        hResult = WaitForSingleMessage( hPort, 0, &pEvent );
+        hResult = WaitForSingleMessage (
+            pComm->m_hPort,
+            pComm->m_hCompletion,
+            &pEvent
+            );
+
         if ( IS_ERROR( hResult ) )
         {
             break;
         }
         
-        //todo: reply
+        REPLY_MESSAGE Reply;
+        memset( &Reply, 0, sizeof( Reply) );
+
+        hResult = FilterReplyMessage (
+            pComm->m_hPort,
+            (PFILTER_REPLY_HEADER) &Reply,
+            sizeof(Reply)
+            );
+
         HeapFree( GetProcessHeap(), 0, pEvent );
 
     } while ( SUCCEEDED( hResult ) );
@@ -143,6 +167,7 @@ main (
 
         if ( IS_ERROR( hResult ) )
         {
+            printf( "Connect failed. Error 0x%x\n", hResult );
             hPort = INVALID_HANDLE_VALUE;
             __leave;
         }
@@ -156,22 +181,31 @@ main (
 
         if ( !hCompletion )
         {
+            printf( "Create completion failed. Error 0x%x\n", GetLastError() );
             __leave;
         }
 
+        COMMUNICATIONS Comm;
+        Comm.m_hPort = hPort;
+        Comm.m_hCompletion = hCompletion;
+
         for ( int thc = 0; thc < THREAD_MAXCOUNT_WAITERS; thc++ )
         {
-            hThreads[thc] = CreateThread ( NULL, 0, WaiterThread, hPort, 0, &ThreadsId[thc] );
+            hThreads[thc] = CreateThread ( NULL, 0, WaiterThread, &Comm, 0, &ThreadsId[thc] );
 
             if ( !hThreads[thc] )
             {
+                printf( "Create thread failed. Error 0x%x\n", GetLastError() );
                 __leave;
             }
-
         }
+
+        // just wait
+        Sleep( 1000 * 30 );
     }
     __finally
     {
+        printf( "cleanup...\n" );
         for ( int thc = 0; thc < THREAD_MAXCOUNT_WAITERS; thc++ )
         {
             if ( hThreads[thc] )
