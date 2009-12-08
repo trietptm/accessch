@@ -3,6 +3,8 @@
 #include <strsafe.h>
 #include <fltUser.h>
 
+#include "../inc/accessch.h"
+
 #define THREAD_MAXCOUNT_WAITERS     8
 #define DRV_EVENT_CONTENT_SIZE      0x1000 
 
@@ -13,19 +15,19 @@ typedef struct _COMMUNICATIONS {
 
 #include <pshpack1.h>
 
-typedef struct _DRVEVENT {
+typedef struct _DRVDATA {
     UCHAR			        m_Content[DRV_EVENT_CONTENT_SIZE];
-} DRVEVENT, *PDRVEVENT;
+} DRVDATA, *PDRVDATA;
 
 typedef struct _DRVEVENT_OVLP {
     FILTER_MESSAGE_HEADER	m_Header;
-    DRVEVENT				m_Event;
+    DRVDATA			    	m_Data;
     OVERLAPPED				m_Ovlp;
 } DRVEVENT_OVLP, *PDRVEVENT_OVLP;
 
 typedef struct _REPLY_MESSAGE {
     FILTER_REPLY_HEADER		m_ReplyHeader;
-    ULONG                   m_Verdict;
+    REPLY_RESULT            m_Verdict;
 } REPLY_MESSAGE, *PREPLY_MESSAGE;
 
 #include <poppack.h>
@@ -121,9 +123,21 @@ WaiterThread (
         {
             break;
         }
+
+        //check data
+        PMESSAGE_DATA pData = (PMESSAGE_DATA) pEvent->m_Data.m_Content;
+        printf( "[0x%x:%x]\n",
+            pData->m_ProcessId,
+            pData->m_ThreadId
+            );
+
+        // release
         
         REPLY_MESSAGE Reply;
         memset( &Reply, 0, sizeof( Reply) );
+
+        Reply.m_ReplyHeader.Status = 0;
+        Reply.m_ReplyHeader.MessageId = pEvent->m_Header.MessageId;
 
         hResult = FilterReplyMessage (
             pComm->m_hPort,
