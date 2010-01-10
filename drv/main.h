@@ -6,3 +6,5 @@
 #include <fltKernel.h>
 #define NTSTRSAFE_LIB
 #include <ntstrsafe.h>
+
+#include "mm.h"
