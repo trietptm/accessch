@@ -1,7 +1,7 @@
 //!
-//	\author - Andrey Sobko (andrey.sobko@gmail.com)
-//	\date - 06.07.2009
-//	\description - sample driver
+//    \author - Andrey Sobko (andrey.sobko@gmail.com)
+//    \date - 06.07.2009
+//    \description - sample driver
 //!
 
 #include "main.h"
@@ -18,8 +18,8 @@ typedef struct _GLOBALS
     PDRIVER_OBJECT          m_FilterDriverObject;
     PFLT_FILTER             m_Filter;
     PFLT_PORT               m_Port;
-	EX_PUSH_LOCK			m_ClientPortLock;
-	PFLT_PORT               m_ClientPort;
+    EX_PUSH_LOCK            m_ClientPortLock;
+    PFLT_PORT               m_ClientPort;
 }GLOBALS, *PGLOBALS;
 
 typedef struct _PORT_CONTEXT
@@ -36,7 +36,7 @@ typedef struct _INSTANCE_CONTEXT
 typedef struct _STREAM_CONTEXT
 {
     LUID                    m_Luid;
-	LONG					m_Flags;
+    LONG                    m_Flags;
 } STREAM_CONTEXT, *PSTREAM_CONTEXT;
 
 typedef struct _STREAM_HANDLE_CONTEXT
@@ -61,8 +61,8 @@ DriverEntry (
 
 NTSTATUS
 Unload (
-	__in FLT_FILTER_UNLOAD_FLAGS Flags
-	);
+    __in FLT_FILTER_UNLOAD_FLAGS Flags
+    );
 
 void
 ContextCleanup (
@@ -186,7 +186,7 @@ DriverEntry (
     RtlZeroMemory( &Globals, sizeof( Globals) );
 
     Globals.m_FilterDriverObject = DriverObject;
-	FltInitializePushLock( &Globals.m_ClientPortLock );
+    FltInitializePushLock( &Globals.m_ClientPortLock );
     __try
     {
         status = FltRegisterFilter( DriverObject, ( PFLT_REGISTRATION )&filterRegistration, &Globals.m_Filter );
@@ -233,20 +233,20 @@ DriverEntry (
 __checkReturn
 NTSTATUS
 Unload (
-	__in FLT_FILTER_UNLOAD_FLAGS Flags
-	)
+    __in FLT_FILTER_UNLOAD_FLAGS Flags
+    )
 {
-	if ( !FlagOn(Flags, FLTFL_FILTER_UNLOAD_MANDATORY) )
-	{
-		//! \todo check
-		//return STATUS_FLT_DO_NOT_DETACH;
-	}
+    if ( !FlagOn(Flags, FLTFL_FILTER_UNLOAD_MANDATORY) )
+    {
+        //! \todo check
+        //return STATUS_FLT_DO_NOT_DETACH;
+    }
 
-	FltCloseCommunicationPort( Globals.m_Port );
-	FltUnregisterFilter( Globals.m_Filter );
-	FltDeletePushLock( &Globals.m_ClientPortLock );
+    FltCloseCommunicationPort( Globals.m_Port );
+    FltUnregisterFilter( Globals.m_Filter );
+    FltDeletePushLock( &Globals.m_ClientPortLock );
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 
@@ -366,42 +366,42 @@ PortConnect (
     __deref_out_opt PVOID *ConnectionCookie
     )
 {
-	NTSTATUS status = STATUS_SUCCESS;
+    NTSTATUS status = STATUS_SUCCESS;
     PPORT_CONTEXT pPortContext = NULL;
 
     UNREFERENCED_PARAMETER( ServerPortCookie );
     UNREFERENCED_PARAMETER( ConnectionContext );
     UNREFERENCED_PARAMETER( SizeOfContext );
 
-	FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
-	__try
-	{
-		if ( Globals.m_ClientPort )
-		{
-			status = STATUS_ALREADY_REGISTERED;
-			__leave;
-		}
+    FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
+    __try
+    {
+        if ( Globals.m_ClientPort )
+        {
+            status = STATUS_ALREADY_REGISTERED;
+            __leave;
+        }
 
-		pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag( NonPagedPool, sizeof(PORT_CONTEXT), _ALLOC_TAG );
-		if ( !pPortContext )
-		{
-			status = STATUS_NO_MEMORY;
-			__leave;
-		}
-	    
-		RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) ); 
+        pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag( NonPagedPool, sizeof(PORT_CONTEXT), _ALLOC_TAG );
+        if ( !pPortContext )
+        {
+            status = STATUS_NO_MEMORY;
+            __leave;
+        }
+        
+        RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) ); 
 
-		pPortContext->m_Connection = ClientPort;
-		
-		//! \todo
-		Globals.m_ClientPort = ClientPort;
+        pPortContext->m_Connection = ClientPort;
+        
+        //! \todo
+        Globals.m_ClientPort = ClientPort;
 
-		*ConnectionCookie = pPortContext;
-	}
-	__finally
-	{
-		FltReleasePushLock( &Globals.m_ClientPortLock );
-	}
+        *ConnectionCookie = pPortContext;
+    }
+    __finally
+    {
+        FltReleasePushLock( &Globals.m_ClientPortLock );
+    }
 
     return status;
 }
@@ -459,30 +459,30 @@ PortMessageNotify (
 __checkReturn
 NTSTATUS
 PortQueryConnected (
-	__deref_out_opt PFLT_PORT* ppPort
-	)
+    __deref_out_opt PFLT_PORT* ppPort
+    )
 {
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-	FltAcquirePushLockShared( &Globals.m_ClientPortLock );
-	if ( Globals.m_ClientPort)
-	{
-		*ppPort = Globals.m_ClientPort;
-		status = STATUS_SUCCESS;
-	}
-	
-	FltReleasePushLock( &Globals.m_ClientPortLock );
+    FltAcquirePushLockShared( &Globals.m_ClientPortLock );
+    if ( Globals.m_ClientPort)
+    {
+        *ppPort = Globals.m_ClientPort;
+        status = STATUS_SUCCESS;
+    }
+    
+    FltReleasePushLock( &Globals.m_ClientPortLock );
 
-	return status;
+    return status;
 }
 
 void
 PortRelease (
-	__deref_in PFLT_PORT* ppPort
-	)
+    __deref_in PFLT_PORT* ppPort
+    )
 {
-	if ( *ppPort )
-		*ppPort = NULL;
+    if ( *ppPort )
+        *ppPort = NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -525,6 +525,64 @@ IsPassThrough (
     return FALSE;
 }
 
+NTSTATUS
+GetSerialNumber (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    NTSTATUS status;
+    PVOID pBuffer = NULL;
+    ULONG BufferSize = 0;
+    
+    status = IoGetDeviceProperty (
+        pDevice,
+        DevicePropertyHardwareID,
+        BufferSize,
+        pBuffer,
+        &BufferSize
+    );
+   
+   if ( NT_SUCCESS( status ) )
+   {
+   }
+    
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+FillVolumeProperties (
+     __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PVOLUME_CONTEXT pVolumeContext
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( pVolumeContext ) );
+
+    NTSTATUS status;    
+    PDEVICE_OBJECT pDevice = NULL;
+    
+    __try
+    {
+        // PDO?
+        status = FltGetDiskDeviceObject( FltObjects->Volume, &pDevice );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pDevice = NULL;
+            __leave;
+        }
+        
+        status = GetSerialNumber( pDevice );
+    }
+    __finally
+    {
+        if ( pDevice )
+        {
+            ObDereferenceObject( pDevice );
+        }
+    }
+    
+    return status;
+}
 __checkReturn
 NTSTATUS
 InstanceSetup (
@@ -587,6 +645,12 @@ InstanceSetup (
         // just for fun
         pInstanceContext->m_VolumeDeviceType = VolumeDeviceType;
         pInstanceContext->m_VolumeFilesystemType = VolumeFilesystemType;
+        
+        status = FillVolumeProperties( FltObjects, pVolumeContext );
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
 
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
 
@@ -597,7 +661,7 @@ InstanceSetup (
             NULL
             );
 
-		pVolumeContext->m_Instance = FltObjects->Instance;
+        pVolumeContext->m_Instance = FltObjects->Instance;
         status = FltSetVolumeContext( FltObjects->Volume, FLT_SET_CONTEXT_KEEP_IF_EXISTS, pVolumeContext, NULL );
     }
     __finally
@@ -633,7 +697,7 @@ QueryFileNameInfo (
 __checkReturn
 NTSTATUS
 GenerateStreamContext (
-	__in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
     __deref_out_opt PSTREAM_CONTEXT* ppStreamContext
     )
 {
@@ -657,16 +721,16 @@ GenerateStreamContext (
 
     if ( NT_SUCCESS( status ) )
     {
-		RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
+        RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
 
-		BOOLEAN bIsDirectory;
+        BOOLEAN bIsDirectory;
 
-		status = FltIsDirectory( FltObjects->FileObject, FltObjects->Instance, &bIsDirectory );
-		if ( NT_SUCCESS( status ) )
-		{
-			if ( bIsDirectory )
-				InterlockedOr( &(*ppStreamContext)->m_Flags, _STREAM_FLAGS_DIRECTORY );
-		}
+        status = FltIsDirectory( FltObjects->FileObject, FltObjects->Instance, &bIsDirectory );
+        if ( NT_SUCCESS( status ) )
+        {
+            if ( bIsDirectory )
+                InterlockedOr( &(*ppStreamContext)->m_Flags, _STREAM_FLAGS_DIRECTORY );
+        }
 
         status = FltSetStreamContext (
             FltObjects->Instance,
@@ -676,7 +740,7 @@ GenerateStreamContext (
             NULL
             );
 
-		ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
+        ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
     }
 
     return status;
@@ -685,155 +749,155 @@ GenerateStreamContext (
 __checkReturn
 NTSTATUS
 SecurityGetLuid (
-	__out PLUID pLuid
-	)
+    __out PLUID pLuid
+    )
 {
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	PACCESS_TOKEN pToken = 0;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    PACCESS_TOKEN pToken = 0;
 
-	SECURITY_SUBJECT_CONTEXT SubjectContext;
+    SECURITY_SUBJECT_CONTEXT SubjectContext;
 
-	SeCaptureSubjectContext( &SubjectContext );
+    SeCaptureSubjectContext( &SubjectContext );
 
-	pToken = SeQuerySubjectContextToken( &SubjectContext );
+    pToken = SeQuerySubjectContextToken( &SubjectContext );
 
-	if ( pToken )
-		status = SeQueryAuthenticationIdToken( pToken, pLuid );
+    if ( pToken )
+        status = SeQueryAuthenticationIdToken( pToken, pLuid );
 
-	SeReleaseSubjectContext( &SubjectContext );
+    SeReleaseSubjectContext( &SubjectContext );
 
-	return status;
+    return status;
 }
 
 __checkReturn
 NTSTATUS
 SecurityAllocateCopySid (
-	__in PSID pSid,
-	__deref_out_opt PSID* ppSid
-	)
+    __in PSID pSid,
+    __deref_out_opt PSID* ppSid
+    )
 {
-	NTSTATUS status;
-	ASSERT( RtlValidSid( pSid ) );
+    NTSTATUS status;
+    ASSERT( RtlValidSid( pSid ) );
 
-	ULONG SidLength = RtlLengthSid( pSid );
+    ULONG SidLength = RtlLengthSid( pSid );
 
-	*ppSid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
-	if ( !*ppSid )
-		return STATUS_NO_MEMORY;
+    *ppSid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
+    if ( !*ppSid )
+        return STATUS_NO_MEMORY;
 
-	status = RtlCopySid( SidLength, *ppSid, pSid );
-	if ( !NT_SUCCESS( status ) )
-	{
-		ExFreePool( *ppSid );
-	}
+    status = RtlCopySid( SidLength, *ppSid, pSid );
+    if ( !NT_SUCCESS( status ) )
+    {
+        ExFreePool( *ppSid );
+    }
 
-	return status;
+    return status;
 }
 
 void
 SecurityFreeSid (
-	__in PSID* ppSid
-	)
+    __in PSID* ppSid
+    )
 {
-	if ( !*ppSid )
-		return;
+    if ( !*ppSid )
+        return;
 
-	ExFreePool( *ppSid );
-	*ppSid = NULL;
+    ExFreePool( *ppSid );
+    *ppSid = NULL;
 }
 
 __checkReturn
 NTSTATUS
 SecurityGetSid (
-	 __in_opt PFLT_CALLBACK_DATA Data,
-	__deref_out_opt PSID *ppSid
-	)
+     __in_opt PFLT_CALLBACK_DATA Data,
+    __deref_out_opt PSID *ppSid
+    )
 {
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-	PACCESS_TOKEN pAccessToken = NULL;
-	PTOKEN_USER pTokenUser = NULL;
+    PACCESS_TOKEN pAccessToken = NULL;
+    PTOKEN_USER pTokenUser = NULL;
 
-	BOOLEAN CopyOnOpen;
-	BOOLEAN EffectiveOnly;
-	SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
+    BOOLEAN CopyOnOpen;
+    BOOLEAN EffectiveOnly;
+    SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
 
-	PSID pSid = NULL;
-	__try
-	{
-		if ( PsIsThreadTerminating( PsGetCurrentThread() ) )
-			__leave;
+    PSID pSid = NULL;
+    __try
+    {
+        if ( PsIsThreadTerminating( PsGetCurrentThread() ) )
+            __leave;
 
-		pAccessToken = PsReferenceImpersonationToken( Data->Thread, &CopyOnOpen, &EffectiveOnly, &ImpersonationLevel );
-		if ( !pAccessToken )
-			pAccessToken = PsReferencePrimaryToken( FltGetRequestorProcess( Data ) );
+        pAccessToken = PsReferenceImpersonationToken( Data->Thread, &CopyOnOpen, &EffectiveOnly, &ImpersonationLevel );
+        if ( !pAccessToken )
+            pAccessToken = PsReferencePrimaryToken( FltGetRequestorProcess( Data ) );
 
-		if ( !pAccessToken )
-			pAccessToken = PsReferencePrimaryToken( PsGetCurrentProcess() );
+        if ( !pAccessToken )
+            pAccessToken = PsReferencePrimaryToken( PsGetCurrentProcess() );
 
-		if ( !pAccessToken )
-			__leave;
+        if ( !pAccessToken )
+            __leave;
 
-		status = SeQueryInformationToken( pAccessToken, TokenUser, (PVOID*) &pTokenUser );
-		if( !NT_SUCCESS( status ) )
-		{
-			pTokenUser = NULL;
-			__leave;
-		}
+        status = SeQueryInformationToken( pAccessToken, TokenUser, (PVOID*) &pTokenUser );
+        if( !NT_SUCCESS( status ) )
+        {
+            pTokenUser = NULL;
+            __leave;
+        }
 
-		status = SecurityAllocateCopySid( pTokenUser->User.Sid, &pSid );
-		if( !NT_SUCCESS( status ) )
-		{
-			pSid = NULL;
-			__leave;
-		}
+        status = SecurityAllocateCopySid( pTokenUser->User.Sid, &pSid );
+        if( !NT_SUCCESS( status ) )
+        {
+            pSid = NULL;
+            __leave;
+        }
 
-		*ppSid = pSid;
-		pSid = NULL;
-	}
-	__finally
-	{
-		if ( pTokenUser )
-		{
-			ExFreePool( pTokenUser );
-			pTokenUser = NULL;
-		}
+        *ppSid = pSid;
+        pSid = NULL;
+    }
+    __finally
+    {
+        if ( pTokenUser )
+        {
+            ExFreePool( pTokenUser );
+            pTokenUser = NULL;
+        }
 
-		if ( pAccessToken )
-		{
-			PsDereferenceImpersonationToken( pAccessToken );
-			pAccessToken = NULL;
-		}
+        if ( pAccessToken )
+        {
+            PsDereferenceImpersonationToken( pAccessToken );
+            pAccessToken = NULL;
+        }
 
-		SecurityFreeSid( &pSid );
-	}
+        SecurityFreeSid( &pSid );
+    }
 
-	return status;
+    return status;
 }
 
 __checkReturn
 NTSTATUS
 PortAllocateMessage (
-	__in_opt ULONG ProcessId,
-	__in_opt ULONG ThreadId,
-	__in ULONG StreamFlags,
-	__in ULONG HandleFlags,
-	__in PFLT_FILE_NAME_INFORMATION pFileNameInfo,
-	__in PSID pSid,
-	__in PLUID pLuid,
-	__deref_out_opt PVOID* ppMessage,
-	__out_opt PULONG pMessageSize
-	)
+    __in_opt ULONG ProcessId,
+    __in_opt ULONG ThreadId,
+    __in ULONG StreamFlags,
+    __in ULONG HandleFlags,
+    __in PFLT_FILE_NAME_INFORMATION pFileNameInfo,
+    __in PSID pSid,
+    __in PLUID pLuid,
+    __deref_out_opt PVOID* ppMessage,
+    __out_opt PULONG pMessageSize
+    )
 {
-	ASSERT( pSid );
-	ASSERT( pLuid );
+    ASSERT( pSid );
+    ASSERT( pLuid );
 
-	PMESSAGE_DATA pMsg;
-	ULONG MessageSize = sizeof(MESSAGE_DATA);
+    PMESSAGE_DATA pMsg;
+    ULONG MessageSize = sizeof(MESSAGE_DATA);
 
-	MessageSize += pFileNameInfo->Name.Length + sizeof(WCHAR);
-	MessageSize += pFileNameInfo->Volume.Length + sizeof(WCHAR);
-	MessageSize += RtlLengthSid( pSid );
+    MessageSize += pFileNameInfo->Name.Length + sizeof(WCHAR);
+    MessageSize += pFileNameInfo->Volume.Length + sizeof(WCHAR);
+    MessageSize += RtlLengthSid( pSid );
 
     if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
     {
@@ -841,178 +905,178 @@ PortAllocateMessage (
         return STATUS_NOT_SUPPORTED;
     }
 
-	pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
-		PagedPool,
-		MessageSize,
-		_ALLOC_TAG
-		);
+    pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
+        PagedPool,
+        MessageSize,
+        _ALLOC_TAG
+        );
 
-	if ( !pMsg )
+    if ( !pMsg )
     {
         return STATUS_NO_MEMORY;
     }
 
-	RtlZeroMemory( pMsg, MessageSize );		//! \todo
+    RtlZeroMemory( pMsg, MessageSize );        //! \todo
 
-	pMsg->m_ProcessId = ProcessId;
-	pMsg->m_ThreadId = ThreadId;
-	pMsg->m_Luid = *pLuid;
-	pMsg->m_FlagsStream = StreamFlags;
-	pMsg->m_FlagsHandle = HandleFlags;
-	
-	pMsg->m_FileNameOffset = sizeof(MESSAGE_DATA);
-	pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof(WCHAR);
+    pMsg->m_ProcessId = ProcessId;
+    pMsg->m_ThreadId = ThreadId;
+    pMsg->m_Luid = *pLuid;
+    pMsg->m_FlagsStream = StreamFlags;
+    pMsg->m_FlagsHandle = HandleFlags;
+    
+    pMsg->m_FileNameOffset = sizeof(MESSAGE_DATA);
+    pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof(WCHAR);
 
-	PVOID pFN = Add2Ptr( pMsg, pMsg->m_FileNameOffset );
-	RtlCopyMemory (
-		pFN,
-		pFileNameInfo->Name.Buffer,
-		pFileNameInfo->Name.Length
-		);
+    PVOID pFN = Add2Ptr( pMsg, pMsg->m_FileNameOffset );
+    RtlCopyMemory (
+        pFN,
+        pFileNameInfo->Name.Buffer,
+        pFileNameInfo->Name.Length
+        );
 
-	pMsg->m_VolumeNameOffset = pMsg->m_FileNameOffset + pMsg->m_FileNameLen;
-	pMsg->m_VolumeNameLen = pFileNameInfo->Volume.Length + sizeof(WCHAR);
+    pMsg->m_VolumeNameOffset = pMsg->m_FileNameOffset + pMsg->m_FileNameLen;
+    pMsg->m_VolumeNameLen = pFileNameInfo->Volume.Length + sizeof(WCHAR);
 
-	PVOID pVN = Add2Ptr( pFN, pMsg->m_FileNameLen );
-	RtlCopyMemory (
-		pVN,
-		pFileNameInfo->Volume.Buffer,
-		pFileNameInfo->Volume.Length
-		);
-	
-	pMsg->m_SidOffset = pMsg->m_VolumeNameOffset + pMsg->m_VolumeNameLen;
-	pMsg->m_SidLength = RtlLengthSid( pSid );
+    PVOID pVN = Add2Ptr( pFN, pMsg->m_FileNameLen );
+    RtlCopyMemory (
+        pVN,
+        pFileNameInfo->Volume.Buffer,
+        pFileNameInfo->Volume.Length
+        );
+    
+    pMsg->m_SidOffset = pMsg->m_VolumeNameOffset + pMsg->m_VolumeNameLen;
+    pMsg->m_SidLength = RtlLengthSid( pSid );
 
-	PVOID pS = Add2Ptr( pVN, pMsg->m_VolumeNameLen );
-	RtlCopySid( RtlLengthSid( pSid ), pS, pSid );
+    PVOID pS = Add2Ptr( pVN, pMsg->m_VolumeNameLen );
+    RtlCopySid( RtlLengthSid( pSid ), pS, pSid );
 
-	*ppMessage = pMsg;
-	*pMessageSize = MessageSize;
+    *ppMessage = pMsg;
+    *pMessageSize = MessageSize;
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 void
 PortReleaseMessage (
-	__deref_in PVOID* ppMessage
-	)
+    __deref_in PVOID* ppMessage
+    )
 {
-	if ( !*ppMessage )
-		return;
+    if ( !*ppMessage )
+        return;
 
-	ExFreePool( *ppMessage );
-	*ppMessage = NULL;
+    ExFreePool( *ppMessage );
+    *ppMessage = NULL;
 }
 
 __checkReturn
 NTSTATUS
 PortAskUser (
-	__inout PFLT_CALLBACK_DATA Data,
-	__in PCFLT_RELATED_OBJECTS FltObjects
-	)
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects
+    )
 {
-	NTSTATUS status;
-	PINSTANCE_CONTEXT pInstanceContext = NULL;
-	PSTREAM_CONTEXT pStreamContext = NULL;
-	PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
-	PFLT_PORT pPort = NULL;
-	PSID pSid = NULL;
-	PVOID pMessage = NULL;
+    NTSTATUS status;
+    PINSTANCE_CONTEXT pInstanceContext = NULL;
+    PSTREAM_CONTEXT pStreamContext = NULL;
+    PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
+    PFLT_PORT pPort = NULL;
+    PSID pSid = NULL;
+    PVOID pMessage = NULL;
 
-	__try
-	{
-		status = PortQueryConnected( &pPort );
-		if ( !NT_SUCCESS( status ) )
-		{
-			pPort = NULL;
-			__leave;
-		}
+    __try
+    {
+        status = PortQueryConnected( &pPort );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pPort = NULL;
+            __leave;
+        }
 
-		status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
-		if ( !NT_SUCCESS( status ) )
-		{
-			pInstanceContext = NULL;
-			__leave;
-		}
+        status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pInstanceContext = NULL;
+            __leave;
+        }
 
-		status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) &pStreamContext );
-		if ( !NT_SUCCESS( status ) )
-		{
-			pStreamContext = NULL;
-			__leave;
-		}
+        status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) &pStreamContext );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pStreamContext = NULL;
+            __leave;
+        }
 
-		status = QueryFileNameInfo( Data, &pFileNameInfo );
-		if ( !NT_SUCCESS( status ) )
-		{
-			pFileNameInfo = NULL;
-			__leave;
-		}
+        status = QueryFileNameInfo( Data, &pFileNameInfo );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pFileNameInfo = NULL;
+            __leave;
+        }
 
-		ULONG ProcessId = FltGetRequestorProcessId( Data );
-		ULONG ThreadId = HandleToUlong( PsGetCurrentThreadId() );
-		LUID Luid;
-		
-		status = SecurityGetLuid( &Luid );
-		if ( !NT_SUCCESS( status ) )
-			__leave;
+        ULONG ProcessId = FltGetRequestorProcessId( Data );
+        ULONG ThreadId = HandleToUlong( PsGetCurrentThreadId() );
+        LUID Luid;
+        
+        status = SecurityGetLuid( &Luid );
+        if ( !NT_SUCCESS( status ) )
+            __leave;
 
-		status = SecurityGetSid( Data, &pSid );
-		if ( !NT_SUCCESS( status ) )
-		{
-			pSid = NULL;
-			__leave;
-		}
+        status = SecurityGetSid( Data, &pSid );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pSid = NULL;
+            __leave;
+        }
 
-		// send data to R3
-		REPLY_RESULT ReplyResult;
-		ULONG ReplyLength = sizeof( ReplyResult );
-		ULONG MessageSize = 0;
+        // send data to R3
+        REPLY_RESULT ReplyResult;
+        ULONG ReplyLength = sizeof( ReplyResult );
+        ULONG MessageSize = 0;
 
-		status = PortAllocateMessage (
-			ProcessId,
-			ThreadId,
-			pStreamContext->m_Flags,
-			0,
-			pFileNameInfo,
-			pSid,
-			&Luid,
-			&pMessage,
-			&MessageSize
-			);
-		
-		if ( !NT_SUCCESS( status ) )
-		{
-			pMessage = NULL;
-			__leave;
-		}
+        status = PortAllocateMessage (
+            ProcessId,
+            ThreadId,
+            pStreamContext->m_Flags,
+            0,
+            pFileNameInfo,
+            pSid,
+            &Luid,
+            &pMessage,
+            &MessageSize
+            );
+        
+        if ( !NT_SUCCESS( status ) )
+        {
+            pMessage = NULL;
+            __leave;
+        }
 
-		status = FltSendMessage (
-			Globals.m_Filter,
-			&pPort,
-			pMessage,
-			MessageSize,
-			&ReplyResult,
-			&ReplyLength,
-			NULL
-			);
+        status = FltSendMessage (
+            Globals.m_Filter,
+            &pPort,
+            pMessage,
+            MessageSize,
+            &ReplyResult,
+            &ReplyLength,
+            NULL
+            );
 
-		if ( !NT_SUCCESS( status ) || ReplyLength != sizeof( ReplyResult) )
-		{
-			RtlZeroMemory( &ReplyResult, sizeof( ReplyResult) );
-		}
-	}
-	__finally
-	{
-		ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
-		ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
-		ReleaseFileNameInfo( &pFileNameInfo );
-		PortRelease( &pPort );
-		SecurityFreeSid( &pSid );
-		PortReleaseMessage( &pMessage );
-	}
+        if ( !NT_SUCCESS( status ) || ReplyLength != sizeof( ReplyResult) )
+        {
+            RtlZeroMemory( &ReplyResult, sizeof( ReplyResult) );
+        }
+    }
+    __finally
+    {
+        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+        ReleaseFileNameInfo( &pFileNameInfo );
+        PortRelease( &pPort );
+        SecurityFreeSid( &pSid );
+        PortReleaseMessage( &pMessage );
+    }
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 __checkReturn
@@ -1031,17 +1095,17 @@ PostCreate (
 
     PSTREAM_CONTEXT pStreamContext = NULL;
  
-	if ( STATUS_REPARSE == Data->IoStatus.Status )
-	{
-		// skip reparse op
-		return FLT_POSTOP_FINISHED_PROCESSING;
-	}
+    if ( STATUS_REPARSE == Data->IoStatus.Status )
+    {
+        // skip reparse op
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
 
-	if ( !NT_SUCCESS( Data->IoStatus.Status ) )
-	{
-		// skip failed op
-		return FLT_POSTOP_FINISHED_PROCESSING;
-	}
+    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+    {
+        // skip failed op
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
 
     if ( IsPassThrough( FltObjects, Flags ) )
     {
@@ -1049,10 +1113,10 @@ PostCreate (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
-	if ( FlagOn( FltObjects->FileObject->Flags,  FO_VOLUME_OPEN ) )
-	{
-		// volume open
-	}
+    if ( FlagOn( FltObjects->FileObject->Flags,  FO_VOLUME_OPEN ) )
+    {
+        // volume open
+    }
 
     __try
     {
@@ -1086,10 +1150,10 @@ PreCleanup (
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
     NTSTATUS status = PortAskUser( Data, FltObjects );
-	if ( NT_SUCCESS( status ) )
-	{
-		//! \todo
-	}
+    if ( NT_SUCCESS( status ) )
+    {
+        //! \todo
+    }
 
     return fltStatus;
 }
@@ -1109,8 +1173,8 @@ PostWrite (
 
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
 
-	if ( !NT_SUCCESS( Data->IoStatus.Status ) )
-		return FLT_POSTOP_FINISHED_PROCESSING;
+    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+        return FLT_POSTOP_FINISHED_PROCESSING;
 
     return fltStatus;
 }
