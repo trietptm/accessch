@@ -1,6 +1,6 @@
 #include "main.h "
 
-void *operator new (
+void* _cdecl operator new (
     size_t size
     )
 {
@@ -8,14 +8,14 @@ void *operator new (
     return NULL; 
 }
 
-void operator delete (
+void _cdecl operator delete (
     void *p
     )
 {
     UNREFERENCED_PARAMETER( p );
 }
 
-void* operator new[] (
+void* _cdecl operator new[] (
     size_t size
     )
 {
@@ -23,7 +23,7 @@ void* operator new[] (
     return NULL;
 }
 
-void operator delete[] (
+void _cdecl operator delete[] (
     void *p
     )
 {

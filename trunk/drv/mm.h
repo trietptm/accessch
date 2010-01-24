@@ -1,19 +1,19 @@
 #ifndef __mm_h
 #define __mm_h
 
-void *operator new (
+void* _cdecl operator new (
     size_t size
     );
  
-void operator delete (
+void _cdecl operator delete (
     void *p
     );
  
-void* operator new[] (
+void* _cdecl operator new[] (
     size_t size
     );
 
-void operator delete[] (
+void _cdecl operator delete[] (
     void *p
     );
     
