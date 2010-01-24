@@ -272,7 +272,9 @@ ReleaseContext (
     )
 {
     if ( !*ppContext )
+    {
         return;
+    }
 
     FltReleaseContext( *ppContext );
     *ppContext = NULL;
@@ -533,18 +535,38 @@ GetSerialNumber (
     NTSTATUS status;
     PVOID pBuffer = NULL;
     ULONG BufferSize = 0;
-    
-    status = IoGetDeviceProperty (
-        pDevice,
-        DevicePropertyHardwareID,
-        BufferSize,
-        pBuffer,
-        &BufferSize
-    );
-   
-   if ( NT_SUCCESS( status ) )
-   {
-   }
+
+    __try
+    {
+        pBuffer = ExAllocatePoolWithTag( PagedPool, 0x1000, _ALLOC_TAG );
+        if ( !pBuffer )
+        {
+            __leave;
+        }
+
+        status = IoGetDeviceProperty (
+            pDevice,
+            DevicePropertyHardwareID,
+            BufferSize,
+            pBuffer,
+            &BufferSize
+        );
+       
+       if ( !NT_SUCCESS( status ) )
+       {
+            __leave;
+       }
+       
+       //! todo analyze result. convert to UNICODE_STRING
+        __debugbreak();
+    }
+    __finally
+    {
+        if ( pBuffer )
+        {
+            ExFreePool( pBuffer );
+        }
+    }
     
     return status;
 }
