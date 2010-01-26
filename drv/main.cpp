@@ -11,7 +11,7 @@
 #define _ACCESSCH_MAX_CONNECTIONS   1
 
 // ----------------------------------------------------------------------------
-// 
+//
 
 typedef struct _GLOBALS
 {
@@ -219,7 +219,7 @@ DriverEntry (
             {
                 FltCloseCommunicationPort( Globals.m_Port );
             }
-            
+
             if ( Globals.m_Filter )
             {
                 FltUnregisterFilter( Globals.m_Filter );
@@ -332,7 +332,7 @@ PortCreate (
     {
         UNICODE_STRING usName;
         OBJECT_ATTRIBUTES oa;
-    
+
         RtlInitUnicodeString ( &usName, ACCESSCH_PORT_NAME );
         InitializeObjectAttributes( &oa, &usName, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, sd );
 
@@ -390,11 +390,11 @@ PortConnect (
             status = STATUS_NO_MEMORY;
             __leave;
         }
-        
-        RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) ); 
+
+        RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) );
 
         pPortContext->m_Connection = ClientPort;
-        
+
         //! \todo
         Globals.m_ClientPort = ClientPort;
 
@@ -472,7 +472,7 @@ PortQueryConnected (
         *ppPort = Globals.m_ClientPort;
         status = STATUS_SUCCESS;
     }
-    
+
     FltReleasePushLock( &Globals.m_ClientPortLock );
 
     return status;
@@ -534,15 +534,29 @@ GetSerialNumber (
 {
     NTSTATUS status;
     PVOID pBuffer = NULL;
-    ULONG BufferSize = 0;
+    ULONG BufferSize = 0x1000;
 
     __try
     {
-        pBuffer = ExAllocatePoolWithTag( PagedPool, 0x1000, _ALLOC_TAG );
+        pBuffer = ExAllocatePoolWithTag( PagedPool, BufferSize, _ALLOC_TAG );
         if ( !pBuffer )
         {
             __leave;
         }
+
+    //! \todo DevicePropertyBusTypeGuid
+    //! \todo DevicePropertyBusNumber
+    //! \todo DevicePropertyManufacturer
+    //! \todo DevicePropertyRemovalPolicy
+    //! \todo DevicePropertyEnumeratorName - на ком подключено
+
+    //! \todo DevicePropertyPhysicalDeviceObjectName - PDO! then query IRP_MN_QUERY_ID
+//     IrpStack->Parameters.QueryId.IdType:
+//      BusQueryDeviceID:
+//      BusQueryHardwareIDs:
+//      BusQueryCompatibleIDs:
+
+    //! \todo на всякий случай можно из юзера спросить IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
 
         status = IoGetDeviceProperty (
             pDevice,
@@ -551,12 +565,12 @@ GetSerialNumber (
             pBuffer,
             &BufferSize
         );
-       
+
        if ( !NT_SUCCESS( status ) )
        {
             __leave;
        }
-       
+
        //! todo analyze result. convert to UNICODE_STRING
         __debugbreak();
     }
@@ -567,7 +581,7 @@ GetSerialNumber (
             ExFreePool( pBuffer );
         }
     }
-    
+
     return status;
 }
 
@@ -580,19 +594,18 @@ FillVolumeProperties (
 {
     ASSERT( ARGUMENT_PRESENT( pVolumeContext ) );
 
-    NTSTATUS status;    
+    NTSTATUS status;
     PDEVICE_OBJECT pDevice = NULL;
-    
+
     __try
     {
-        // PDO?
         status = FltGetDiskDeviceObject( FltObjects->Volume, &pDevice );
         if ( !NT_SUCCESS( status ) )
         {
             pDevice = NULL;
             __leave;
         }
-        
+
         status = GetSerialNumber( pDevice );
     }
     __finally
@@ -602,7 +615,7 @@ FillVolumeProperties (
             ObDereferenceObject( pDevice );
         }
     }
-    
+
     return status;
 }
 __checkReturn
@@ -647,7 +660,7 @@ InstanceSetup (
             pInstanceContext = NULL;
             __leave;
         }
-    
+
         RtlZeroMemory( pInstanceContext, sizeof( INSTANCE_CONTEXT ) );
 
         status = FltAllocateContext (
@@ -657,7 +670,7 @@ InstanceSetup (
             NonPagedPool,
             (PFLT_CONTEXT*) &pVolumeContext
             );
-        
+
         if ( !NT_SUCCESS( status ) )
         {
             pVolumeContext = NULL;
@@ -667,7 +680,7 @@ InstanceSetup (
         // just for fun
         pInstanceContext->m_VolumeDeviceType = VolumeDeviceType;
         pInstanceContext->m_VolumeFilesystemType = VolumeFilesystemType;
-        
+
         status = FillVolumeProperties( FltObjects, pVolumeContext );
         if ( !NT_SUCCESS( status ) )
         {
@@ -712,7 +725,7 @@ QueryFileNameInfo (
     status = FltParseFileNameInformation( *ppFileNameInfo );
 
     ASSERT( NT_SUCCESS( status ) ); //ignore unsuccessful parse
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -729,7 +742,7 @@ GenerateStreamContext (
         return STATUS_NOT_SUPPORTED;;
 
     status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) ppStreamContext );
-    
+
     if ( NT_SUCCESS( status ) )
         return status;
 
@@ -945,7 +958,7 @@ PortAllocateMessage (
     pMsg->m_Luid = *pLuid;
     pMsg->m_FlagsStream = StreamFlags;
     pMsg->m_FlagsHandle = HandleFlags;
-    
+
     pMsg->m_FileNameOffset = sizeof(MESSAGE_DATA);
     pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof(WCHAR);
 
@@ -965,7 +978,7 @@ PortAllocateMessage (
         pFileNameInfo->Volume.Buffer,
         pFileNameInfo->Volume.Length
         );
-    
+
     pMsg->m_SidOffset = pMsg->m_VolumeNameOffset + pMsg->m_VolumeNameLen;
     pMsg->m_SidLength = RtlLengthSid( pSid );
 
@@ -1038,7 +1051,7 @@ PortAskUser (
         ULONG ProcessId = FltGetRequestorProcessId( Data );
         ULONG ThreadId = HandleToUlong( PsGetCurrentThreadId() );
         LUID Luid;
-        
+
         status = SecurityGetLuid( &Luid );
         if ( !NT_SUCCESS( status ) )
             __leave;
@@ -1066,7 +1079,7 @@ PortAskUser (
             &pMessage,
             &MessageSize
             );
-        
+
         if ( !NT_SUCCESS( status ) )
         {
             pMessage = NULL;
@@ -1116,7 +1129,7 @@ PostCreate (
     NTSTATUS status;
 
     PSTREAM_CONTEXT pStreamContext = NULL;
- 
+
     if ( STATUS_REPARSE == Data->IoStatus.Status )
     {
         // skip reparse op
@@ -1155,7 +1168,7 @@ PostCreate (
     {
         ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
     }
-    
+
     return fltStatus;
 }
 
