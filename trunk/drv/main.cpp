@@ -4,7 +4,10 @@
 //    \description - sample driver
 //!
 
+//! \todo check nessesary headers
 #include "main.h"
+#include "ntddstor.h"
+#include "storduid.h" 
 #include "../inc/accessch.h"
 
 #define _ALLOC_TAG                  'hcca'
@@ -528,60 +531,139 @@ IsPassThrough (
 }
 
 NTSTATUS
-GetSerialNumber (
-    __in PDEVICE_OBJECT pDevice
+QueryDeviceProperty (
+    __in PDEVICE_OBJECT pDevice,
+    __in DEVICE_REGISTRY_PROPERTY DevProperty,
+    __out PVOID* ppBuffer,
+    __out PULONG pResultLenght
     )
 {
+    ASSERT( ARGUMENT_PRESENT( pDevice ) );
     NTSTATUS status;
     PVOID pBuffer = NULL;
-    ULONG BufferSize = 0x1000;
+    ULONG BufferSize = 0;
 
-    __try
+    status = IoGetDeviceProperty (
+        pDevice,
+        DevProperty,
+        BufferSize,
+        NULL,
+        &BufferSize
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        // no intresting data
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    while ( STATUS_BUFFER_TOO_SMALL == status)
     {
         pBuffer = ExAllocatePoolWithTag( PagedPool, BufferSize, _ALLOC_TAG );
         if ( !pBuffer )
         {
-            __leave;
+            return STATUS_NO_MEMORY;
         }
-
-    //! \todo DevicePropertyBusTypeGuid
-    //! \todo DevicePropertyBusNumber
-    //! \todo DevicePropertyManufacturer
-    //! \todo DevicePropertyRemovalPolicy
-    //! \todo DevicePropertyEnumeratorName - на ком подключено
-
-    //! \todo DevicePropertyPhysicalDeviceObjectName - PDO! then query IRP_MN_QUERY_ID
-//     IrpStack->Parameters.QueryId.IdType:
-//      BusQueryDeviceID:
-//      BusQueryHardwareIDs:
-//      BusQueryCompatibleIDs:
-
-    //! \todo на всякий случай можно из юзера спросить IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
 
         status = IoGetDeviceProperty (
             pDevice,
-            DevicePropertyHardwareID,
+            DevProperty,
             BufferSize,
             pBuffer,
             &BufferSize
-        );
+            );
 
-       if ( !NT_SUCCESS( status ) )
-       {
+        if ( NT_SUCCESS( status ) )
+        {
+            *ppBuffer = pBuffer;
+            *pResultLenght = BufferSize;
+            return status;
+        }
+
+        ExFreePool( pBuffer );
+        pBuffer = NULL;
+    }
+
+    ASSERT( !pBuffer );
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+GetSerialNumber (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    //IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+    STORAGE_PROPERTY_QUERY PropQuery;
+    PVOID QueryBuffer = NULL;
+    ULONG QuerySize = 0x2000;
+    
+    __try
+    {
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG);
+        if ( !QueryBuffer )
+        {
             __leave;
-       }
+        }
 
-       //! todo analyze result. convert to UNICODE_STRING
+        memset( &PropQuery, 0, sizeof(PropQuery) );
+        memset( QueryBuffer, 0, QuerySize );
+        PropQuery.PropertyId = StorageDeviceProperty; //StorageDeviceIdProperty;
+        PropQuery.QueryType = PropertyStandardQuery;
+        
+        KeInitializeEvent( &Event, NotificationEvent, FALSE );
+        
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_STORAGE_QUERY_PROPERTY,
+            pDevice,
+            &PropQuery,
+            sizeof(PropQuery),
+            QueryBuffer,
+            QuerySize,
+            FALSE,
+            &Event, 
+            &Iosb
+            );
+        
+        if ( !Irp )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+        
+        status = IoCallDriver( pDevice, Irp );
+        
+        if ( STATUS_PENDING == status )
+        {
+            KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, (PLARGE_INTEGER) NULL );
+            status = Iosb.Status;
+        }
+        
+        if ( NT_SUCCESS( status ) && !Iosb.Information )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        PSTORAGE_DEVICE_DESCRIPTOR pDesc = (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer; //StorageDeviceProperty
+        //PSTORAGE_DEVICE_ID_DESCRIPTOR pDescid = (PSTORAGE_DEVICE_ID_DESCRIPTOR) QueryBuffer; //StorageDeviceIdProperty
         __debugbreak();
     }
     __finally
     {
-        if ( pBuffer )
+        if ( QueryBuffer )
         {
-            ExFreePool( pBuffer );
+            ExFreePool( QueryBuffer );
+            QueryBuffer = NULL;
         }
     }
-
+    
     return status;
 }
 
@@ -599,6 +681,9 @@ FillVolumeProperties (
 
     __try
     {
+        PVOID pBuffer = NULL;
+        ULONG PropertySize;
+
         status = FltGetDiskDeviceObject( FltObjects->Volume, &pDevice );
         if ( !NT_SUCCESS( status ) )
         {
@@ -606,7 +691,49 @@ FillVolumeProperties (
             __leave;
         }
 
+        //! \todo DevicePropertyBusNumber
+
+        status = QueryDeviceProperty( pDevice, DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
+        if ( NT_SUCCESS( status ) )
+        {
+            ExFreePool( pBuffer );
+            pBuffer = NULL;
+        }
+
+        status = QueryDeviceProperty( pDevice, DevicePropertyHardwareID, &pBuffer, &PropertySize );
+        if ( NT_SUCCESS( status ) )
+        {
+            ExFreePool( pBuffer );
+            pBuffer = NULL;
+        }
+
+        status = QueryDeviceProperty( pDevice, DevicePropertyRemovalPolicy, &pBuffer, &PropertySize );
+        if ( NT_SUCCESS( status ) )
+        {
+            ExFreePool( pBuffer );
+            pBuffer = NULL;
+        }
+
         status = GetSerialNumber( pDevice );
+
+       /* status = QueryDeviceProperty( pDevice, DevicePropertyPhysicalDeviceObjectName, &pBuffer, &PropertySize );
+        if ( NT_SUCCESS( status ) )
+        {
+            PDEVICE_OBJECT pDevicePDO = NULL;
+            PFILE_OBJECT pFileObject;
+            UNICODE_STRING us;
+            RtlInitUnicodeString( &us, (PWSTR) pBuffer );
+            status = IoGetDeviceObjectPointer( &us, 0, &pFileObject, &pDevicePDO );
+            if ( NT_SUCCESS( status ) )
+            {
+                status = GetSerialNumber( pDevicePDO );
+
+                ObDereferenceObject( pFileObject );
+            }
+
+            ExFreePool( pBuffer );
+            pBuffer = NULL;
+        }*/
     }
     __finally
     {
