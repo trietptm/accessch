@@ -591,11 +591,11 @@ QueryDeviceProperty (
 
 __checkReturn
 NTSTATUS
-GetSerialNumber (
+GetStorageProperty (
     __in PDEVICE_OBJECT pDevice
     )
 {
-    //IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
+    //! \todo save value from pDesc
     PIRP Irp;
     KEVENT Event;
     NTSTATUS status;
@@ -606,7 +606,7 @@ GetSerialNumber (
     
     __try
     {
-        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG);
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
         if ( !QueryBuffer )
         {
             __leave;
@@ -614,7 +614,7 @@ GetSerialNumber (
 
         memset( &PropQuery, 0, sizeof(PropQuery) );
         memset( QueryBuffer, 0, QuerySize );
-        PropQuery.PropertyId = StorageDeviceProperty; //StorageDeviceIdProperty;
+        PropQuery.PropertyId = StorageDeviceProperty;
         PropQuery.QueryType = PropertyStandardQuery;
         
         KeInitializeEvent( &Event, NotificationEvent, FALSE );
@@ -645,16 +645,20 @@ GetSerialNumber (
             status = Iosb.Status;
         }
         
-        if ( NT_SUCCESS( status ) && !Iosb.Information )
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        if ( !Iosb.Information )
         {
             status = STATUS_UNSUCCESSFUL;
             __leave;
         }
 
         PSTORAGE_DEVICE_DESCRIPTOR pDesc = (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer; //StorageDeviceProperty
-        //PSTORAGE_DEVICE_ID_DESCRIPTOR pDescid = (PSTORAGE_DEVICE_ID_DESCRIPTOR) QueryBuffer; //StorageDeviceIdProperty
         __debugbreak();
-    }
+     }
     __finally
     {
         if ( QueryBuffer )
@@ -691,7 +695,8 @@ FillVolumeProperties (
             __leave;
         }
 
-        //! \todo DevicePropertyBusNumber
+        __debugbreak();
+        //IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
 
         status = QueryDeviceProperty( pDevice, DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
@@ -710,11 +715,13 @@ FillVolumeProperties (
         status = QueryDeviceProperty( pDevice, DevicePropertyRemovalPolicy, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
         {
+            PDEVICE_REMOVAL_POLICY pRemovalPolicy = (PDEVICE_REMOVAL_POLICY) pBuffer;
+
             ExFreePool( pBuffer );
             pBuffer = NULL;
         }
 
-        status = GetSerialNumber( pDevice );
+        status = GetStorageProperty( pDevice );
 
        /* status = QueryDeviceProperty( pDevice, DevicePropertyPhysicalDeviceObjectName, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
@@ -842,7 +849,7 @@ QueryFileNameInfo (
     __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
     )
 {
-    ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT;
+    ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
     NTSTATUS status = FltGetFileNameInformation( Data, QueryNameFlags, ppFileNameInfo );
     if ( !NT_SUCCESS( status ) )
     {
