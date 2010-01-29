@@ -336,7 +336,7 @@ PortCreate (
         UNICODE_STRING usName;
         OBJECT_ATTRIBUTES oa;
 
-        RtlInitUnicodeString ( &usName, ACCESSCH_PORT_NAME );
+        RtlInitUnicodeString( &usName, ACCESSCH_PORT_NAME );
         InitializeObjectAttributes( &oa, &usName, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, sd );
 
         status = FltCreateCommunicationPort (
