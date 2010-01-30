@@ -6,8 +6,14 @@
 
 //! \todo check nessesary headers
 #include "main.h"
-#include "ntddstor.h"
-#include "storduid.h" 
+
+//#include "ntddstor.h"
+//#include "storduid.h"
+#include "ntddscsi.h"
+#include "ata.h"
+#include "irb.h"
+#include "ntddcdrm.h"
+
 #include "../inc/accessch.h"
 
 #define _ALLOC_TAG                  'hcca'
@@ -589,6 +595,159 @@ QueryDeviceProperty (
     return status;
 }
 
+
+NTSTATUS
+GetDiskSignature (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+
+    UCHAR Buffer[sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA)];
+    PATA_PASS_THROUGH_EX ataData = (PATA_PASS_THROUGH_EX) Buffer;
+    PIDENTIFY_DEVICE_DATA identifyData; 
+    
+    RtlZeroMemory( Buffer, sizeof(Buffer) );
+    
+    ataData->Length = sizeof (ATA_PASS_THROUGH_EX);
+    ataData->DataBufferOffset = sizeof (ATA_PASS_THROUGH_EX);
+    ataData->DataTransferLength = sizeof (IDENTIFY_DEVICE_DATA);
+    ataData->AtaFlags = ATA_FLAGS_DATA_IN;
+    ataData->TimeOutValue = 2;
+    ataData->CurrentTaskFile[6] = 0xEC;
+
+    KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+    __try
+    {
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_ATA_PASS_THROUGH,
+            pDevice,
+            Buffer,
+            sizeof(Buffer),
+            Buffer,
+            sizeof(Buffer),
+            FALSE,
+            &Event,
+            &Iosb
+            );
+    
+        if ( !Irp )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
+        else
+        {
+            status = IoCallDriver( pDevice, Irp );
+            if ( STATUS_PENDING == status )
+            {
+                KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, NULL );
+                status = Iosb.Status;
+            }
+            
+            if ( !NT_SUCCESS ( status ) )
+            {
+                __leave;
+            }
+            
+            identifyData = (PIDENTIFY_DEVICE_DATA) Add2Ptr( Buffer, sizeof(ATA_PASS_THROUGH_EX) );
+            __debugbreak();
+        }
+     }
+     __finally
+    {
+    }
+
+     return status;
+}
+
+__checkReturn
+NTSTATUS
+GetMediaATIP (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+    PVOID QueryBuffer = NULL;
+    ULONG QuerySize = 0x2000;
+    
+    __try
+    {
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
+        if ( !QueryBuffer )
+        {
+            __leave;
+        }
+
+        memset( QueryBuffer, 0, QuerySize );
+        KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+        CDROM_READ_TOC_EX ReadTocEx;
+        RtlZeroMemory( &ReadTocEx, sizeof(ReadTocEx) );
+        ReadTocEx.Format = CDROM_READ_TOC_EX_FORMAT_ATIP;
+        ReadTocEx.Msf = 1;
+
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_CDROM_READ_TOC_EX,
+            pDevice,
+            &ReadTocEx,
+            sizeof(ReadTocEx),
+            QueryBuffer,
+            QuerySize,
+            FALSE,
+            &Event, 
+            &Iosb
+            );
+        
+        if ( !Irp )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+        
+        status = IoCallDriver( pDevice, Irp );
+        
+        if ( STATUS_PENDING == status )
+        {
+            KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, (PLARGE_INTEGER) NULL );
+            status = Iosb.Status;
+        }
+        
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        if ( !Iosb.Information )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        PCDROM_TOC_ATIP_DATA pAtipData = (PCDROM_TOC_ATIP_DATA) QueryBuffer;
+        PCDROM_TOC_ATIP_DATA_BLOCK pAtipBlock = pAtipData->Descriptors;
+        
+        __debugbreak();
+     }
+    __finally
+    {
+        if ( QueryBuffer )
+        {
+            ExFreePool( QueryBuffer );
+            QueryBuffer = NULL;
+        }
+    }
+    
+    return status;
+}
+
 __checkReturn
 NTSTATUS
 GetStorageProperty (
@@ -658,6 +817,15 @@ GetStorageProperty (
 
         PSTORAGE_DEVICE_DESCRIPTOR pDesc = (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer; //StorageDeviceProperty
         __debugbreak();
+        if (
+            BusTypeAtapi == pDesc->BusType
+            ||
+            BusTypeAta == pDesc->BusType
+            )
+        {
+            status = GetDiskSignature( pDevice );
+        }
+
      }
     __finally
     {
@@ -683,6 +851,12 @@ FillVolumeProperties (
     NTSTATUS status;
     PDEVICE_OBJECT pDevice = NULL;
 
+    __debugbreak();
+
+    // IRP_MJ_DEVICE_CONTROL + IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
+    // changer - GetProductData
+    // IDENTIFY_DEVICE_DATA - ata\atapi modify for usb
+
     __try
     {
         PVOID pBuffer = NULL;
@@ -695,8 +869,9 @@ FillVolumeProperties (
             __leave;
         }
 
-        __debugbreak();
-        //IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
+        status = GetMediaATIP( pDevice );
+
+        status = GetStorageProperty( pDevice );
 
         status = QueryDeviceProperty( pDevice, DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
@@ -720,8 +895,6 @@ FillVolumeProperties (
             ExFreePool( pBuffer );
             pBuffer = NULL;
         }
-
-        status = GetStorageProperty( pDevice );
 
        /* status = QueryDeviceProperty( pDevice, DevicePropertyPhysicalDeviceObjectName, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
