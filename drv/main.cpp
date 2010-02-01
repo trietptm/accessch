@@ -655,7 +655,6 @@ GetDiskSignature (
             }
             
             identifyData = (PIDENTIFY_DEVICE_DATA) Add2Ptr( Buffer, sizeof(ATA_PASS_THROUGH_EX) );
-            __debugbreak();
         }
      }
      __finally
@@ -733,8 +732,6 @@ GetMediaATIP (
 
         PCDROM_TOC_ATIP_DATA pAtipData = (PCDROM_TOC_ATIP_DATA) QueryBuffer;
         PCDROM_TOC_ATIP_DATA_BLOCK pAtipBlock = pAtipData->Descriptors;
-        
-        __debugbreak();
      }
     __finally
     {
@@ -816,7 +813,6 @@ GetStorageProperty (
         }
 
         PSTORAGE_DEVICE_DESCRIPTOR pDesc = (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer; //StorageDeviceProperty
-        __debugbreak();
         if (
             BusTypeAtapi == pDesc->BusType
             ||
@@ -839,6 +835,82 @@ GetStorageProperty (
     return status;
 }
 
+NTSTATUS
+GetMediaSerialNumber (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+    PVOID QueryBuffer = NULL;
+    ULONG QuerySize = 0x2000;
+
+    __try
+    {
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
+        if ( !QueryBuffer )
+        {
+            __leave;
+        }
+
+        memset( QueryBuffer, 0, QuerySize );
+
+        KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER,
+            pDevice,
+            NULL,
+            0,
+            QueryBuffer,
+            QuerySize,
+            FALSE,
+            &Event, 
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        status = IoCallDriver( pDevice, Irp );
+
+        if ( STATUS_PENDING == status )
+        {
+            KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, (PLARGE_INTEGER) NULL );
+            status = Iosb.Status;
+        }
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        if ( !Iosb.Information )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        __debugbreak();
+
+    }
+    __finally
+    {
+        if ( QueryBuffer )
+        {
+            ExFreePool( QueryBuffer );
+            QueryBuffer = NULL;
+        }
+    }
+
+    return status;
+}
+
 __checkReturn
 NTSTATUS
 FillVolumeProperties (
@@ -853,9 +925,8 @@ FillVolumeProperties (
 
     __debugbreak();
 
-    // IRP_MJ_DEVICE_CONTROL + IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER
     // changer - GetProductData
-    // IDENTIFY_DEVICE_DATA - ata\atapi modify for usb
+    // IDENTIFY_DEVICE_DATA - ata\atapi
 
     __try
     {
@@ -870,7 +941,7 @@ FillVolumeProperties (
         }
 
         status = GetMediaATIP( pDevice );
-
+        status = GetMediaSerialNumber( pDevice );
         status = GetStorageProperty( pDevice );
 
         status = QueryDeviceProperty( pDevice, DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
