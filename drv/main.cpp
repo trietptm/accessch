@@ -616,12 +616,17 @@ GetSCSIInfo (
     scsiData->TimeOutValue = 10;
     scsiData->DataBufferOffset = sizeof(SCSI_PASS_THROUGH) + scsiData->SenseInfoLength;
     scsiData->SenseInfoOffset = sizeof(SCSI_PASS_THROUGH);
-    scsiData->Cdb[0] = SCSIOP_INQUIRY; 
-    scsiData->Cdb[4] = sizeof(INQUIRYDATA);
+
+    CDB::_CDB6INQUIRY* pInquiery = (CDB::_CDB6INQUIRY*) scsiData->Cdb;
+    pInquiery->OperationCode = SCSIOP_INQUIRY;
+    pInquiery->AllocationLength = sizeof(INQUIRYDATA);
+    //scsiData->Cdb[0] = SCSIOP_INQUIRY; 
+    //scsiData->Cdb[4] = sizeof(INQUIRYDATA);
     
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
-    PINQUIRYDATA pInquiry = (PINQUIRYDATA) scsiData + scsiData->DataBufferOffset;
+    PINQUIRYDATA pInquiryData = (PINQUIRYDATA)
+        Add2Ptr( scsiData, scsiData->DataBufferOffset );
 
     __try
     {
