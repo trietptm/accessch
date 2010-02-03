@@ -613,6 +613,12 @@ GetSCSIInfo (
     //    PTRALIGN UCHAR      DataBuffer[SPTWB_DATA_LENGTH];
     //} SCSI_PASS_THROUGH_WITH_BUFFERS, *PSCSI_PASS_THROUGH_WITH_BUFFERS;
 
+    // check
+    //Cdb[0] = 0x12;    // SCSIOP_INQUIRY
+    //Cdb[1] = 0x1;    // CDB_INQUIRY_EVPD, Vital product data
+    //Cdb[2] = 0x80;   // PageCode, Unit serial number
+    //Cdb[4] = 192;
+
     UCHAR Buffer[sizeof(SCSI_PASS_THROUGH) + 24 + sizeof(INQUIRYDATA)];
     PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
 
