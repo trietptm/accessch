@@ -610,19 +610,17 @@ GetSCSIInfo (
 
     scsiData->Length = sizeof(SCSI_PASS_THROUGH);
     scsiData->CdbLength = CDB6GENERIC_LENGTH;
-    scsiData->SenseInfoLength = 24;
+    scsiData->SenseInfoLength = 24; //?? \todo
     scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
     scsiData->DataTransferLength = sizeof(INQUIRYDATA); 
-    scsiData->TimeOutValue = 10;
+    scsiData->TimeOutValue = 10; //sec
     scsiData->DataBufferOffset = sizeof(SCSI_PASS_THROUGH) + scsiData->SenseInfoLength;
     scsiData->SenseInfoOffset = sizeof(SCSI_PASS_THROUGH);
 
     CDB::_CDB6INQUIRY* pInquiery = (CDB::_CDB6INQUIRY*) scsiData->Cdb;
     pInquiery->OperationCode = SCSIOP_INQUIRY;
     pInquiery->AllocationLength = sizeof(INQUIRYDATA);
-    //scsiData->Cdb[0] = SCSIOP_INQUIRY; 
-    //scsiData->Cdb[4] = sizeof(INQUIRYDATA);
-    
+   
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
     PINQUIRYDATA pInquiryData = (PINQUIRYDATA)
