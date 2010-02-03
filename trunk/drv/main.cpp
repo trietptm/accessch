@@ -7,11 +7,8 @@
 //! \todo check nessesary headers
 #include "main.h"
 
-//#include "ntddstor.h"
-//#include "storduid.h"
 #include "ntddscsi.h"
 #include "ata.h"
-#include "irb.h"
 #include "ntddcdrm.h"
 
 #include "../inc/accessch.h"
@@ -849,6 +846,8 @@ GetMediaSerialNumber (
 
     __try
     {
+        PSTORAGE_MEDIA_SERIAL_NUMBER_DATA pSerialNumber = NULL;
+
         QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
         if ( !QueryBuffer )
         {
@@ -896,6 +895,7 @@ GetMediaSerialNumber (
             __leave;
         }
 
+        pSerialNumber = (PSTORAGE_MEDIA_SERIAL_NUMBER_DATA) QueryBuffer;
         __debugbreak();
 
     }
