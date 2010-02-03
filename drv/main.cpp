@@ -603,6 +603,16 @@ GetSCSIInfo (
     NTSTATUS status;
     IO_STATUS_BLOCK Iosb;
 
+    //dsm.h
+    //#define SPTWB_SENSE_LENGTH  32
+    //#define SPTWB_DATA_LENGTH   512
+
+    //typedef struct _SCSI_PASS_THROUGH_WITH_BUFFERS {
+    //    SCSI_PASS_THROUGH   ScsiPassThrough;
+    //    PTRALIGN UCHAR      SenseInfoBuffer[SPTWB_SENSE_LENGTH];
+    //    PTRALIGN UCHAR      DataBuffer[SPTWB_DATA_LENGTH];
+    //} SCSI_PASS_THROUGH_WITH_BUFFERS, *PSCSI_PASS_THROUGH_WITH_BUFFERS;
+
     UCHAR Buffer[sizeof(SCSI_PASS_THROUGH) + 24 + sizeof(INQUIRYDATA)];
     PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
 
