@@ -9,6 +9,7 @@
 
 #include "ntddscsi.h"
 #include "ata.h"
+#include "scsi.h"
 #include "ntddcdrm.h"
 
 #include "../inc/accessch.h"
@@ -592,6 +593,79 @@ QueryDeviceProperty (
     return status;
 }
 
+NTSTATUS
+GetSCSIInfo (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+
+    UCHAR Buffer[sizeof(SCSI_PASS_THROUGH) + 24 + sizeof(INQUIRYDATA)];
+    PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
+
+    RtlZeroMemory( Buffer, sizeof(Buffer) );
+
+    scsiData->Length = sizeof(SCSI_PASS_THROUGH);
+    scsiData->CdbLength = CDB6GENERIC_LENGTH;
+    scsiData->SenseInfoLength = 24;
+    scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
+    scsiData->DataTransferLength = sizeof(INQUIRYDATA); 
+    scsiData->TimeOutValue = 10;
+    scsiData->DataBufferOffset = sizeof(SCSI_PASS_THROUGH) + scsiData->SenseInfoLength;
+    scsiData->SenseInfoOffset = sizeof(SCSI_PASS_THROUGH);
+    scsiData->Cdb[0] = SCSIOP_INQUIRY; 
+    scsiData->Cdb[4] = sizeof(INQUIRYDATA);
+    
+    KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+    PINQUIRYDATA pInquiry = (PINQUIRYDATA) scsiData + scsiData->DataBufferOffset;
+
+    __try
+    {
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_SCSI_PASS_THROUGH,
+            pDevice,
+            Buffer,
+            sizeof(Buffer),
+            Buffer,
+            sizeof(Buffer),
+            FALSE,
+            &Event,
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
+        else
+        {
+            status = IoCallDriver( pDevice, Irp );
+            if ( STATUS_PENDING == status )
+            {
+                KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, NULL );
+                status = Iosb.Status;
+            }
+
+            if ( !NT_SUCCESS ( status ) )
+            {
+                __leave;
+            }
+
+            __debugbreak();
+        }
+    }
+    __finally
+    {
+    }
+
+    return status;
+}
+
 
 NTSTATUS
 GetDiskSignature (
@@ -943,6 +1017,7 @@ FillVolumeProperties (
         status = GetMediaATIP( pDevice );
         status = GetMediaSerialNumber( pDevice );
         status = GetStorageProperty( pDevice );
+        status = GetSCSIInfo( pDevice );
 
         status = QueryDeviceProperty( pDevice, DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
