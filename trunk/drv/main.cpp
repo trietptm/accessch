@@ -603,40 +603,31 @@ GetSCSIInfo (
     NTSTATUS status;
     IO_STATUS_BLOCK Iosb;
 
-    //dsm.h
-    //#define SPTWB_SENSE_LENGTH  32
-    //#define SPTWB_DATA_LENGTH   512
-
-    //typedef struct _SCSI_PASS_THROUGH_WITH_BUFFERS {
-    //    SCSI_PASS_THROUGH   ScsiPassThrough;
-    //    PTRALIGN UCHAR      SenseInfoBuffer[SPTWB_SENSE_LENGTH];
-    //    PTRALIGN UCHAR      DataBuffer[SPTWB_DATA_LENGTH];
-    //} SCSI_PASS_THROUGH_WITH_BUFFERS, *PSCSI_PASS_THROUGH_WITH_BUFFERS;
-
-    // check
-    //Cdb[0] = 0x12;    // SCSIOP_INQUIRY
-    //Cdb[1] = 0x1;    // CDB_INQUIRY_EVPD, Vital product data
-    //Cdb[2] = 0x80;   // PageCode, Unit serial number
-    //Cdb[4] = 192;
-
     UCHAR Buffer[sizeof(SCSI_PASS_THROUGH) + 24 + sizeof(INQUIRYDATA)];
     PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
 
     RtlZeroMemory( Buffer, sizeof(Buffer) );
 
     scsiData->Length = sizeof(SCSI_PASS_THROUGH);
+    scsiData->SenseInfoLength = 24; //if set 32 - will not filled by device
     scsiData->CdbLength = CDB6GENERIC_LENGTH;
-    scsiData->SenseInfoLength = 24; //?? \todo
     scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
     scsiData->DataTransferLength = sizeof(INQUIRYDATA); 
     scsiData->TimeOutValue = 10; //sec
     scsiData->DataBufferOffset = sizeof(SCSI_PASS_THROUGH) + scsiData->SenseInfoLength;
     scsiData->SenseInfoOffset = sizeof(SCSI_PASS_THROUGH);
 
-    CDB::_CDB6INQUIRY* pInquiery = (CDB::_CDB6INQUIRY*) scsiData->Cdb;
-    pInquiery->OperationCode = SCSIOP_INQUIRY;
-    pInquiery->AllocationLength = sizeof(INQUIRYDATA);
-   
+    scsiData->CdbLength = CDB6GENERIC_LENGTH;
+    CDB::_CDB6INQUIRY* pInquiry = (CDB::_CDB6INQUIRY*) scsiData->Cdb;
+    pInquiry->OperationCode = SCSIOP_INQUIRY;
+    pInquiry->AllocationLength = sizeof(INQUIRYDATA);
+
+    /*CDB::_CDB6INQUIRY3* pInquiry = (CDB::_CDB6INQUIRY3*) scsiData->Cdb;
+    pInquiry->OperationCode = SCSIOP_INQUIRY;
+    pInquiry->EnableVitalProductData = CDB_INQUIRY_EVPD;
+    pInquiry->PageCode = 0x80;
+    pInquiry->AllocationLength = sizeof(INQUIRYDATA);*/
+
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
     PINQUIRYDATA pInquiryData = (PINQUIRYDATA)
@@ -702,9 +693,9 @@ GetDiskSignature (
     
     RtlZeroMemory( Buffer, sizeof(Buffer) );
     
-    ataData->Length = sizeof (ATA_PASS_THROUGH_EX);
-    ataData->DataBufferOffset = sizeof (ATA_PASS_THROUGH_EX);
-    ataData->DataTransferLength = sizeof (IDENTIFY_DEVICE_DATA);
+    ataData->Length = sizeof(ATA_PASS_THROUGH_EX);
+    ataData->DataBufferOffset = sizeof(ATA_PASS_THROUGH_EX);
+    ataData->DataTransferLength = sizeof(IDENTIFY_DEVICE_DATA);
     ataData->AtaFlags = ATA_FLAGS_DATA_IN;
     ataData->TimeOutValue = 2;
     ataData->CurrentTaskFile[6] = 0xEC;
