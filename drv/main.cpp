@@ -50,9 +50,15 @@ typedef struct _STREAM_HANDLE_CONTEXT
 {
 } STREAM_HANDLE_CONTEXT, *PSTREAM_HANDLE_CONTEXT;
 
+#define _VOLUME_DESCRIPTION_LENGTH  0x20
 typedef struct _VOLUME_CONTEXT
 {
     PFLT_INSTANCE           m_Instance;
+    STORAGE_BUS_TYPE        m_BusType;
+    UCHAR                   m_VendorId[_VOLUME_DESCRIPTION_LENGTH];
+    UCHAR                   m_ProductId[_VOLUME_DESCRIPTION_LENGTH];
+    UCHAR                   m_ProductRevisionLevel[_VOLUME_DESCRIPTION_LENGTH];
+    UCHAR                   m_VendorSpecific[_VOLUME_DESCRIPTION_LENGTH];
 } VOLUME_CONTEXT, *PVOLUME_CONTEXT;
 
 // ----------------------------------------------------------------------------
@@ -422,7 +428,7 @@ PortDisconnect (
 {
     PPORT_CONTEXT pPortContext = (PPORT_CONTEXT) ConnectionCookie;
 
-    ASSERT( pPortContext != NULL );
+    ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
     //! \todo
     FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
@@ -595,7 +601,8 @@ QueryDeviceProperty (
 
 NTSTATUS
 GetSCSIInfo (
-    __in PDEVICE_OBJECT pDevice
+    __in PDEVICE_OBJECT pDevice,
+    __in PVOLUME_CONTEXT pVolumeContext
     )
 {
     PIRP Irp;
@@ -630,8 +637,7 @@ GetSCSIInfo (
 
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
-    PINQUIRYDATA pInquiryData = (PINQUIRYDATA)
-        Add2Ptr( scsiData, scsiData->DataBufferOffset );
+    PVOID PtrInquiry = Add2Ptr( scsiData, scsiData->DataBufferOffset );
 
     __try
     {
@@ -666,7 +672,41 @@ GetSCSIInfo (
                 __leave;
             }
 
-            __debugbreak();
+            PINQUIRYDATA pInquiryData = (PINQUIRYDATA) PtrInquiry;
+
+            NTSTATUS status_strcopy;
+            status_strcopy = RtlStringCbCopyNW (
+                (NTSTRSAFE_PWSTR) pVolumeContext->m_ProductId,
+                sizeof(pVolumeContext->m_ProductId),
+                (NTSTRSAFE_PWSTR) pInquiryData->ProductId,
+                sizeof(pInquiryData->ProductId)
+                );
+            ASSERT( NT_SUCCESS( status_strcopy ) );
+
+            status_strcopy = RtlStringCbCopyNW (
+                (NTSTRSAFE_PWSTR) pVolumeContext->m_VendorId,
+                sizeof(pVolumeContext->m_VendorId),
+                (NTSTRSAFE_PWSTR) pInquiryData->VendorId,
+                sizeof(pInquiryData->VendorId)
+                );
+            ASSERT( NT_SUCCESS( status_strcopy ) );
+
+            status_strcopy = RtlStringCbCopyNW (
+                (NTSTRSAFE_PWSTR) pVolumeContext->m_ProductRevisionLevel,
+                sizeof(pVolumeContext->m_ProductRevisionLevel),
+                (NTSTRSAFE_PWSTR) pInquiryData->ProductRevisionLevel,
+                sizeof(pInquiryData->ProductRevisionLevel)
+                );
+            ASSERT( NT_SUCCESS( status_strcopy ) );
+
+            status_strcopy = RtlStringCbCopyNW (
+                (NTSTRSAFE_PWSTR) pVolumeContext->m_VendorSpecific,
+                sizeof(pVolumeContext->m_VendorSpecific),
+                (NTSTRSAFE_PWSTR) pInquiryData->VendorSpecific,
+                sizeof(pInquiryData->VendorSpecific)
+                );
+            ASSERT( NT_SUCCESS( status_strcopy ) );
+            //! \todo correct VendorSpecific buffer - replace 0 by ' '
         }
     }
     __finally
@@ -676,9 +716,8 @@ GetSCSIInfo (
     return status;
 }
 
-
 NTSTATUS
-GetDiskSignature (
+GetAtaDiskSignature (
     __in PDEVICE_OBJECT pDevice
     )
 {
@@ -689,7 +728,6 @@ GetDiskSignature (
 
     UCHAR Buffer[sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA)];
     PATA_PASS_THROUGH_EX ataData = (PATA_PASS_THROUGH_EX) Buffer;
-    PIDENTIFY_DEVICE_DATA identifyData; 
     
     RtlZeroMemory( Buffer, sizeof(Buffer) );
     
@@ -735,7 +773,9 @@ GetDiskSignature (
                 __leave;
             }
             
-            identifyData = (PIDENTIFY_DEVICE_DATA) Add2Ptr( Buffer, sizeof(ATA_PASS_THROUGH_EX) );
+            PVOID pIdentify = Add2Ptr( Buffer, sizeof(ATA_PASS_THROUGH_EX) );
+            PIDENTIFY_DEVICE_DATA identifyData = (PIDENTIFY_DEVICE_DATA) pIdentify;
+            __debugbreak();
         }
      }
      __finally
@@ -829,7 +869,8 @@ GetMediaATIP (
 __checkReturn
 NTSTATUS
 GetStorageProperty (
-    __in PDEVICE_OBJECT pDevice
+    __in PDEVICE_OBJECT pDevice,
+    __in PVOLUME_CONTEXT pVolumeContext
     )
 {
     //! \todo save value from pDesc
@@ -894,13 +935,15 @@ GetStorageProperty (
         }
 
         PSTORAGE_DEVICE_DESCRIPTOR pDesc = (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer; //StorageDeviceProperty
+        pVolumeContext->m_BusType = pDesc->BusType;
+
         if (
             BusTypeAtapi == pDesc->BusType
             ||
             BusTypeAta == pDesc->BusType
             )
         {
-            status = GetDiskSignature( pDevice );
+            status = GetAtaDiskSignature( pDevice );
         }
 
      }
@@ -1024,10 +1067,16 @@ FillVolumeProperties (
             __leave;
         }
 
+        status = GetStorageProperty( pDevice, pVolumeContext );
+        ASSERT( NT_SUCCESS( status ) );
+
+        status = GetSCSIInfo( pDevice, pVolumeContext  );
+        ASSERT( NT_SUCCESS( status ) );
+
+        // for CD\DVD only
         status = GetMediaATIP( pDevice );
+        
         status = GetMediaSerialNumber( pDevice );
-        status = GetStorageProperty( pDevice );
-        status = GetSCSIInfo( pDevice );
 
         status = QueryDeviceProperty( pDevice, DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
