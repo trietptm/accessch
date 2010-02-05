@@ -55,6 +55,7 @@ typedef struct _VOLUME_CONTEXT
 {
     PFLT_INSTANCE           m_Instance;
     STORAGE_BUS_TYPE        m_BusType;
+    DEVICE_REMOVAL_POLICY   m_RemovablePolicy;
     UCHAR                   m_VendorId[_VOLUME_DESCRIPTION_LENGTH];
     UCHAR                   m_ProductId[_VOLUME_DESCRIPTION_LENGTH];
     UCHAR                   m_ProductRevisionLevel[_VOLUME_DESCRIPTION_LENGTH];
@@ -158,8 +159,6 @@ const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
 
 #define _NO_PAGING  FLTFL_OPERATION_REGISTRATION_SKIP_PAGING_IO
 
-// dont remove PreCreate - self defence (open+truncate will leave zero size file)
-// w2k server will hang if IRP_MJ_FILE_SYSTEM_CONTROL intercepted - look at driver ver. 8.2 function Serv_CheckCallbacks
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
     { IRP_MJ_CREATE,    0,          NULL,           PostCreate },
     { IRP_MJ_CLEANUP,   0,          PreCleanup,     NULL },
@@ -181,7 +180,7 @@ FLT_REGISTRATION filterRegistration = {
     NULL, NULL,                                      // NameProvider callbacks
     NULL,
 #if FLT_MGR_LONGHORN
-    NULL,                                            // transaction callback for Vista
+    NULL,                                            // transaction callback
     NULL                                             //
 #endif //FLT_MGR_LONGHORN
 };
@@ -202,7 +201,12 @@ DriverEntry (
     FltInitializePushLock( &Globals.m_ClientPortLock );
     __try
     {
-        status = FltRegisterFilter( DriverObject, ( PFLT_REGISTRATION )&filterRegistration, &Globals.m_Filter );
+        status = FltRegisterFilter (
+            DriverObject,
+            (PFLT_REGISTRATION) &filterRegistration,
+            &Globals.m_Filter
+            );
+
         if ( !NT_SUCCESS( status ) )
         {
             Globals.m_Filter = NULL;
@@ -347,7 +351,13 @@ PortCreate (
         OBJECT_ATTRIBUTES oa;
 
         RtlInitUnicodeString( &usName, ACCESSCH_PORT_NAME );
-        InitializeObjectAttributes( &oa, &usName, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, sd );
+        InitializeObjectAttributes (
+            &oa,
+            &usName,
+            OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+            NULL,
+            sd
+            );
 
         status = FltCreateCommunicationPort (
             pFilter,
@@ -397,14 +407,19 @@ PortConnect (
             __leave;
         }
 
-        pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag( NonPagedPool, sizeof(PORT_CONTEXT), _ALLOC_TAG );
+        pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag (
+            NonPagedPool,
+            sizeof( PORT_CONTEXT ),
+            _ALLOC_TAG
+            );
+
         if ( !pPortContext )
         {
             status = STATUS_NO_MEMORY;
             __leave;
         }
 
-        RtlZeroMemory( pPortContext, sizeof(PORT_CONTEXT) );
+        RtlZeroMemory( pPortContext, sizeof( PORT_CONTEXT ) );
 
         pPortContext->m_Connection = ClientPort;
 
@@ -600,9 +615,8 @@ QueryDeviceProperty (
 }
 
 NTSTATUS
-GetSCSIInfo (
-    __in PDEVICE_OBJECT pDevice,
-    __in PVOLUME_CONTEXT pVolumeContext
+GetAtaDiskSignature (
+    __in PDEVICE_OBJECT pDevice
     )
 {
     PIRP Irp;
@@ -610,44 +624,29 @@ GetSCSIInfo (
     NTSTATUS status;
     IO_STATUS_BLOCK Iosb;
 
-    UCHAR Buffer[sizeof(SCSI_PASS_THROUGH) + 24 + sizeof(INQUIRYDATA)];
-    PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
+    UCHAR Buffer[sizeof( ATA_PASS_THROUGH_EX ) + sizeof( IDENTIFY_DEVICE_DATA )];
+    PATA_PASS_THROUGH_EX ataData = (PATA_PASS_THROUGH_EX) Buffer;
 
-    RtlZeroMemory( Buffer, sizeof(Buffer) );
+    RtlZeroMemory( Buffer, sizeof( Buffer ) );
 
-    scsiData->Length = sizeof(SCSI_PASS_THROUGH);
-    scsiData->SenseInfoLength = 24; //if set 32 - will not filled by device
-    scsiData->CdbLength = CDB6GENERIC_LENGTH;
-    scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
-    scsiData->DataTransferLength = sizeof(INQUIRYDATA); 
-    scsiData->TimeOutValue = 10; //sec
-    scsiData->DataBufferOffset = sizeof(SCSI_PASS_THROUGH) + scsiData->SenseInfoLength;
-    scsiData->SenseInfoOffset = sizeof(SCSI_PASS_THROUGH);
-
-    scsiData->CdbLength = CDB6GENERIC_LENGTH;
-    CDB::_CDB6INQUIRY* pInquiry = (CDB::_CDB6INQUIRY*) scsiData->Cdb;
-    pInquiry->OperationCode = SCSIOP_INQUIRY;
-    pInquiry->AllocationLength = sizeof(INQUIRYDATA);
-
-    /*CDB::_CDB6INQUIRY3* pInquiry = (CDB::_CDB6INQUIRY3*) scsiData->Cdb;
-    pInquiry->OperationCode = SCSIOP_INQUIRY;
-    pInquiry->EnableVitalProductData = CDB_INQUIRY_EVPD;
-    pInquiry->PageCode = 0x80;
-    pInquiry->AllocationLength = sizeof(INQUIRYDATA);*/
+    ataData->Length = sizeof( ATA_PASS_THROUGH_EX );
+    ataData->DataBufferOffset = sizeof( ATA_PASS_THROUGH_EX );
+    ataData->DataTransferLength = sizeof( IDENTIFY_DEVICE_DATA );
+    ataData->AtaFlags = ATA_FLAGS_DATA_IN;
+    ataData->TimeOutValue = 2;
+    ataData->CurrentTaskFile[6] = 0xEC;
 
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
-
-    PVOID PtrInquiry = Add2Ptr( scsiData, scsiData->DataBufferOffset );
 
     __try
     {
         Irp = IoBuildDeviceIoControlRequest (
-            IOCTL_SCSI_PASS_THROUGH,
+            IOCTL_ATA_PASS_THROUGH,
             pDevice,
             Buffer,
-            sizeof(Buffer),
+            sizeof( Buffer ),
             Buffer,
-            sizeof(Buffer),
+            sizeof( Buffer ),
             FALSE,
             &Event,
             &Iosb
@@ -663,7 +662,208 @@ GetSCSIInfo (
             status = IoCallDriver( pDevice, Irp );
             if ( STATUS_PENDING == status )
             {
-                KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, NULL );
+                KeWaitForSingleObject (
+                    &Event,
+                    Executive,
+                    KernelMode,
+                    FALSE,
+                    NULL
+                    );
+
+                status = Iosb.Status;
+            }
+
+            if ( !NT_SUCCESS ( status ) )
+            {
+                __leave;
+            }
+
+            PVOID ptrtmp = Add2Ptr( Buffer, sizeof( ATA_PASS_THROUGH_EX ) );
+            PIDENTIFY_DEVICE_DATA identifyData = (PIDENTIFY_DEVICE_DATA) ptrtmp;
+
+            __debugbreak();
+        }
+    }
+    __finally
+    {
+    }
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+GetStorageProperty (
+    __in PDEVICE_OBJECT pDevice,
+    __in PVOLUME_CONTEXT pVolumeContext
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+    STORAGE_PROPERTY_QUERY PropQuery;
+    PVOID QueryBuffer = NULL;
+    ULONG QuerySize = 0x2000;
+
+    __try
+    {
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
+        if ( !QueryBuffer )
+        {
+            __leave;
+        }
+
+        memset( &PropQuery, 0, sizeof( PropQuery ) );
+        memset( QueryBuffer, 0, QuerySize );
+        PropQuery.PropertyId = StorageDeviceProperty;
+        PropQuery.QueryType = PropertyStandardQuery;
+
+        KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_STORAGE_QUERY_PROPERTY,
+            pDevice,
+            &PropQuery,
+            sizeof( PropQuery ),
+            QueryBuffer,
+            QuerySize,
+            FALSE,
+            &Event, 
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        status = IoCallDriver( pDevice, Irp );
+
+        if ( STATUS_PENDING == status )
+        {
+            KeWaitForSingleObject (
+                &Event,
+                Executive,
+                KernelMode,
+                FALSE,
+                (PLARGE_INTEGER) NULL
+                );
+
+            status = Iosb.Status;
+        }
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        if ( !Iosb.Information )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        PSTORAGE_DEVICE_DESCRIPTOR pDesc = 
+            (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer;
+        
+        pVolumeContext->m_BusType = pDesc->BusType;
+
+        if (
+            BusTypeAtapi == pDesc->BusType
+            ||
+            BusTypeAta == pDesc->BusType
+            )
+        {
+            status = GetAtaDiskSignature( pDevice );
+        }
+
+    }
+    __finally
+    {
+        if ( QueryBuffer )
+        {
+            ExFreePool( QueryBuffer );
+            QueryBuffer = NULL;
+        }
+    }
+
+    return status;
+}
+
+NTSTATUS
+GetSCSIInfo (
+    __in PDEVICE_OBJECT pDevice,
+    __in PVOLUME_CONTEXT pVolumeContext
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+
+    UCHAR Buffer[sizeof( SCSI_PASS_THROUGH ) + 24 + sizeof( INQUIRYDATA )];
+    PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
+
+    RtlZeroMemory( Buffer, sizeof( Buffer ) );
+
+    scsiData->Length = sizeof( SCSI_PASS_THROUGH );
+    scsiData->SenseInfoLength = 24; //if set 32 - will not filled by device
+    scsiData->CdbLength = CDB6GENERIC_LENGTH;
+    scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
+    scsiData->DataTransferLength = sizeof( INQUIRYDATA ); 
+    scsiData->TimeOutValue = 10; //sec
+    scsiData->DataBufferOffset = scsiData->Length + scsiData->SenseInfoLength;
+    scsiData->SenseInfoOffset = scsiData->Length;
+
+    scsiData->CdbLength = CDB6GENERIC_LENGTH;
+    CDB::_CDB6INQUIRY* pInquiry = (CDB::_CDB6INQUIRY*) scsiData->Cdb;
+    pInquiry->OperationCode = SCSIOP_INQUIRY;
+    pInquiry->AllocationLength = sizeof( INQUIRYDATA );
+
+    /*CDB::_CDB6INQUIRY3* pInquiry = (CDB::_CDB6INQUIRY3*) scsiData->Cdb;
+    pInquiry->OperationCode = SCSIOP_INQUIRY;
+    pInquiry->EnableVitalProductData = CDB_INQUIRY_EVPD;
+    pInquiry->PageCode = 0x80;
+    pInquiry->AllocationLength = sizeof( INQUIRYDATA );*/
+
+    KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+    PVOID PtrInquiry = Add2Ptr( scsiData, scsiData->DataBufferOffset );
+
+    __try
+    {
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_SCSI_PASS_THROUGH,
+            pDevice,
+            Buffer,
+            sizeof( Buffer ),
+            Buffer,
+            sizeof( Buffer ),
+            FALSE,
+            &Event,
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
+        else
+        {
+            status = IoCallDriver( pDevice, Irp );
+            if ( STATUS_PENDING == status )
+            {
+                KeWaitForSingleObject (
+                    &Event,
+                    Executive,
+                    KernelMode,
+                    FALSE,
+                    NULL
+                    );
+
                 status = Iosb.Status;
             }
 
@@ -677,33 +877,33 @@ GetSCSIInfo (
             NTSTATUS status_strcopy;
             status_strcopy = RtlStringCbCopyNW (
                 (NTSTRSAFE_PWSTR) pVolumeContext->m_ProductId,
-                sizeof(pVolumeContext->m_ProductId),
+                sizeof( pVolumeContext->m_ProductId ),
                 (NTSTRSAFE_PWSTR) pInquiryData->ProductId,
-                sizeof(pInquiryData->ProductId)
+                sizeof( pInquiryData->ProductId)
                 );
             ASSERT( NT_SUCCESS( status_strcopy ) );
 
             status_strcopy = RtlStringCbCopyNW (
                 (NTSTRSAFE_PWSTR) pVolumeContext->m_VendorId,
-                sizeof(pVolumeContext->m_VendorId),
+                sizeof( pVolumeContext->m_VendorId ),
                 (NTSTRSAFE_PWSTR) pInquiryData->VendorId,
-                sizeof(pInquiryData->VendorId)
+                sizeof( pInquiryData->VendorId )
                 );
             ASSERT( NT_SUCCESS( status_strcopy ) );
 
             status_strcopy = RtlStringCbCopyNW (
                 (NTSTRSAFE_PWSTR) pVolumeContext->m_ProductRevisionLevel,
-                sizeof(pVolumeContext->m_ProductRevisionLevel),
+                sizeof( pVolumeContext->m_ProductRevisionLevel ),
                 (NTSTRSAFE_PWSTR) pInquiryData->ProductRevisionLevel,
-                sizeof(pInquiryData->ProductRevisionLevel)
+                sizeof( pInquiryData->ProductRevisionLevel )
                 );
             ASSERT( NT_SUCCESS( status_strcopy ) );
 
             status_strcopy = RtlStringCbCopyNW (
                 (NTSTRSAFE_PWSTR) pVolumeContext->m_VendorSpecific,
-                sizeof(pVolumeContext->m_VendorSpecific),
+                sizeof( pVolumeContext->m_VendorSpecific ),
                 (NTSTRSAFE_PWSTR) pInquiryData->VendorSpecific,
-                sizeof(pInquiryData->VendorSpecific)
+                sizeof( pInquiryData->VendorSpecific )
                 );
             ASSERT( NT_SUCCESS( status_strcopy ) );
             //! \todo correct VendorSpecific buffer - replace 0 by ' '
@@ -714,75 +914,6 @@ GetSCSIInfo (
     }
 
     return status;
-}
-
-NTSTATUS
-GetAtaDiskSignature (
-    __in PDEVICE_OBJECT pDevice
-    )
-{
-    PIRP Irp;
-    KEVENT Event;
-    NTSTATUS status;
-    IO_STATUS_BLOCK Iosb;
-
-    UCHAR Buffer[sizeof(ATA_PASS_THROUGH_EX) + sizeof(IDENTIFY_DEVICE_DATA)];
-    PATA_PASS_THROUGH_EX ataData = (PATA_PASS_THROUGH_EX) Buffer;
-    
-    RtlZeroMemory( Buffer, sizeof(Buffer) );
-    
-    ataData->Length = sizeof(ATA_PASS_THROUGH_EX);
-    ataData->DataBufferOffset = sizeof(ATA_PASS_THROUGH_EX);
-    ataData->DataTransferLength = sizeof(IDENTIFY_DEVICE_DATA);
-    ataData->AtaFlags = ATA_FLAGS_DATA_IN;
-    ataData->TimeOutValue = 2;
-    ataData->CurrentTaskFile[6] = 0xEC;
-
-    KeInitializeEvent( &Event, NotificationEvent, FALSE );
-
-    __try
-    {
-        Irp = IoBuildDeviceIoControlRequest (
-            IOCTL_ATA_PASS_THROUGH,
-            pDevice,
-            Buffer,
-            sizeof(Buffer),
-            Buffer,
-            sizeof(Buffer),
-            FALSE,
-            &Event,
-            &Iosb
-            );
-    
-        if ( !Irp )
-        {
-            status = STATUS_INSUFFICIENT_RESOURCES;
-            __leave;
-        }
-        else
-        {
-            status = IoCallDriver( pDevice, Irp );
-            if ( STATUS_PENDING == status )
-            {
-                KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, NULL );
-                status = Iosb.Status;
-            }
-            
-            if ( !NT_SUCCESS ( status ) )
-            {
-                __leave;
-            }
-            
-            PVOID pIdentify = Add2Ptr( Buffer, sizeof(ATA_PASS_THROUGH_EX) );
-            PIDENTIFY_DEVICE_DATA identifyData = (PIDENTIFY_DEVICE_DATA) pIdentify;
-            __debugbreak();
-        }
-     }
-     __finally
-    {
-    }
-
-     return status;
 }
 
 __checkReturn
@@ -810,7 +941,7 @@ GetMediaATIP (
         KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
         CDROM_READ_TOC_EX ReadTocEx;
-        RtlZeroMemory( &ReadTocEx, sizeof(ReadTocEx) );
+        RtlZeroMemory( &ReadTocEx, sizeof( ReadTocEx ) );
         ReadTocEx.Format = CDROM_READ_TOC_EX_FORMAT_ATIP;
         ReadTocEx.Msf = 1;
 
@@ -818,7 +949,7 @@ GetMediaATIP (
             IOCTL_CDROM_READ_TOC_EX,
             pDevice,
             &ReadTocEx,
-            sizeof(ReadTocEx),
+            sizeof( ReadTocEx ),
             QueryBuffer,
             QuerySize,
             FALSE,
@@ -836,7 +967,14 @@ GetMediaATIP (
         
         if ( STATUS_PENDING == status )
         {
-            KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, (PLARGE_INTEGER) NULL );
+            KeWaitForSingleObject (
+                &Event,
+                Executive,
+                KernelMode,
+                FALSE,
+                (PLARGE_INTEGER) NULL
+                );
+
             status = Iosb.Status;
         }
         
@@ -866,98 +1004,6 @@ GetMediaATIP (
     return status;
 }
 
-__checkReturn
-NTSTATUS
-GetStorageProperty (
-    __in PDEVICE_OBJECT pDevice,
-    __in PVOLUME_CONTEXT pVolumeContext
-    )
-{
-    //! \todo save value from pDesc
-    PIRP Irp;
-    KEVENT Event;
-    NTSTATUS status;
-    IO_STATUS_BLOCK Iosb;
-    STORAGE_PROPERTY_QUERY PropQuery;
-    PVOID QueryBuffer = NULL;
-    ULONG QuerySize = 0x2000;
-    
-    __try
-    {
-        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
-        if ( !QueryBuffer )
-        {
-            __leave;
-        }
-
-        memset( &PropQuery, 0, sizeof(PropQuery) );
-        memset( QueryBuffer, 0, QuerySize );
-        PropQuery.PropertyId = StorageDeviceProperty;
-        PropQuery.QueryType = PropertyStandardQuery;
-        
-        KeInitializeEvent( &Event, NotificationEvent, FALSE );
-        
-        Irp = IoBuildDeviceIoControlRequest (
-            IOCTL_STORAGE_QUERY_PROPERTY,
-            pDevice,
-            &PropQuery,
-            sizeof(PropQuery),
-            QueryBuffer,
-            QuerySize,
-            FALSE,
-            &Event, 
-            &Iosb
-            );
-        
-        if ( !Irp )
-        {
-            status = STATUS_UNSUCCESSFUL;
-            __leave;
-        }
-        
-        status = IoCallDriver( pDevice, Irp );
-        
-        if ( STATUS_PENDING == status )
-        {
-            KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, (PLARGE_INTEGER) NULL );
-            status = Iosb.Status;
-        }
-        
-        if ( !NT_SUCCESS( status ) )
-        {
-            __leave;
-        }
-
-        if ( !Iosb.Information )
-        {
-            status = STATUS_UNSUCCESSFUL;
-            __leave;
-        }
-
-        PSTORAGE_DEVICE_DESCRIPTOR pDesc = (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer; //StorageDeviceProperty
-        pVolumeContext->m_BusType = pDesc->BusType;
-
-        if (
-            BusTypeAtapi == pDesc->BusType
-            ||
-            BusTypeAta == pDesc->BusType
-            )
-        {
-            status = GetAtaDiskSignature( pDevice );
-        }
-
-     }
-    __finally
-    {
-        if ( QueryBuffer )
-        {
-            ExFreePool( QueryBuffer );
-            QueryBuffer = NULL;
-        }
-    }
-    
-    return status;
-}
 
 NTSTATUS
 GetMediaSerialNumber (
@@ -1007,7 +1053,14 @@ GetMediaSerialNumber (
 
         if ( STATUS_PENDING == status )
         {
-            KeWaitForSingleObject( &Event, Executive, KernelMode, FALSE, (PLARGE_INTEGER) NULL );
+            KeWaitForSingleObject (
+                &Event,
+                Executive,
+                KernelMode,
+                FALSE,
+                (PLARGE_INTEGER) NULL
+                );
+
             status = Iosb.Status;
         }
 
@@ -1057,9 +1110,6 @@ FillVolumeProperties (
 
     __try
     {
-        PVOID pBuffer = NULL;
-        ULONG PropertySize;
-
         status = FltGetDiskDeviceObject( FltObjects->Volume, &pDevice );
         if ( !NT_SUCCESS( status ) )
         {
@@ -1075,50 +1125,46 @@ FillVolumeProperties (
 
         // for CD\DVD only
         status = GetMediaATIP( pDevice );
-        
         status = GetMediaSerialNumber( pDevice );
 
-        status = QueryDeviceProperty( pDevice, DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
+        PVOID pBuffer = NULL;
+        ULONG PropertySize;
+
+        status = QueryDeviceProperty (
+            pDevice,
+            DevicePropertyRemovalPolicy,
+            &pBuffer,
+            &PropertySize
+            );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            PDEVICE_REMOVAL_POLICY pRemovalPolicy =
+                (PDEVICE_REMOVAL_POLICY) pBuffer;
+            
+            pVolumeContext->m_RemovablePolicy = *pRemovalPolicy;
+
+            ExFreePool( pBuffer );
+            pBuffer = NULL;
+        }
+
+        /*status = QueryDeviceProperty( pDevice,
+        DevicePropertyDeviceDescription, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
         {
             ExFreePool( pBuffer );
             pBuffer = NULL;
         }
 
-        status = QueryDeviceProperty( pDevice, DevicePropertyHardwareID, &pBuffer, &PropertySize );
+        status = QueryDeviceProperty( pDevice,
+        DevicePropertyHardwareID, &pBuffer, &PropertySize );
         if ( NT_SUCCESS( status ) )
         {
-            ExFreePool( pBuffer );
-            pBuffer = NULL;
-        }
-
-        status = QueryDeviceProperty( pDevice, DevicePropertyRemovalPolicy, &pBuffer, &PropertySize );
-        if ( NT_SUCCESS( status ) )
-        {
-            PDEVICE_REMOVAL_POLICY pRemovalPolicy = (PDEVICE_REMOVAL_POLICY) pBuffer;
-
-            ExFreePool( pBuffer );
-            pBuffer = NULL;
-        }
-
-       /* status = QueryDeviceProperty( pDevice, DevicePropertyPhysicalDeviceObjectName, &pBuffer, &PropertySize );
-        if ( NT_SUCCESS( status ) )
-        {
-            PDEVICE_OBJECT pDevicePDO = NULL;
-            PFILE_OBJECT pFileObject;
-            UNICODE_STRING us;
-            RtlInitUnicodeString( &us, (PWSTR) pBuffer );
-            status = IoGetDeviceObjectPointer( &us, 0, &pFileObject, &pDevicePDO );
-            if ( NT_SUCCESS( status ) )
-            {
-                status = GetSerialNumber( pDevicePDO );
-
-                ObDereferenceObject( pFileObject );
-            }
-
             ExFreePool( pBuffer );
             pBuffer = NULL;
         }*/
+        
+        status = STATUS_SUCCESS;
     }
     __finally
     {
@@ -1178,7 +1224,7 @@ InstanceSetup (
         status = FltAllocateContext (
             Globals.m_Filter,
             FLT_VOLUME_CONTEXT,
-            sizeof(VOLUME_CONTEXT),
+            sizeof( VOLUME_CONTEXT ),
             NonPagedPool,
             (PFLT_CONTEXT*) &pVolumeContext
             );
@@ -1188,6 +1234,7 @@ InstanceSetup (
             pVolumeContext = NULL;
             __leave;
         }
+        RtlZeroMemory( pVolumeContext, sizeof( VOLUME_CONTEXT ) );
 
         // just for fun
         pInstanceContext->m_VolumeDeviceType = VolumeDeviceType;
@@ -1209,7 +1256,12 @@ InstanceSetup (
             );
 
         pVolumeContext->m_Instance = FltObjects->Instance;
-        status = FltSetVolumeContext( FltObjects->Volume, FLT_SET_CONTEXT_KEEP_IF_EXISTS, pVolumeContext, NULL );
+        status = FltSetVolumeContext (
+            FltObjects->Volume,
+            FLT_SET_CONTEXT_KEEP_IF_EXISTS,
+            pVolumeContext,
+            NULL
+            );
     }
     __finally
     {
@@ -1227,8 +1279,15 @@ QueryFileNameInfo (
     __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
     )
 {
-    ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
-    NTSTATUS status = FltGetFileNameInformation( Data, QueryNameFlags, ppFileNameInfo );
+    ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED
+        | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
+
+    NTSTATUS status = FltGetFileNameInformation (
+        Data,
+        QueryNameFlags,
+        ppFileNameInfo
+        );
+
     if ( !NT_SUCCESS( status ) )
     {
         return status;
@@ -1253,7 +1312,11 @@ GenerateStreamContext (
     if ( !FsRtlSupportsPerStreamContexts( FltObjects->FileObject ) )
         return STATUS_NOT_SUPPORTED;;
 
-    status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) ppStreamContext );
+    status = FltGetStreamContext (
+        FltObjects->Instance,
+        FltObjects->FileObject,
+        (PFLT_CONTEXT*) ppStreamContext
+        );
 
     if ( NT_SUCCESS( status ) )
         return status;
@@ -1261,22 +1324,32 @@ GenerateStreamContext (
     status = FltAllocateContext (
         Globals.m_Filter,
         FLT_STREAM_CONTEXT,
-        sizeof(STREAM_CONTEXT),
+        sizeof( STREAM_CONTEXT ),
         NonPagedPool,
         (PFLT_CONTEXT*) ppStreamContext
         );
 
     if ( NT_SUCCESS( status ) )
     {
-        RtlZeroMemory( *ppStreamContext, sizeof(STREAM_CONTEXT) );
+        RtlZeroMemory( *ppStreamContext, sizeof( STREAM_CONTEXT ) );
 
         BOOLEAN bIsDirectory;
 
-        status = FltIsDirectory( FltObjects->FileObject, FltObjects->Instance, &bIsDirectory );
+        status = FltIsDirectory (
+            FltObjects->FileObject,
+            FltObjects->Instance,
+            &bIsDirectory
+            );
+
         if ( NT_SUCCESS( status ) )
         {
             if ( bIsDirectory )
-                InterlockedOr( &(*ppStreamContext)->m_Flags, _STREAM_FLAGS_DIRECTORY );
+            {
+                InterlockedOr (
+                    &(*ppStreamContext)->m_Flags,
+                    _STREAM_FLAGS_DIRECTORY
+                    );
+            }
         }
 
         status = FltSetStreamContext (
@@ -1309,7 +1382,9 @@ SecurityGetLuid (
     pToken = SeQuerySubjectContextToken( &SubjectContext );
 
     if ( pToken )
+    {
         status = SeQueryAuthenticationIdToken( pToken, pLuid );
+    }
 
     SeReleaseSubjectContext( &SubjectContext );
 
@@ -1330,7 +1405,9 @@ SecurityAllocateCopySid (
 
     *ppSid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
     if ( !*ppSid )
+    {
         return STATUS_NO_MEMORY;
+    }
 
     status = RtlCopySid( SidLength, *ppSid, pSid );
     if ( !NT_SUCCESS( status ) )
@@ -1375,17 +1452,36 @@ SecurityGetSid (
         if ( PsIsThreadTerminating( PsGetCurrentThread() ) )
             __leave;
 
-        pAccessToken = PsReferenceImpersonationToken( Data->Thread, &CopyOnOpen, &EffectiveOnly, &ImpersonationLevel );
-        if ( !pAccessToken )
-            pAccessToken = PsReferencePrimaryToken( FltGetRequestorProcess( Data ) );
+        pAccessToken = PsReferenceImpersonationToken (
+            Data->Thread,
+            &CopyOnOpen,
+            &EffectiveOnly,
+            &ImpersonationLevel
+            );
 
         if ( !pAccessToken )
+        {
+            pAccessToken = PsReferencePrimaryToken (
+                FltGetRequestorProcess( Data )
+                );
+        }
+
+        if ( !pAccessToken )
+        {
             pAccessToken = PsReferencePrimaryToken( PsGetCurrentProcess() );
+        }
 
         if ( !pAccessToken )
+        {
             __leave;
+        }
 
-        status = SeQueryInformationToken( pAccessToken, TokenUser, (PVOID*) &pTokenUser );
+        status = SeQueryInformationToken (
+            pAccessToken,
+            TokenUser,
+            (PVOID*) &pTokenUser
+            );
+
         if( !NT_SUCCESS( status ) )
         {
             pTokenUser = NULL;
@@ -1440,10 +1536,10 @@ PortAllocateMessage (
     ASSERT( pLuid );
 
     PMESSAGE_DATA pMsg;
-    ULONG MessageSize = sizeof(MESSAGE_DATA);
+    ULONG MessageSize = sizeof( MESSAGE_DATA );
 
-    MessageSize += pFileNameInfo->Name.Length + sizeof(WCHAR);
-    MessageSize += pFileNameInfo->Volume.Length + sizeof(WCHAR);
+    MessageSize += pFileNameInfo->Name.Length + sizeof( WCHAR );
+    MessageSize += pFileNameInfo->Volume.Length + sizeof( WCHAR );
     MessageSize += RtlLengthSid( pSid );
 
     if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
@@ -1471,8 +1567,8 @@ PortAllocateMessage (
     pMsg->m_FlagsStream = StreamFlags;
     pMsg->m_FlagsHandle = HandleFlags;
 
-    pMsg->m_FileNameOffset = sizeof(MESSAGE_DATA);
-    pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof(WCHAR);
+    pMsg->m_FileNameOffset = sizeof( MESSAGE_DATA );
+    pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof( WCHAR );
 
     PVOID pFN = Add2Ptr( pMsg, pMsg->m_FileNameOffset );
     RtlCopyMemory (
@@ -1482,7 +1578,7 @@ PortAllocateMessage (
         );
 
     pMsg->m_VolumeNameOffset = pMsg->m_FileNameOffset + pMsg->m_FileNameLen;
-    pMsg->m_VolumeNameLen = pFileNameInfo->Volume.Length + sizeof(WCHAR);
+    pMsg->m_VolumeNameLen = pFileNameInfo->Volume.Length + sizeof( WCHAR );
 
     PVOID pVN = Add2Ptr( pFN, pMsg->m_FileNameLen );
     RtlCopyMemory (
@@ -1539,14 +1635,23 @@ PortAskUser (
             __leave;
         }
 
-        status = FltGetInstanceContext( FltObjects->Instance, (PFLT_CONTEXT*) &pInstanceContext );
+        status = FltGetInstanceContext (
+            FltObjects->Instance,
+            (PFLT_CONTEXT*) &pInstanceContext
+            );
+
         if ( !NT_SUCCESS( status ) )
         {
             pInstanceContext = NULL;
             __leave;
         }
 
-        status = FltGetStreamContext( FltObjects->Instance, FltObjects->FileObject, (PFLT_CONTEXT*) &pStreamContext );
+        status = FltGetStreamContext (
+            FltObjects->Instance,
+            FltObjects->FileObject,
+            (PFLT_CONTEXT*) &pStreamContext
+            );
+
         if ( !NT_SUCCESS( status ) )
         {
             pStreamContext = NULL;
