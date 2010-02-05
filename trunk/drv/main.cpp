@@ -11,6 +11,7 @@
 #include "ata.h"
 #include "scsi.h"
 #include "ntddcdrm.h"
+#include "ntddvol.h"
 
 #include "../inc/accessch.h"
 
@@ -918,6 +919,90 @@ GetSCSIInfo (
 
 __checkReturn
 NTSTATUS
+GetSmartInfo (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+    PVOID QueryBuffer = NULL;
+    ULONG QuerySize = 0x2000;
+
+    __try
+    {
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
+        if ( !QueryBuffer )
+        {
+            __leave;
+        }
+
+        memset( QueryBuffer, 0, QuerySize );
+        KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+            pDevice,
+            NULL,
+            0,
+            QueryBuffer,
+            QuerySize,
+            FALSE,
+            &Event, 
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        status = IoCallDriver( pDevice, Irp );
+
+        if ( STATUS_PENDING == status )
+        {
+            KeWaitForSingleObject (
+                &Event,
+                Executive,
+                KernelMode,
+                FALSE,
+                (PLARGE_INTEGER) NULL
+                );
+
+            status = Iosb.Status;
+        }
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        if ( !Iosb.Information )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        PVOLUME_DISK_EXTENTS pvdExtents = (PVOLUME_DISK_EXTENTS) QueryBuffer;
+        __debugbreak();
+    }
+    __finally
+    {
+        if ( QueryBuffer )
+        {
+            ExFreePool( QueryBuffer );
+            QueryBuffer = NULL;
+        }
+    }
+
+    return status;
+
+}
+
+__checkReturn
+NTSTATUS
 GetMediaATIP (
     __in PDEVICE_OBJECT pDevice
     )
@@ -1120,8 +1205,10 @@ FillVolumeProperties (
         status = GetStorageProperty( pDevice, pVolumeContext );
         ASSERT( NT_SUCCESS( status ) );
 
-        status = GetSCSIInfo( pDevice, pVolumeContext  );
+        status = GetSCSIInfo( pDevice, pVolumeContext );
         ASSERT( NT_SUCCESS( status ) );
+
+        status = GetSmartInfo( pDevice );
 
         // for CD\DVD only
         status = GetMediaATIP( pDevice );
