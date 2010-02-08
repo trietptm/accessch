@@ -29,4 +29,5 @@ SOURCES= \
 		smart.cpp \
 		busata.cpp \
 		cdrom.cpp \
+                busscsi.cpp  \
 		accessch.rc
