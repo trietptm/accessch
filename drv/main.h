@@ -7,4 +7,16 @@
 #define NTSTRSAFE_LIB
 #include <ntstrsafe.h>
 
+#define _VOLUME_DESCRIPTION_LENGTH  0x20
+typedef struct _VOLUME_CONTEXT
+{
+    PFLT_INSTANCE           m_Instance;
+    ULONG                   m_BusType; //STORAGE_BUS_TYPE
+    DEVICE_REMOVAL_POLICY   m_RemovablePolicy;
+    UCHAR                   m_VendorId[_VOLUME_DESCRIPTION_LENGTH];
+    UCHAR                   m_ProductId[_VOLUME_DESCRIPTION_LENGTH];
+    UCHAR                   m_ProductRevisionLevel[_VOLUME_DESCRIPTION_LENGTH];
+    UCHAR                   m_VendorSpecific[_VOLUME_DESCRIPTION_LENGTH];
+} VOLUME_CONTEXT, *PVOLUME_CONTEXT;
+
 #include "mm.h"

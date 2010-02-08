@@ -16,6 +16,7 @@
 #include "../inc/accessch.h"
 #include "smart.h"
 #include "busata.h"
+#include "busscsi.h"
 #include "cdrom.h"
 
 #define _ACCESSCH_MAX_CONNECTIONS   1
@@ -52,18 +53,6 @@ typedef struct _STREAM_CONTEXT
 typedef struct _STREAM_HANDLE_CONTEXT
 {
 } STREAM_HANDLE_CONTEXT, *PSTREAM_HANDLE_CONTEXT;
-
-#define _VOLUME_DESCRIPTION_LENGTH  0x20
-typedef struct _VOLUME_CONTEXT
-{
-    PFLT_INSTANCE           m_Instance;
-    STORAGE_BUS_TYPE        m_BusType;
-    DEVICE_REMOVAL_POLICY   m_RemovablePolicy;
-    UCHAR                   m_VendorId[_VOLUME_DESCRIPTION_LENGTH];
-    UCHAR                   m_ProductId[_VOLUME_DESCRIPTION_LENGTH];
-    UCHAR                   m_ProductRevisionLevel[_VOLUME_DESCRIPTION_LENGTH];
-    UCHAR                   m_VendorSpecific[_VOLUME_DESCRIPTION_LENGTH];
-} VOLUME_CONTEXT, *PVOLUME_CONTEXT;
 
 // ----------------------------------------------------------------------------
 // prototypes
@@ -694,7 +683,6 @@ QueryDeviceProperty (
 //    return status;
 //}
 
-
 __checkReturn
 NTSTATUS
 GetStorageProperty (
@@ -777,22 +765,20 @@ GetStorageProperty (
         switch ( pDesc->BusType )
         {
         case BusTypeAtapi:
-            status = GetIdentifyInfo( pDevice, ATAPI_ID_CMD );
+            status = GetSCSISmartInfo( pDevice ); // Vista
             break;
 
         case BusTypeScsi:
-            status = GetIdentifyInfo( pDevice, ID_CMD );
+            status = GetSCSIIdentifyInfo( pDevice, ID_CMD ); //xp checked!
             break;
         
         case BusTypeAta:
-            status = GetIdentifyInfo( pDevice, ID_CMD );
             break;
 
         case BusTypeRAID:
             break;
 
         case BusTypeUsb:
-            status = GetIdentifyInfo( pDevice, ID_CMD );
             break;
         }
     }
@@ -803,130 +789,6 @@ GetStorageProperty (
             ExFreePool( QueryBuffer );
             QueryBuffer = NULL;
         }
-    }
-
-    return status;
-}
-
-NTSTATUS
-GetSCSIInfo (
-    __in PDEVICE_OBJECT pDevice,
-    __in PVOLUME_CONTEXT pVolumeContext
-    )
-{
-    PIRP Irp;
-    KEVENT Event;
-    NTSTATUS status;
-    IO_STATUS_BLOCK Iosb;
-
-    UCHAR Buffer[sizeof( SCSI_PASS_THROUGH ) + 24 + sizeof( INQUIRYDATA )];
-    PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
-
-    RtlZeroMemory( Buffer, sizeof( Buffer ) );
-
-    scsiData->Length = sizeof( SCSI_PASS_THROUGH );
-    scsiData->SenseInfoLength = 24; //if set 32 - will not filled by device
-    scsiData->CdbLength = CDB6GENERIC_LENGTH;
-    scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
-    scsiData->DataTransferLength = sizeof( INQUIRYDATA ); 
-    scsiData->TimeOutValue = 10; //sec
-    scsiData->DataBufferOffset = scsiData->Length + scsiData->SenseInfoLength;
-    scsiData->SenseInfoOffset = scsiData->Length;
-
-    scsiData->CdbLength = CDB6GENERIC_LENGTH;
-    CDB::_CDB6INQUIRY* pInquiry = (CDB::_CDB6INQUIRY*) scsiData->Cdb;
-    pInquiry->OperationCode = SCSIOP_INQUIRY;
-    pInquiry->AllocationLength = sizeof( INQUIRYDATA );
-
-    /*CDB::_CDB6INQUIRY3* pInquiry = (CDB::_CDB6INQUIRY3*) scsiData->Cdb;
-    pInquiry->OperationCode = SCSIOP_INQUIRY;
-    pInquiry->EnableVitalProductData = CDB_INQUIRY_EVPD;
-    pInquiry->PageCode = 0x80;
-    pInquiry->AllocationLength = sizeof( INQUIRYDATA );*/
-
-    KeInitializeEvent( &Event, NotificationEvent, FALSE );
-
-    PVOID PtrInquiry = Add2Ptr( scsiData, scsiData->DataBufferOffset );
-
-    __try
-    {
-        Irp = IoBuildDeviceIoControlRequest (
-            IOCTL_SCSI_PASS_THROUGH,
-            pDevice,
-            Buffer,
-            sizeof( Buffer ),
-            Buffer,
-            sizeof( Buffer ),
-            FALSE,
-            &Event,
-            &Iosb
-            );
-
-        if ( !Irp )
-        {
-            status = STATUS_INSUFFICIENT_RESOURCES;
-            __leave;
-        }
-        else
-        {
-            status = IoCallDriver( pDevice, Irp );
-            if ( STATUS_PENDING == status )
-            {
-                KeWaitForSingleObject (
-                    &Event,
-                    Executive,
-                    KernelMode,
-                    FALSE,
-                    NULL
-                    );
-
-                status = Iosb.Status;
-            }
-
-            if ( !NT_SUCCESS ( status ) )
-            {
-                __leave;
-            }
-
-            PINQUIRYDATA pInquiryData = (PINQUIRYDATA) PtrInquiry;
-
-            NTSTATUS status_strcopy;
-            status_strcopy = RtlStringCbCopyNW (
-                (NTSTRSAFE_PWSTR) pVolumeContext->m_ProductId,
-                sizeof( pVolumeContext->m_ProductId ),
-                (NTSTRSAFE_PWSTR) pInquiryData->ProductId,
-                sizeof( pInquiryData->ProductId)
-                );
-            ASSERT( NT_SUCCESS( status_strcopy ) );
-
-            status_strcopy = RtlStringCbCopyNW (
-                (NTSTRSAFE_PWSTR) pVolumeContext->m_VendorId,
-                sizeof( pVolumeContext->m_VendorId ),
-                (NTSTRSAFE_PWSTR) pInquiryData->VendorId,
-                sizeof( pInquiryData->VendorId )
-                );
-            ASSERT( NT_SUCCESS( status_strcopy ) );
-
-            status_strcopy = RtlStringCbCopyNW (
-                (NTSTRSAFE_PWSTR) pVolumeContext->m_ProductRevisionLevel,
-                sizeof( pVolumeContext->m_ProductRevisionLevel ),
-                (NTSTRSAFE_PWSTR) pInquiryData->ProductRevisionLevel,
-                sizeof( pInquiryData->ProductRevisionLevel )
-                );
-            ASSERT( NT_SUCCESS( status_strcopy ) );
-
-            status_strcopy = RtlStringCbCopyNW (
-                (NTSTRSAFE_PWSTR) pVolumeContext->m_VendorSpecific,
-                sizeof( pVolumeContext->m_VendorSpecific ),
-                (NTSTRSAFE_PWSTR) pInquiryData->VendorSpecific,
-                sizeof( pInquiryData->VendorSpecific )
-                );
-            ASSERT( NT_SUCCESS( status_strcopy ) );
-            //! \todo correct VendorSpecific buffer - replace 0 by ' '
-        }
-    }
-    __finally
-    {
     }
 
     return status;
