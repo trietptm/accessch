@@ -39,7 +39,7 @@ GetIdentifyInfo (
     __try
     {
         Irp = IoBuildDeviceIoControlRequest (
-            IOCTL_ATA_MINIPORT, //IOCTL_SCSI_MINIPORT
+            IOCTL_SCSI_MINIPORT,
             pDevice,
             buffer,
             sizeof( SRB_IO_CONTROL ) + sizeof (SENDCMDINPARAMS) - 1,
