@@ -185,6 +185,25 @@ GetSCSISmartInfo (
     return status;
 }
 
+// check!
+//# void __stdcall WaitDiscInfo()
+//# {
+//# DWORD dwsize, i;
+//# DISK_INFORMATION diskInfo;
+//# dwsize = sizeof(DISK_INFORMATION);
+//# for(i=0;;i++) {
+//# dwsize = sizeof(DISK_INFORMATION);
+//# ZeroMemory(&diskInfo, sizeof(DISK_INFORMATION));
+//# ZeroMemory(&cdb, sizeof(CDB));
+//# cdb.READ_DISK_INFORMATION.OperationCode = SCSIOP_READ_DISK_INFORMATION;
+//# cdb.READ_DISK_INFORMATION.AllocationLength[0] = (UCHAR)(dwsize >> 8);
+//# cdb.READ_DISK_INFORMATION.AllocationLength[1] = (UCHAR)(dwsize & 0xff);
+//# if(SendCdb2DeviceEx(&cdb, 10, (PUCHAR)&diskInfo, &dwsize, 0, 0, TRUE, 60)) return;
+//# Sleep(1000);
+//# }
+//# return;
+//# } 
+
 __checkReturn
 NTSTATUS
 GetSCSIInfo (
