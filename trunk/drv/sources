@@ -26,4 +26,7 @@ TARGETLIBS= \
 
 SOURCES= \
 		main.cpp \
+		smart.cpp \
+		busata.cpp \
+		cdrom.cpp \
 		accessch.rc

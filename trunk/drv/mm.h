@@ -1,6 +1,8 @@
 #ifndef __mm_h
 #define __mm_h
 
+#define _ALLOC_TAG                  'hcca'
+
 void* _cdecl operator new (
     size_t size
     );
