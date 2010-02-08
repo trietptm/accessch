@@ -7,10 +7,6 @@
 //! \todo check nessesary headers
 #include "main.h"
 
-#include <ntddscsi.h>
-#include <ata.h>
-#include <scsi.h>
-#include <ntddvol.h>
 #include <ntdddisk.h>
 
 #include "../inc/accessch.h"
@@ -21,40 +17,6 @@
 
 #define _ACCESSCH_MAX_CONNECTIONS   1
 
-// ----------------------------------------------------------------------------
-//
-
-typedef struct _GLOBALS
-{
-    PDRIVER_OBJECT          m_FilterDriverObject;
-    PFLT_FILTER             m_Filter;
-    PFLT_PORT               m_Port;
-    EX_PUSH_LOCK            m_ClientPortLock;
-    PFLT_PORT               m_ClientPort;
-}GLOBALS, *PGLOBALS;
-
-typedef struct _PORT_CONTEXT
-{
-    PFLT_PORT               m_Connection;
-}PORT_CONTEXT, *PPORT_CONTEXT;
-
-typedef struct _INSTANCE_CONTEXT
-{
-    DEVICE_TYPE             m_VolumeDeviceType;
-    FLT_FILESYSTEM_TYPE     m_VolumeFilesystemType;
-} INSTANCE_CONTEXT, *PINSTANCE_CONTEXT;
-
-typedef struct _STREAM_CONTEXT
-{
-    LUID                    m_Luid;
-    LONG                    m_Flags;
-} STREAM_CONTEXT, *PSTREAM_CONTEXT;
-
-typedef struct _STREAM_HANDLE_CONTEXT
-{
-} STREAM_HANDLE_CONTEXT, *PSTREAM_HANDLE_CONTEXT;
-
-// ----------------------------------------------------------------------------
 // prototypes
 extern "C"
 {
