@@ -24,8 +24,6 @@ GetSmartInfo (
     PVOLUME_DISK_EXTENTS pvdExtents = NULL;
     PGETVERSIONINPARAMS pVersionParams = NULL;
 
-    __debugbreak();
-
     __try
     {
         ULONG BufferSize = 0;

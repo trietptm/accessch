@@ -77,8 +77,6 @@ GetSCSIIdentifyInfo (
             }
 
             PIDENTIFY_DEVICE_DATA pId = (PIDENTIFY_DEVICE_DATA) (pOut->bBuffer);
-
-            __debugbreak();
         }
     }
     __finally
@@ -169,8 +167,6 @@ GetSCSISmartInfo (
             {
                 __leave;
             }
-
-            __debugbreak();
         }
     }
     __finally
