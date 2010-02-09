@@ -71,8 +71,6 @@ GetAtaDiskSignature (
 
             PVOID ptrtmp = Add2Ptr( Buffer, sizeof( ATA_PASS_THROUGH_EX ) );
             PIDENTIFY_DEVICE_DATA identifyData = (PIDENTIFY_DEVICE_DATA) ptrtmp;
-
-            __debugbreak();
         }
     }
     __finally

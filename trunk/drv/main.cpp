@@ -14,6 +14,7 @@
 #include "busata.h"
 #include "busscsi.h"
 #include "cdrom.h"
+#include "pnphelper.h"
 
 #define _ACCESSCH_MAX_CONNECTIONS   1
 
@@ -647,8 +648,6 @@ GetStorageProperty (
         
         pVolumeContext->m_BusType = pDesc->BusType;
 
-        __debugbreak();
-
         switch ( pDesc->BusType )
         {
         case BusTypeAtapi:
@@ -880,6 +879,8 @@ FillVolumeProperties (
 
     // changer - GetProductData
 
+    __debugbreak();
+
     __try
     {
         status = FltGetDiskDeviceObject( FltObjects->Volume, &pDevice );
@@ -894,6 +895,13 @@ FillVolumeProperties (
 
         status = GetSCSIInfo( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
+
+        PWCHAR pwchInfo = NULL;
+        status = GetPnpInfo( pDevice, (PVOID*) &pwchInfo );
+        if ( NT_SUCCESS( status ) )
+        {
+            ExFreePool( pwchInfo );
+        }
 
         //status = GetSmartInfo( pDevice );
 
