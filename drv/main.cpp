@@ -664,6 +664,7 @@ GetStorageProperty (
             break;
 
         case BusTypeRAID:
+            //!
             break;
 
         case BusTypeUsb:
@@ -896,11 +897,20 @@ FillVolumeProperties (
         status = GetSCSIInfo( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
 
+        status = GetSCSIDiskInfo( pDevice );
+
         PWCHAR pwchInfo = NULL;
         status = GetPnpInfo( pDevice, (PVOID*) &pwchInfo );
         if ( NT_SUCCESS( status ) )
         {
             ExFreePool( pwchInfo );
+        }
+
+        PWCHAR pwchText = NULL;
+        status = GetPnpText( pDevice, (PVOID*) &pwchText );
+        if ( NT_SUCCESS( status ) )
+        {
+            ExFreePool( pwchText );
         }
 
         //status = GetSmartInfo( pDevice );
