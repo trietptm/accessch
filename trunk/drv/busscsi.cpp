@@ -181,24 +181,95 @@ GetSCSISmartInfo (
     return status;
 }
 
-// check!
-//# void __stdcall WaitDiscInfo()
-//# {
-//# DWORD dwsize, i;
-//# DISK_INFORMATION diskInfo;
-//# dwsize = sizeof(DISK_INFORMATION);
-//# for(i=0;;i++) {
-//# dwsize = sizeof(DISK_INFORMATION);
-//# ZeroMemory(&diskInfo, sizeof(DISK_INFORMATION));
-//# ZeroMemory(&cdb, sizeof(CDB));
-//# cdb.READ_DISK_INFORMATION.OperationCode = SCSIOP_READ_DISK_INFORMATION;
-//# cdb.READ_DISK_INFORMATION.AllocationLength[0] = (UCHAR)(dwsize >> 8);
-//# cdb.READ_DISK_INFORMATION.AllocationLength[1] = (UCHAR)(dwsize & 0xff);
-//# if(SendCdb2DeviceEx(&cdb, 10, (PUCHAR)&diskInfo, &dwsize, 0, 0, TRUE, 60)) return;
-//# Sleep(1000);
-//# }
-//# return;
-//# } 
+__checkReturn
+NTSTATUS
+GetSCSIDiskInfo (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+
+    UCHAR Buffer[sizeof( SCSI_PASS_THROUGH ) + 24 + sizeof( DISK_INFORMATION )];
+    PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
+
+    RtlZeroMemory( Buffer, sizeof( Buffer ) );
+
+    scsiData->Length = sizeof( SCSI_PASS_THROUGH );
+    scsiData->SenseInfoLength = 24; //if set 32 - will not filled by device
+    scsiData->CdbLength = CDB6GENERIC_LENGTH;
+    scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
+    scsiData->DataTransferLength = sizeof(CDB::_READ_DISK_INFORMATION); 
+    scsiData->TimeOutValue = 10; //sec
+    scsiData->DataBufferOffset = scsiData->Length + scsiData->SenseInfoLength;
+    scsiData->SenseInfoOffset = scsiData->Length;
+
+    scsiData->CdbLength = sizeof(CDB::_READ_DISK_INFORMATION);
+    CDB::_READ_DISK_INFORMATION* pRead = (CDB::_READ_DISK_INFORMATION*) scsiData->Cdb;
+    pRead->OperationCode = SCSIOP_READ_DISK_INFORMATION;
+    pRead->AllocationLength[0] = sizeof( DISK_INFORMATION ) >> 8;
+    pRead->AllocationLength[1] = sizeof( DISK_INFORMATION ) & 0xff;
+
+    KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+    PVOID PtrOut = Add2Ptr( scsiData, scsiData->DataBufferOffset );
+
+    __try
+    {
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_SCSI_PASS_THROUGH,
+            pDevice,
+            Buffer,
+            sizeof( Buffer ),
+            Buffer,
+            sizeof( Buffer ),
+            FALSE,
+            &Event,
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
+        else
+        {
+            status = IoCallDriver( pDevice, Irp );
+            if ( STATUS_PENDING == status )
+            {
+                KeWaitForSingleObject (
+                    &Event,
+                    Executive,
+                    KernelMode,
+                    FALSE,
+                    NULL
+                    );
+
+                status = Iosb.Status;
+            }
+            
+            if ( STATUS_IO_TIMEOUT == status )
+            {
+                //! \todo раскрутить диск
+            }
+
+            if ( !NT_SUCCESS ( status ) )
+            {
+                __leave;
+            }
+            
+            PDISK_INFORMATION pDiskInfo = (PDISK_INFORMATION) PtrOut;
+        }
+    }
+    __finally
+    {
+    }
+
+    return status;
+} 
 
 __checkReturn
 NTSTATUS
@@ -239,7 +310,7 @@ GetSCSIInfo (
 
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
-    PVOID PtrInquiry = Add2Ptr( scsiData, scsiData->DataBufferOffset );
+    PVOID PtrOut = Add2Ptr( scsiData, scsiData->DataBufferOffset );
 
     __try
     {
@@ -281,7 +352,7 @@ GetSCSIInfo (
                 __leave;
             }
 
-            PINQUIRYDATA pInquiryData = (PINQUIRYDATA) PtrInquiry;
+            PINQUIRYDATA pInquiryData = (PINQUIRYDATA) PtrOut;
 
             NTSTATUS status_strcopy;
             status_strcopy = RtlStringCbCopyNW (

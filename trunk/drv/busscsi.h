@@ -21,4 +21,10 @@ GetSCSIInfo (
     __in PVOLUME_CONTEXT pVolumeContext
     );
 
+__checkReturn
+NTSTATUS
+GetSCSIDiskInfo (
+    __in PDEVICE_OBJECT pDevice
+    );
+
 #endif // __scsi_h
