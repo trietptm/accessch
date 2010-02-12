@@ -5,6 +5,7 @@
 #include <storport.h>
 #include <ata.h>
 
+
 #define  SENDIDLENGTH  sizeof (SENDCMDOUTPARAMS) + IDENTIFY_BUFFER_SIZE
 
 __checkReturn
@@ -215,6 +216,7 @@ GetSCSIDiskInfo (
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
     PVOID PtrOut = Add2Ptr( scsiData, scsiData->DataBufferOffset );
+    PDISK_INFORMATION pDiskInfo = (PDISK_INFORMATION) PtrOut;
 
     __try
     {
@@ -260,8 +262,6 @@ GetSCSIDiskInfo (
             {
                 __leave;
             }
-            
-            PDISK_INFORMATION pDiskInfo = (PDISK_INFORMATION) PtrOut;
         }
     }
     __finally
@@ -302,15 +302,16 @@ GetSCSIInfo (
     pInquiry->OperationCode = SCSIOP_INQUIRY;
     pInquiry->AllocationLength = sizeof( INQUIRYDATA );
 
-    /*CDB::_CDB6INQUIRY3* pInquiry = (CDB::_CDB6INQUIRY3*) scsiData->Cdb;
-    pInquiry->OperationCode = SCSIOP_INQUIRY;
-    pInquiry->EnableVitalProductData = CDB_INQUIRY_EVPD;
-    pInquiry->PageCode = 0x80;
-    pInquiry->AllocationLength = sizeof( INQUIRYDATA );*/
+    //CDB::_CDB6INQUIRY3* pInquiry = (CDB::_CDB6INQUIRY3*) scsiData->Cdb;
+    //pInquiry->OperationCode = SCSIOP_INQUIRY;
+    //pInquiry->EnableVitalProductData = CDB_INQUIRY_EVPD;
+    //pInquiry->PageCode = VPD_EXTENDED_INQUIRY_DATA;
+    //pInquiry->AllocationLength = sizeof( INQUIRYDATA );
 
     KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
     PVOID PtrOut = Add2Ptr( scsiData, scsiData->DataBufferOffset );
+    PINQUIRYDATA pInquiryData = (PINQUIRYDATA) PtrOut;
 
     __try
     {
@@ -352,8 +353,6 @@ GetSCSIInfo (
                 __leave;
             }
 
-            PINQUIRYDATA pInquiryData = (PINQUIRYDATA) PtrOut;
-
             NTSTATUS status_strcopy;
             status_strcopy = RtlStringCbCopyNW (
                 (NTSTRSAFE_PWSTR) pVolumeContext->m_ProductId,
@@ -387,6 +386,168 @@ GetSCSIInfo (
                 );
             ASSERT( NT_SUCCESS( status_strcopy ) );
             //! \todo correct VendorSpecific buffer - replace 0 by ' '
+        }
+    }
+    __finally
+    {
+    }
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+GetSCSIVitalPagesInfo (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+
+    UCHAR Buffer[sizeof( SCSI_PASS_THROUGH ) + 24 + VPD_MAX_BUFFER_SIZE];
+    PSCSI_PASS_THROUGH scsiData = (PSCSI_PASS_THROUGH) Buffer;
+
+    RtlZeroMemory( Buffer, sizeof( Buffer ) );
+
+    scsiData->Length = sizeof( SCSI_PASS_THROUGH );
+    scsiData->SenseInfoLength = 24; //if set 32 - will not filled by device
+    scsiData->CdbLength = CDB6GENERIC_LENGTH;
+    scsiData->DataIn = SCSI_IOCTL_DATA_IN; 
+    scsiData->DataTransferLength = VPD_MAX_BUFFER_SIZE; 
+    scsiData->TimeOutValue = 10; //sec
+    scsiData->DataBufferOffset = scsiData->Length + scsiData->SenseInfoLength;
+    scsiData->SenseInfoOffset = scsiData->Length;
+
+    CDB::_CDB6INQUIRY3* pInquiry = (CDB::_CDB6INQUIRY3*) scsiData->Cdb;
+    pInquiry->OperationCode = SCSIOP_INQUIRY;
+    pInquiry->EnableVitalProductData = CDB_INQUIRY_EVPD;
+    pInquiry->PageCode = VPD_SUPPORTED_PAGES;
+    pInquiry->AllocationLength = VPD_MAX_BUFFER_SIZE;
+
+    KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+    PVOID PtrOut = Add2Ptr( scsiData, scsiData->DataBufferOffset );
+    PVPD_SUPPORTED_PAGES_PAGE pPages = (PVPD_SUPPORTED_PAGES_PAGE) PtrOut;
+    PVPD_IDENTIFICATION_PAGE pPage = (PVPD_IDENTIFICATION_PAGE) pPages->SupportedPageList;
+
+    __try
+    {
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_SCSI_PASS_THROUGH,
+            pDevice,
+            Buffer,
+            sizeof( Buffer ),
+            Buffer,
+            sizeof( Buffer ),
+            FALSE,
+            &Event,
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
+        else
+        {
+            status = IoCallDriver( pDevice, Irp );
+            if ( STATUS_PENDING == status )
+            {
+                KeWaitForSingleObject (
+                    &Event,
+                    Executive,
+                    KernelMode,
+                    FALSE,
+                    NULL
+                    );
+
+                status = Iosb.Status;
+            }
+
+            if ( !NT_SUCCESS ( status ) )
+            {
+                __leave;
+            }
+        }
+    }
+    __finally
+    {
+    }
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+GetInquieryInfo (
+    __in PDEVICE_OBJECT pDevice
+    )
+{
+    PIRP Irp;
+    KEVENT Event;
+    NTSTATUS status;
+    IO_STATUS_BLOCK Iosb;
+
+    /*Parameters.DeviceIoControl.OutputBufferLength indicates the size, in 
+    bytes, of the buffer, which must be >= 
+    (sizeof(SCSI_ADAPTER_BUS_INFO) + (NumberOfBuses) * sizeof(SCSI_BUS_DATA)) + (InquiryDataSize * NumberOfLUs),
+    where the InquiryDataSize is (sizeof(SCSI_INQUIRY_DATA) - 1 + INQUIRYDATABUFFERSIZE)
+    rounded up to an alignment boundary.*/
+    UCHAR Buffer[sizeof( SCSI_PASS_THROUGH ) + 24 + 512];
+    
+    RtlZeroMemory( Buffer, sizeof( Buffer ) );
+
+    PSCSI_ADAPTER_BUS_INFO pBusInfo = (PSCSI_ADAPTER_BUS_INFO) Buffer;
+    PSCSI_BUS_DATA pData = (PSCSI_BUS_DATA) pBusInfo->BusData;
+
+    KeInitializeEvent( &Event, NotificationEvent, FALSE );
+
+     __try
+    {
+        Irp = IoBuildDeviceIoControlRequest (
+            IOCTL_SCSI_GET_INQUIRY_DATA,
+            pDevice,
+            NULL,
+            0,
+            Buffer,
+            sizeof( Buffer ),
+            FALSE,
+            &Event,
+            &Iosb
+            );
+
+        if ( !Irp )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
+        else
+        {
+            status = IoCallDriver( pDevice, Irp );
+            if ( STATUS_PENDING == status )
+            {
+                KeWaitForSingleObject (
+                    &Event,
+                    Executive,
+                    KernelMode,
+                    FALSE,
+                    NULL
+                    );
+
+                status = Iosb.Status;
+            }
+
+            if ( !NT_SUCCESS ( status ) )
+            {
+                __leave;
+            }
+            
+            PINQUIRYDATA pInquiery = (PINQUIRYDATA) Add2Ptr( pData, pData->InquiryDataOffset);
+            __debugbreak();
+
         }
     }
     __finally
