@@ -894,10 +894,13 @@ FillVolumeProperties (
         status = GetStorageProperty( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
 
+        status = GetSCSIVitalPagesInfo( pDevice );
+
         status = GetSCSIInfo( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
 
         status = GetSCSIDiskInfo( pDevice );
+        status = GetInquieryInfo( pDevice );
 
         PWCHAR pwchInfo = NULL;
         status = GetPnpInfo( pDevice, (PVOID*) &pwchInfo );

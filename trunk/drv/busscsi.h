@@ -27,4 +27,16 @@ GetSCSIDiskInfo (
     __in PDEVICE_OBJECT pDevice
     );
 
+__checkReturn
+NTSTATUS
+GetSCSIVitalPagesInfo (
+    __in PDEVICE_OBJECT pDevice
+    );
+
+__checkReturn
+NTSTATUS
+GetInquieryInfo (
+    __in PDEVICE_OBJECT pDevice
+    );
+
 #endif // __scsi_h
