@@ -10,11 +10,7 @@
 #include <ntdddisk.h>
 
 #include "../inc/accessch.h"
-#include "smart.h"
-#include "busata.h"
-#include "busscsi.h"
-#include "cdrom.h"
-#include "pnphelper.h"
+#include "volhlp.h"
 
 #define _ACCESSCH_MAX_CONNECTIONS   1
 

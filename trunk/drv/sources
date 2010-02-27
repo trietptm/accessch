@@ -26,9 +26,5 @@ TARGETLIBS= \
 
 SOURCES= \
 		main.cpp \
-		smart.cpp \
-		busata.cpp \
-		cdrom.cpp \
-                busscsi.cpp \
-                pnphelper.cpp \
+		volhlp.cpp \
 		accessch.rc
