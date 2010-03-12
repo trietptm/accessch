@@ -1,7 +1,7 @@
-#pragma warning(error:4100)     //  Enable-Unreferenced formal parameter
-#pragma warning(error:4101)     //  Enable-Unreferenced local variable
-#pragma warning(error:4061)     //  Eenable-missing enumeration in switch statement
-#pragma warning(error:4505)     //  Enable-identify dead functions
+#pragma prefast(disable:28252) // sal annotation compare h -> cpp
+#pragma prefast(disable:28253) // sal annotation compare h -> cpp
+#pragma prefast(disable:28107) // critical region checks
+#pragma prefast(disable:28175) // access to DEVICE_OBJECT members
 
 #include <fltKernel.h>
 #define NTSTRSAFE_LIB
