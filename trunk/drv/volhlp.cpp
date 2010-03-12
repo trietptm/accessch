@@ -27,7 +27,7 @@ QueryDeviceProperty (
         return STATUS_NOT_SUPPORTED;
     }
 
-    while ( STATUS_BUFFER_TOO_SMALL == status)
+    while ( STATUS_BUFFER_TOO_SMALL == status )
     {
         pBuffer = ExAllocatePoolWithTag( PagedPool, BufferSize, _ALLOC_TAG );
         if ( !pBuffer )
@@ -295,6 +295,8 @@ FillVolumeProperties (
         
         status = GetRemovableProperty( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
+
+        status = GetMediaSerialNumber( pDevice );
 
         status = STATUS_SUCCESS;
     }
