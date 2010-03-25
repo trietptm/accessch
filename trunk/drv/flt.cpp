@@ -10,5 +10,5 @@ FilterEvent (
     UNREFERENCED_PARAMETER( Event );
     UNREFERENCED_PARAMETER( Verdict );
 
-    return STATUS_NOT_IMPLEMENTED;
+    return STATUS_SUCCESS;
 }

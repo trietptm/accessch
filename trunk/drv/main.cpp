@@ -16,6 +16,14 @@
 
 #define _ACCESSCH_MAX_CONNECTIONS   1
 
+Parameters gFileCommonParams[] = {
+    PARAMETER_FILE_NAME,
+    PARAMETER_REQUESTOR_PROCESS_ID,
+    PARAMETER_CURRENT_THREAD_ID,
+    PARAMETER_LUID,
+    PARAMETER_SID
+};
+
 // prototypes
 extern "C"
 {
@@ -1019,19 +1027,17 @@ PostCreate (
             __leave;
         }
 
-        FileInterceptorContext Context( Data, FltObjects );
-        
-        Parameters params[] = {
-            PARAMETER_FILE_NAME,
-            PARAMETER_REQUESTOR_PROCESS_ID,
-            PARAMETER_CURRENT_THREAD_ID,
-            PARAMETER_LUID,
-            PARAMETER_SID
-        };
-
-        EventData event( &Context, NULL, FILE_MINIFILTER,
-            IRP_MJ_CLEANUP, 0, ARRAYSIZE( params ), params );
         VERDICT Verdict = VERDICT_NOT_FILTERED;
+        FileInterceptorContext Context( Data, FltObjects );
+        EventData event (
+            &Context,
+            QueryFileParameter,
+            FILE_MINIFILTER,
+            IRP_MJ_CLEANUP,
+            0,
+            ARRAYSIZE( gFileCommonParams ),
+            gFileCommonParams
+            );
 
         status = FilterEvent( &event, &Verdict );
 
@@ -1064,10 +1070,17 @@ PreCleanup (
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
 
-    FileInterceptorContext Context( Data, FltObjects );
-    EventData event( &Context, NULL, FILE_MINIFILTER,
-        IRP_MJ_CREATE, 0, 0, NULL );
     VERDICT Verdict = VERDICT_NOT_FILTERED;
+    FileInterceptorContext Context( Data, FltObjects );
+    EventData event (
+        &Context,
+        QueryFileParameter,
+        FILE_MINIFILTER,
+        IRP_MJ_CREATE,
+        0,
+        ARRAYSIZE( gFileCommonParams ),
+        gFileCommonParams
+        );;
 
     status = FilterEvent( &event, &Verdict );
 

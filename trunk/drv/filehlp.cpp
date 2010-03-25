@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "filehlp.h"
 
 void
 ReleaseFileNameInfo (
@@ -38,4 +39,18 @@ SecurityFreeSid (
 
     ExFreePool( *ppSid );
     *ppSid = NULL;
+}
+
+__checkReturn
+NTSTATUS
+QueryFileParameter (
+    __in PVOID Opaque,
+    __in_opt Parameters ParameterId,
+    __deref_out_opt PVOID* Data,
+    __deref_out_opt PULONG DataSize
+    )
+{
+    __debugbreak();
+
+    return STATUS_NOT_IMPLEMENTED;
 }
