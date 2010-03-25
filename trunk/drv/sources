@@ -27,4 +27,5 @@ TARGETLIBS= \
 SOURCES= \
 		main.cpp \
 		volhlp.cpp \
+		flt.cpp \
 		accessch.rc
