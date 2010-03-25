@@ -838,26 +838,38 @@ SecurityGetSid (
 __checkReturn
 NTSTATUS
 PortAllocateMessage (
-    __in_opt ULONG ProcessId,
-    __in_opt ULONG ThreadId,
-    __in ULONG StreamFlags,
-    __in ULONG HandleFlags,
-    __in PFLT_FILE_NAME_INFORMATION pFileNameInfo,
-    __in PSID pSid,
-    __in PLUID pLuid,
+    __in EventData *Event,
     __deref_out_opt PVOID* ppMessage,
     __out_opt PULONG pMessageSize
     )
 {
-    ASSERT( pSid );
-    ASSERT( pLuid );
+    ASSERT( Event );
+    
+    NTSTATUS status;
 
     PMESSAGE_DATA pMsg;
     ULONG MessageSize = sizeof( MESSAGE_DATA );
 
-    MessageSize += pFileNameInfo->Name.Length + sizeof( WCHAR );
-    MessageSize += pFileNameInfo->Volume.Length + sizeof( WCHAR );
-    MessageSize += RtlLengthSid( pSid );
+    ULONG count = Event->GetParametersCount();
+
+    PVOID data;
+    ULONG datasize;
+    Parameters parameterId;
+    for ( ULONG cou = 0; cou < count; cou++ )
+    {
+        parameterId = Event->GetParameterId( cou );
+        status = Event->QueryParameter (
+            parameterId,
+            &data,
+            &datasize
+            );
+        if ( !NT_SUCCESS( status ) )
+        {
+            return status;
+        }
+
+        MessageSize += datasize;
+    }
 
     if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
     {
@@ -876,39 +888,10 @@ PortAllocateMessage (
         return STATUS_NO_MEMORY;
     }
 
-    RtlZeroMemory( pMsg, MessageSize );        //! \todo
+    RtlZeroMemory( pMsg, MessageSize ); //! \todo dbgfill
+    pMsg->m_ParametersCount = count;
+    //pMsg->m_Parameters;
 
-    pMsg->m_ProcessId = ProcessId;
-    pMsg->m_ThreadId = ThreadId;
-    pMsg->m_Luid = *pLuid;
-    pMsg->m_FlagsStream = StreamFlags;
-    pMsg->m_FlagsHandle = HandleFlags;
-
-    pMsg->m_FileNameOffset = sizeof( MESSAGE_DATA );
-    pMsg->m_FileNameLen = pFileNameInfo->Name.Length + sizeof( WCHAR );
-
-    PVOID pFN = Add2Ptr( pMsg, pMsg->m_FileNameOffset );
-    RtlCopyMemory (
-        pFN,
-        pFileNameInfo->Name.Buffer,
-        pFileNameInfo->Name.Length
-        );
-
-    pMsg->m_VolumeNameOffset = pMsg->m_FileNameOffset + pMsg->m_FileNameLen;
-    pMsg->m_VolumeNameLen = pFileNameInfo->Volume.Length + sizeof( WCHAR );
-
-    PVOID pVN = Add2Ptr( pFN, pMsg->m_FileNameLen );
-    RtlCopyMemory (
-        pVN,
-        pFileNameInfo->Volume.Buffer,
-        pFileNameInfo->Volume.Length
-        );
-
-    pMsg->m_SidOffset = pMsg->m_VolumeNameOffset + pMsg->m_VolumeNameLen;
-    pMsg->m_SidLength = RtlLengthSid( pSid );
-
-    PVOID pS = Add2Ptr( pVN, pMsg->m_VolumeNameLen );
-    RtlCopySid( RtlLengthSid( pSid ), pS, pSid );
 
     *ppMessage = pMsg;
     *pMessageSize = MessageSize;
@@ -947,47 +930,13 @@ PortAskUser (
             __leave;
         }
 
-        UNICODE_STRING usFileName;
-        status = Event->QueryParameterAsUnicodeString (
-            PARAMETER_FILE_NAME,
-            &usFileName
-            );
-
-        if ( !NT_SUCCESS( status ) )
-        {
-            __leave;
-        }
-
-        usFileName.MaximumLength = usFileName.Length;
-
-        ULONG ProcessId = FltGetRequestorProcessId( Data );
-        ULONG ThreadId = HandleToUlong( PsGetCurrentThreadId() );
-        LUID Luid;
-
-        status = SecurityGetLuid( &Luid );
-        if ( !NT_SUCCESS( status ) )
-            __leave;
-
-        status = SecurityGetSid( Data, &pSid );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pSid = NULL;
-            __leave;
-        }
-
         // send data to R3
         REPLY_RESULT ReplyResult;
         ULONG ReplyLength = sizeof( ReplyResult );
         ULONG MessageSize = 0;
 
         status = PortAllocateMessage (
-            ProcessId,
-            ThreadId,
-            pStreamContext->m_Flags,
-            0,
-            pFileNameInfo,
-            pSid,
-            &Luid,
+            Event,
             &pMessage,
             &MessageSize
             );
@@ -1075,7 +1024,9 @@ PostCreate (
         Parameters params[] = {
             PARAMETER_FILE_NAME,
             PARAMETER_REQUESTOR_PROCESS_ID,
-            PARAMETER_CURRENT_THREAD_ID
+            PARAMETER_CURRENT_THREAD_ID,
+            PARAMETER_LUID,
+            PARAMETER_SID
         };
 
         EventData event( &Context, NULL, FILE_MINIFILTER,

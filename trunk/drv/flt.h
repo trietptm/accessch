@@ -1,24 +1,7 @@
 #ifndef __flt_h
 #define __flt_h
 
-typedef enum Interceptors
-{
-    FILE_MINIFILTER = 0,
-};
-
-typedef enum Parameters
-{
-    PARAMETER_FILE_NAME             = 0,
-    PARAMETER_VOLUME_NAME           = 1,
-    PARAMETER_REQUESTOR_PROCESS_ID  = 2,
-    PARAMETER_CURRENT_THREAD_ID     = 3,
-} *PParameters;
-
-typedef ULONG VERDICT, *PVERDICT;
-#define VERDICT_NOT_FILTERED    0x0000
-#define VERDICT_ALLOW           0x0001
-#define VERDICT_NOT_DENY        0x0002
-#define VERDICT_ASK             0x0004
+#include "../inc/accessch.h"
 
 typedef
 __checkReturn
@@ -32,7 +15,7 @@ NTSTATUS
 
 class EventData
 {
-public:
+private:
 
     PVOID                   m_Opaque;
     PFN_QUERY_EVENT_PARAM   m_QueryFunc;
@@ -40,8 +23,9 @@ public:
     ULONG                   m_Major;
     ULONG                   m_Minor;
     ULONG                   m_ParamsCount;
-    PParameters              m_Params;
+    PParameters             m_Params;
 
+public:
     EventData (
         __in PVOID Opaque,
         __in PFN_QUERY_EVENT_PARAM QueryFunc,
@@ -60,6 +44,23 @@ public:
     {
         ASSERT( Opaque );
         ASSERT( QueryFunc );
+    }
+
+    ULONG
+    GetParametersCount (
+        )
+    {
+        return m_ParamsCount;
+    }
+
+    Parameters
+    GetParameterId (
+        __in_opt ULONG ParameterNumber
+        )
+    {
+        ASSERT( ParameterNumber <= m_ParamsCount );
+
+        return m_Params[ ParameterNumber ];
     }
 
     NTSTATUS

@@ -3,7 +3,7 @@
 
 NTSTATUS
 FilterEvent (
-    __in PEventData Event,
+    __in EventData *Event,
     __inout PVERDICT Verdict
     )
 {

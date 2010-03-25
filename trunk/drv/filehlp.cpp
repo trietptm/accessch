@@ -14,7 +14,6 @@ ReleaseFileNameInfo (
     };
 }
 
-FORCEINLINE
 void
 ReleaseContext (
     __in_opt PFLT_CONTEXT* ppContext

@@ -6,7 +6,6 @@ ReleaseFileNameInfo (
     __in_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
     );
 
-FORCEINLINE
 void
 ReleaseContext (
     __in_opt PFLT_CONTEXT* ppContext
