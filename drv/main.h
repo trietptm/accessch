@@ -47,4 +47,25 @@ typedef struct _VOLUME_CONTEXT
     UCHAR                   m_VendorSpecific[_VOLUME_DESCRIPTION_LENGTH];
 } VOLUME_CONTEXT, *PVOLUME_CONTEXT;
 
-#include "mm.h"
+class FileInterceptorContext
+{
+private:
+    PFLT_CALLBACK_DATA          m_Data;
+    PCFLT_RELATED_OBJECTS       m_FltObjects;
+    
+    PINSTANCE_CONTEXT           m_InstanceContext;
+    PSTREAM_CONTEXT             m_StreamContext;
+
+    PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
+    PSID                        m_Sid;
+    LUID                        Luid;
+
+public:
+    FileInterceptorContext (
+        PFLT_CALLBACK_DATA Data,
+        PCFLT_RELATED_OBJECTS FltObjects
+        );
+    
+    ~FileInterceptorContext (
+        );
+};

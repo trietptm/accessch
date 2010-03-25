@@ -6,6 +6,7 @@
 
 //! \todo check nessesary headers
 #include "main.h"
+#include "filehlp.h"
 
 #include <ntdddisk.h>
 
@@ -99,6 +100,31 @@ PostWrite (
 
 // ----------------------------------------------------------------------------
 // end init block
+
+//////////////////////////////////////////////////////////////////////////
+
+FileInterceptorContext::FileInterceptorContext (
+        PFLT_CALLBACK_DATA Data,
+        PCFLT_RELATED_OBJECTS FltObjects
+        ) : m_Data( Data ), m_FltObjects( FltObjects )
+{
+    m_InstanceContext = NULL;
+    m_StreamContext = NULL;
+    m_FileNameInfo = NULL;
+    m_Sid = NULL;
+    RtlZeroMemory( &Luid.HighPart, sizeof(  Luid ) );
+};
+
+FileInterceptorContext::~FileInterceptorContext (
+        )
+{
+    ReleaseContext( (PFLT_CONTEXT*) &m_InstanceContext );
+    ReleaseContext( (PFLT_CONTEXT*) &m_StreamContext );
+    ReleaseFileNameInfo( &m_FileNameInfo );
+    SecurityFreeSid( &m_Sid );
+}
+
+//////////////////////////////////////////////////////////////////////////
 GLOBALS Globals;
 
 const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
@@ -220,34 +246,6 @@ Unload (
 
 
 // ----------------------------------------------------------------------------
-void
-ReleaseFileNameInfo (
-    __in_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
-    )
-{
-    ASSERT( ppFileNameInfo );
-
-    if ( *ppFileNameInfo )
-    {
-        FltReleaseFileNameInformation( *ppFileNameInfo );
-        *ppFileNameInfo = NULL;
-    };
-}
-
-FORCEINLINE
-void
-ReleaseContext (
-    __in_opt PFLT_CONTEXT* ppContext
-    )
-{
-    if ( !*ppContext )
-    {
-        return;
-    }
-
-    FltReleaseContext( *ppContext );
-    *ppContext = NULL;
-}
 
 void
 ContextCleanup (
@@ -749,18 +747,6 @@ SecurityAllocateCopySid (
     return status;
 }
 
-void
-SecurityFreeSid (
-    __in PSID* ppSid
-    )
-{
-    if ( !*ppSid )
-        return;
-
-    ExFreePool( *ppSid );
-    *ppSid = NULL;
-}
-
 __checkReturn
 NTSTATUS
 SecurityGetSid (
@@ -945,16 +931,11 @@ PortReleaseMessage (
 __checkReturn
 NTSTATUS
 PortAskUser (
-    __inout PFLT_CALLBACK_DATA Data,
-    __in PCFLT_RELATED_OBJECTS FltObjects
+    __in EventData *Event
     )
 {
     NTSTATUS status;
-    PINSTANCE_CONTEXT pInstanceContext = NULL;
-    PSTREAM_CONTEXT pStreamContext = NULL;
-    PFLT_FILE_NAME_INFORMATION pFileNameInfo = NULL;
     PFLT_PORT pPort = NULL;
-    PSID pSid = NULL;
     PVOID pMessage = NULL;
 
     __try
@@ -966,35 +947,18 @@ PortAskUser (
             __leave;
         }
 
-        status = FltGetInstanceContext (
-            FltObjects->Instance,
-            (PFLT_CONTEXT*) &pInstanceContext
+        UNICODE_STRING usFileName;
+        status = Event->QueryParameterAsUnicodeString (
+            PARAMETER_FILE_NAME,
+            &usFileName
             );
 
         if ( !NT_SUCCESS( status ) )
         {
-            pInstanceContext = NULL;
             __leave;
         }
 
-        status = FltGetStreamContext (
-            FltObjects->Instance,
-            FltObjects->FileObject,
-            (PFLT_CONTEXT*) &pStreamContext
-            );
-
-        if ( !NT_SUCCESS( status ) )
-        {
-            pStreamContext = NULL;
-            __leave;
-        }
-
-        status = QueryFileNameInfo( Data, &pFileNameInfo );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pFileNameInfo = NULL;
-            __leave;
-        }
+        usFileName.MaximumLength = usFileName.Length;
 
         ULONG ProcessId = FltGetRequestorProcessId( Data );
         ULONG ThreadId = HandleToUlong( PsGetCurrentThreadId() );
@@ -1051,11 +1015,7 @@ PortAskUser (
     }
     __finally
     {
-        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
-        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
-        ReleaseFileNameInfo( &pFileNameInfo );
         PortRelease( &pPort );
-        SecurityFreeSid( &pSid );
         PortReleaseMessage( &pMessage );
     }
 
@@ -1110,7 +1070,16 @@ PostCreate (
             __leave;
         }
 
-        EventData event = {NULL, NULL, FILE_MINIFILTER, IRP_MJ_CLEANUP, 0, 0, NULL };
+        FileInterceptorContext Context( Data, FltObjects );
+        
+        Parameters params[] = {
+            PARAMETER_FILE_NAME,
+            PARAMETER_REQUESTOR_PROCESS_ID,
+            PARAMETER_CURRENT_THREAD_ID
+        };
+
+        EventData event( &Context, NULL, FILE_MINIFILTER,
+            IRP_MJ_CLEANUP, 0, ARRAYSIZE( params ), params );
         VERDICT Verdict = VERDICT_NOT_FILTERED;
 
         status = FilterEvent( &event, &Verdict );
@@ -1119,7 +1088,7 @@ PostCreate (
             &&
             FlagOn( Verdict, VERDICT_ASK ) )
         {
-            PortAskUser( Data, FltObjects );
+            PortAskUser( &event );
         }
     }
     __finally
@@ -1144,7 +1113,9 @@ PreCleanup (
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
 
-    EventData event = {NULL, NULL, FILE_MINIFILTER, IRP_MJ_CREATE, 0, 0, NULL };
+    FileInterceptorContext Context( Data, FltObjects );
+    EventData event( &Context, NULL, FILE_MINIFILTER,
+        IRP_MJ_CREATE, 0, 0, NULL );
     VERDICT Verdict = VERDICT_NOT_FILTERED;
 
     status = FilterEvent( &event, &Verdict );
@@ -1153,7 +1124,7 @@ PreCleanup (
         &&
         FlagOn( Verdict, VERDICT_ASK ) )
     {
-        status = PortAskUser( Data, FltObjects );
+        status = PortAskUser( &event );
         if ( NT_SUCCESS( status ) )
         {
             //! \todo
