@@ -55,7 +55,6 @@ private:
     
     PINSTANCE_CONTEXT           m_InstanceContext;
     PSTREAM_CONTEXT             m_StreamContext;
-
     PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
     PSID                        m_Sid;
     LUID                        Luid;
