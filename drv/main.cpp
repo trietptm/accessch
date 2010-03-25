@@ -10,6 +10,7 @@
 #include <ntdddisk.h>
 
 #include "../inc/accessch.h"
+#include "flt.h"
 #include "volhlp.h"
 
 #define _ACCESSCH_MAX_CONNECTIONS   1
@@ -1109,7 +1110,17 @@ PostCreate (
             __leave;
         }
 
-        PortAskUser( Data, FltObjects );
+        EventData event = {NULL, NULL, FILE_MINIFILTER, IRP_MJ_CLEANUP, 0, 0, NULL };
+        VERDICT Verdict = VERDICT_NOT_FILTERED;
+
+        status = FilterEvent( &event, &Verdict );
+
+        if ( NT_SUCCESS( status )
+            &&
+            FlagOn( Verdict, VERDICT_ASK ) )
+        {
+            PortAskUser( Data, FltObjects );
+        }
     }
     __finally
     {
@@ -1127,14 +1138,26 @@ PreCleanup (
     __out PVOID *CompletionContext
     )
 {
+    NTSTATUS status;
     UNREFERENCED_PARAMETER( Data );
     UNREFERENCED_PARAMETER( CompletionContext );
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
-    NTSTATUS status = PortAskUser( Data, FltObjects );
-    if ( NT_SUCCESS( status ) )
+
+    EventData event = {NULL, NULL, FILE_MINIFILTER, IRP_MJ_CREATE, 0, 0, NULL };
+    VERDICT Verdict = VERDICT_NOT_FILTERED;
+
+    status = FilterEvent( &event, &Verdict );
+
+    if ( NT_SUCCESS( status )
+        &&
+        FlagOn( Verdict, VERDICT_ASK ) )
     {
-        //! \todo
+        status = PortAskUser( Data, FltObjects );
+        if ( NT_SUCCESS( status ) )
+        {
+            //! \todo
+        }
     }
 
     return fltStatus;
@@ -1156,7 +1179,9 @@ PostWrite (
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
 
     if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+    {
         return FLT_POSTOP_FINISHED_PROCESSING;
+    }
 
     return fltStatus;
 }
