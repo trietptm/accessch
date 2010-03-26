@@ -4,7 +4,7 @@
 //    \description - sample driver
 //!
 
-//! \todo check nessesary headers
+//! \todo check necessary headers
 #include "main.h"
 #include "filehlp.h"
 
