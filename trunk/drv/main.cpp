@@ -261,7 +261,7 @@ ContextCleanup (
     __in FLT_CONTEXT_TYPE ContextType
     )
 {
-     switch (ContextType)
+    switch ( ContextType )
     {
     case FLT_INSTANCE_CONTEXT:
         {
