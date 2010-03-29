@@ -8,7 +8,7 @@
 #include "main.h"
 #include "filehlp.h"
 
-#include <ntdddisk.h>
+#include <specstrings.h>
 
 #include "../inc/accessch.h"
 #include "flt.h"
@@ -116,6 +116,7 @@ FileInterceptorContext::FileInterceptorContext (
         PCFLT_RELATED_OBJECTS FltObjects
         ) : m_Data( Data ), m_FltObjects( FltObjects )
 {
+    m_RequestorProcessId = 0;
     m_InstanceContext = NULL;
     m_StreamContext = NULL;
     m_FileNameInfo = NULL;
@@ -241,7 +242,7 @@ Unload (
 {
     if ( !FlagOn(Flags, FLTFL_FILTER_UNLOAD_MANDATORY) )
     {
-        //! \todo check
+        //! \todo checks during Unload
         //return STATUS_FLT_DO_NOT_DETACH;
     }
 
@@ -381,7 +382,7 @@ PortConnect (
 
         pPortContext->m_Connection = ClientPort;
 
-        //! \todo
+        //! \todo  revise single port connection
         Globals.m_ClientPort = ClientPort;
 
         *ConnectionCookie = pPortContext;
@@ -403,7 +404,6 @@ PortDisconnect (
 
     ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
-    //! \todo
     FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
     Globals.m_ClientPort = NULL;
     FltReleasePushLock( &Globals.m_ClientPortLock );
@@ -1091,7 +1091,7 @@ PreCleanup (
         status = PortAskUser( &event );
         if ( NT_SUCCESS( status ) )
         {
-            //! \todo
+            //! \todo PreCleanup( AskUser complete )
         }
     }
 

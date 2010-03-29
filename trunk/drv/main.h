@@ -53,6 +53,8 @@ private:
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
     
+    HANDLE                      m_RequestorProcessId;
+    HANDLE                      m_RequestorThreadId;
     PINSTANCE_CONTEXT           m_InstanceContext;
     PSTREAM_CONTEXT             m_StreamContext;
     PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
