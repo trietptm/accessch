@@ -7,6 +7,5 @@
 #define NTSTRSAFE_LIB
 #include <ntstrsafe.h>
 #include <ntdddisk.h>
-#include <specstrings.h>
 
 #include "mm.h"

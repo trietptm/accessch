@@ -40,11 +40,43 @@ FileInterceptorContext::QueryFileParameter (
     switch ( ParameterId )
     {
     case PARAMETER_FILE_NAME:
-        //! \todo: PARAMETER_FILE_NAME
+        if ( !m_FileNameInfo )
+        {
+            status = QueryFileNameInfo (
+                m_Data,
+                &m_FileNameInfo
+                );
+            
+            if ( !NT_SUCCESS( status ) )
+            {
+                break;
+            }
+        }
+        
+        *Data = m_FileNameInfo->Name.Buffer;
+        *DataSize = m_FileNameInfo->Name.Length;
+        status = STATUS_SUCCESS;
+
         break;
 
     case PARAMETER_VOLUME_NAME:
-        //! \todo: PARAMETER_VOLUME_NAME
+        if ( !m_FileNameInfo )
+        {
+            status = QueryFileNameInfo (
+                m_Data,
+                &m_FileNameInfo
+                );
+
+            if ( !NT_SUCCESS( status ) )
+            {
+                break;
+            }
+        }
+
+        *Data = m_FileNameInfo->Volume.Buffer;
+        *DataSize = m_FileNameInfo->Volume.Length;
+        status = STATUS_SUCCESS;
+
         break;
 
     case PARAMETER_REQUESTOR_PROCESS_ID:
@@ -86,10 +118,37 @@ FileInterceptorContext::QueryFileParameter (
         break;
     }
 
-    return STATUS_NOT_IMPLEMENTED;
+    return status;
 }
 
 //////////////////////////////////////////////////////////////////////////
+__checkReturn
+NTSTATUS
+QueryFileNameInfo (
+    __in PFLT_CALLBACK_DATA Data,
+    __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    )
+{
+    ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED
+        | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
+
+    NTSTATUS status = FltGetFileNameInformation (
+        Data,
+        QueryNameFlags,
+        ppFileNameInfo
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    status = FltParseFileNameInformation( *ppFileNameInfo );
+
+    ASSERT( NT_SUCCESS( status ) ); //ignore unsuccessful parse
+
+    return STATUS_SUCCESS;
+}
 
 void
 ReleaseFileNameInfo (
@@ -106,7 +165,7 @@ ReleaseFileNameInfo (
 }
 
 void
-ReleaseContext (
+ReleaseContextImp (
     __in_opt PFLT_CONTEXT* ppContext
     )
 {
@@ -150,3 +209,86 @@ QueryFileParameter (
 
     return status;
 }
+
+__checkReturn
+NTSTATUS
+GenerateStreamContext (
+    __in PFLT_FILTER Filter,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PSTREAM_CONTEXT* ppStreamContext
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( Filter ) );
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    PINSTANCE_CONTEXT InstanceContext = NULL;
+
+    if ( !FsRtlSupportsPerStreamContexts( FltObjects->FileObject ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    status = FltGetStreamContext (
+        FltObjects->Instance,
+        FltObjects->FileObject,
+        (PFLT_CONTEXT*) ppStreamContext
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    status = FltAllocateContext (
+        Filter,
+        FLT_STREAM_CONTEXT,
+        sizeof( STREAM_CONTEXT ),
+        NonPagedPool,
+        (PFLT_CONTEXT*) ppStreamContext
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        RtlZeroMemory( *ppStreamContext, sizeof( STREAM_CONTEXT ) );
+
+        status = FltGetInstanceContext (
+            FltObjects->Instance,
+            (PFLT_CONTEXT *) &InstanceContext
+            );
+
+        ASSERT( NT_SUCCESS( status ) );
+
+        (*ppStreamContext)->m_InstanceContext = InstanceContext;
+
+        BOOLEAN bIsDirectory;
+
+        status = FltIsDirectory (
+            FltObjects->FileObject,
+            FltObjects->Instance,
+            &bIsDirectory
+            );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            if ( bIsDirectory )
+            {
+                InterlockedOr (
+                    &(*ppStreamContext)->m_Flags,
+                    _STREAM_FLAGS_DIRECTORY
+                    );
+            }
+        }
+
+        status = FltSetStreamContext (
+            FltObjects->Instance,
+            FltObjects->FileObject,
+            FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
+            *ppStreamContext,
+            NULL
+            );
+
+        ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
+    }
+
+    return status;
+}
+
