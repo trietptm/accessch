@@ -10,5 +10,7 @@ FilterEvent (
     UNREFERENCED_PARAMETER( Event );
     UNREFERENCED_PARAMETER( Verdict );
 
+    *Verdict = VERDICT_ASK;
+
     return STATUS_SUCCESS;
 }

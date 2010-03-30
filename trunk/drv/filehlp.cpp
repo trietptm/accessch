@@ -7,6 +7,7 @@ FileInterceptorContext::FileInterceptorContext (
     ) : m_Data( Data ), m_FltObjects( FltObjects )
 {
     m_RequestorProcessId = 0;
+    m_RequestorThreadId = 0;
     m_InstanceContext = 0;
     m_StreamContext = 0;
     m_FileNameInfo = 0;
