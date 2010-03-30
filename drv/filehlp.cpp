@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "filehlp.h"
 
+#include "security.h"
+
 FileInterceptorContext::FileInterceptorContext (
     PFLT_CALLBACK_DATA Data,
     PCFLT_RELATED_OBJECTS FltObjects
@@ -12,7 +14,7 @@ FileInterceptorContext::FileInterceptorContext (
     m_StreamContext = 0;
     m_FileNameInfo = 0;
     m_Sid = 0;
-    RtlZeroMemory( &Luid.HighPart, sizeof(  Luid ) );
+    SecurityLuidReset( &m_Luid );
 };
 
 FileInterceptorContext::~FileInterceptorContext (
@@ -107,11 +109,32 @@ FileInterceptorContext::QueryFileParameter (
         break;
 
     case PARAMETER_LUID:
-        //! \todo: PARAMETER_LUID
+        if ( !SecurityIsLuidValid( &m_Luid ) )
+        {
+            status = SecurityGetLuid( &m_Luid );
+            if ( !NT_SUCCESS( status ) )
+            {
+                SecurityLuidReset( &m_Luid );
+                break;
+            }
+        }
+        *Data = &m_Luid;
+        *DataSize = sizeof( m_Luid );
+        status = STATUS_SUCCESS;
+
         break;
 
     case PARAMETER_SID:
-        //! \todo: PARAMETER_LUID
+        //! \todo: PARAMETER_SID
+        if ( !m_Sid )
+        {
+            status = SecurityGetSid( m_Data, &m_Sid );
+            if ( !NT_SUCCESS( status ) )
+            {
+                m_Sid = 0;
+                break;
+            }
+        }
         break;
 
     default:
@@ -177,18 +200,6 @@ ReleaseContextImp (
 
     FltReleaseContext( *ppContext );
     *ppContext = NULL;
-}
-
-void
-SecurityFreeSid (
-    __in PSID* ppSid
-    )
-{
-    if ( !*ppSid )
-        return;
-
-    ExFreePool( *ppSid );
-    *ppSid = NULL;
 }
 
 __checkReturn

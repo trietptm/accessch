@@ -35,7 +35,7 @@ private:
     PSTREAM_CONTEXT             m_StreamContext;
     PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
     PSID                        m_Sid;
-    LUID                        Luid;
+    LUID                        m_Luid;
 
 public:
     FileInterceptorContext (
