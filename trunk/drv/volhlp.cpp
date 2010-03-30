@@ -1,4 +1,4 @@
-#include "main.h"
+#include "volhlp.h"
 
 // {E636CD65-4021-4d20-97EC-5AE23189566B}
 DEFINE_GUID( GET_MEDIA_SERIAL_NUMBER_GUID, 

@@ -11,27 +11,17 @@ typedef struct _INSTANCE_CONTEXT
 
 typedef struct _STREAM_CONTEXT
 {
-    LUID                    m_Luid;
+    PINSTANCE_CONTEXT       m_InstanceContext;
     LONG                    m_Flags;
 } STREAM_CONTEXT, *PSTREAM_CONTEXT;
 
 typedef struct _STREAM_HANDLE_CONTEXT
 {
+    PSTREAM_CONTEXT         m_StreamContext;
+    LUID                    m_Luid;
 } STREAM_HANDLE_CONTEXT, *PSTREAM_HANDLE_CONTEXT;
 
 // ----------------------------------------------------------------------------
-
-#define _VOLUME_DESCRIPTION_LENGTH  0x20
-typedef struct _VOLUME_CONTEXT
-{
-    PFLT_INSTANCE           m_Instance;
-    STORAGE_BUS_TYPE        m_BusType;
-    DEVICE_REMOVAL_POLICY   m_RemovablePolicy;
-    UCHAR                   m_VendorId[_VOLUME_DESCRIPTION_LENGTH];
-    UCHAR                   m_ProductId[_VOLUME_DESCRIPTION_LENGTH];
-    UCHAR                   m_ProductRevisionLevel[_VOLUME_DESCRIPTION_LENGTH];
-    UCHAR                   m_VendorSpecific[_VOLUME_DESCRIPTION_LENGTH];
-} VOLUME_CONTEXT, *PVOLUME_CONTEXT;
 
 class FileInterceptorContext
 {
@@ -65,13 +55,23 @@ public:
         );
 };
 
+//////////////////////////////////////////////////////////////////////////
+__checkReturn
+NTSTATUS
+QueryFileNameInfo (
+    __in PFLT_CALLBACK_DATA Data,
+    __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    );
+
 void
 ReleaseFileNameInfo (
     __in_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
     );
 
+#define ReleaseContext( _context ) ReleaseContextImp( (PFLT_CONTEXT*) _context )
+
 void
-ReleaseContext (
+ReleaseContextImp (
     __in_opt PFLT_CONTEXT* ppContext
     );
 
@@ -87,6 +87,14 @@ QueryFileParameter (
     __in_opt Parameters ParameterId,
     __deref_out_opt PVOID* Data,
     __deref_out_opt PULONG DataSize
+    );
+
+__checkReturn
+NTSTATUS
+GenerateStreamContext (
+    __in PFLT_FILTER Filter,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PSTREAM_CONTEXT* ppStreamContext
     );
 
 #endif // __filehlp_h
