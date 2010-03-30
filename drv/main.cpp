@@ -110,30 +110,6 @@ PostWrite (
 // end init block
 
 //////////////////////////////////////////////////////////////////////////
-
-FileInterceptorContext::FileInterceptorContext (
-        PFLT_CALLBACK_DATA Data,
-        PCFLT_RELATED_OBJECTS FltObjects
-        ) : m_Data( Data ), m_FltObjects( FltObjects )
-{
-    m_RequestorProcessId = 0;
-    m_InstanceContext = NULL;
-    m_StreamContext = NULL;
-    m_FileNameInfo = NULL;
-    m_Sid = NULL;
-    RtlZeroMemory( &Luid.HighPart, sizeof(  Luid ) );
-};
-
-FileInterceptorContext::~FileInterceptorContext (
-        )
-{
-    ReleaseContext( (PFLT_CONTEXT*) &m_InstanceContext );
-    ReleaseContext( (PFLT_CONTEXT*) &m_StreamContext );
-    ReleaseFileNameInfo( &m_FileNameInfo );
-    SecurityFreeSid( &m_Sid );
-}
-
-//////////////////////////////////////////////////////////////////////////
 GLOBALS Globals;
 
 const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
