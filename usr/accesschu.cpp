@@ -126,9 +126,8 @@ WaiterThread (
 
         //check data
         PMESSAGE_DATA pData = (PMESSAGE_DATA) pEvent->m_Data.m_Content;
-        printf( "[0x%x:%x]\n",
-            pData->m_ProcessId,
-            pData->m_ThreadId
+        printf( "event: params count %d\n",
+            pData->m_ParametersCount
             );
 
         // release
