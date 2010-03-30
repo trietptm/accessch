@@ -125,7 +125,6 @@ FileInterceptorContext::QueryFileParameter (
         break;
 
     case PARAMETER_SID:
-        //! \todo: PARAMETER_SID
         if ( !m_Sid )
         {
             status = SecurityGetSid( m_Data, &m_Sid );
@@ -135,6 +134,11 @@ FileInterceptorContext::QueryFileParameter (
                 break;
             }
         }
+
+        *Data = m_Sid;
+        *DataSize = RtlLengthSid( m_Sid );
+        status = STATUS_SUCCESS;
+
         break;
 
     default:
