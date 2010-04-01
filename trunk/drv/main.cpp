@@ -651,7 +651,7 @@ PortAllocateMessage (
             &datasize
             );
 
-        ASSERT( !NT_SUCCESS ( status ) );
+        ASSERT( NT_SUCCESS ( status ) );
         parameter->m_Id = parameterId;
         parameter->m_Size = datasize;
         RtlCopyMemory( parameter->m_Data, data, datasize );
