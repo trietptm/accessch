@@ -599,7 +599,7 @@ PortAllocateMessage (
     NTSTATUS status;
 
     PMESSAGE_DATA pMsg;
-    ULONG MessageSize = sizeof( MESSAGE_DATA );
+    ULONG MessageSize = FIELD_OFFSET( MESSAGE_DATA, m_Parameters );
 
     ULONG count = Event->GetParametersCount();
 
@@ -619,7 +619,7 @@ PortAllocateMessage (
             return status;
         }
 
-        MessageSize += datasize;
+        MessageSize += FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize;
     }
 
     if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
@@ -639,10 +639,28 @@ PortAllocateMessage (
         return STATUS_NO_MEMORY;
     }
 
-    RtlZeroMemory( pMsg, MessageSize ); //! \todo dbgfill
     pMsg->m_ParametersCount = count;
-    //pMsg->m_Parameters;
+    
+    PSINGLE_PARAMETER parameter = pMsg->m_Parameters;
+    for ( ULONG cou = 0; cou < count; cou++ )
+    {
+        parameterId = Event->GetParameterId( cou );
+        status = Event->QueryParameter (
+            parameterId,
+            &data,
+            &datasize
+            );
 
+        ASSERT( !NT_SUCCESS ( status ) );
+        parameter->m_Id = parameterId;
+        parameter->m_Size = datasize;
+        RtlCopyMemory( parameter->m_Data, data, datasize );
+
+        parameter = (PSINGLE_PARAMETER) Add2Ptr (
+            parameter,
+            FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize
+            );
+    }
 
     *ppMessage = pMsg;
     *pMessageSize = MessageSize;
