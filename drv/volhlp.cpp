@@ -296,8 +296,9 @@ FillVolumeProperties (
 
         status = GetDeviceInfo( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
-        
-        status = GetRemovableProperty( pDevice, pVolumeContext );
+      
+        //! \todo - need PDO object for GetRemovableProperty - Verifier BUGCHECK
+        // status = GetRemovableProperty( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
 
         status = GetMediaSerialNumber( pDevice );
