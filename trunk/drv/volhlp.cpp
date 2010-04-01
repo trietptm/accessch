@@ -283,8 +283,6 @@ FillVolumeProperties (
     NTSTATUS status;
     PDEVICE_OBJECT pDevice = NULL;
 
-    __debugbreak();
-
     __try
     {
         status = FltGetDiskDeviceObject( FltObjects->Volume, &pDevice );
