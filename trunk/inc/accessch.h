@@ -1,9 +1,6 @@
 #ifndef __accesscheck_h
 #define __accesscheck_h
 
-#pragma warning ( push )
-#pragma warning ( disable : 4200 )
-
 #define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define DRV_EVENT_CONTENT_SIZE      0x1000
 
@@ -40,17 +37,15 @@ typedef struct _SINGLE_PARAMETER
 {
     Parameters          m_Id;
     ULONG               m_Size;
-    UCHAR               m_Data[0];
+    UCHAR               m_Data[1];
 } SINGLE_PARAMETER, *PSINGLE_PARAMETER;
 
 typedef struct _MESSAGE_DATA
 {
     ULONG               m_ParametersCount;
-    PSINGLE_PARAMETER   m_Parameters[0];
+    SINGLE_PARAMETER    m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;
 
 #include <poppack.h>
-
-#pragma warning ( pop )
 
 #endif // __accesscheck_h 
