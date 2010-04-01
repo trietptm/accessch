@@ -1,8 +1,6 @@
 #ifndef __flt_h
 #define __flt_h
 
-#include "../inc/accessch.h"
-
 typedef
 __checkReturn
 NTSTATUS

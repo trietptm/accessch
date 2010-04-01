@@ -6,11 +6,14 @@
 
 //! \todo check necessary headers
 #include "main.h"
+
+#include "../inc/accessch.h"
+#include "flt.h"
 #include "filehlp.h"
 
 #include <specstrings.h>
 
-#include "../inc/accessch.h"
+
 #include "flt.h"
 #include "volhlp.h"
 

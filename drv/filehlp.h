@@ -1,8 +1,6 @@
 #ifndef __filehlp_h
 #define __filehlp_h
 
-#include "flt.h"
-
 typedef struct _INSTANCE_CONTEXT
 {
     DEVICE_TYPE             m_VolumeDeviceType;
