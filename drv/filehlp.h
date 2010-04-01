@@ -36,7 +36,6 @@ private:
     PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
     PSID                        m_Sid;
     LUID                        m_Luid;
-
 public:
     FileInterceptorContext (
         PFLT_CALLBACK_DATA Data,
