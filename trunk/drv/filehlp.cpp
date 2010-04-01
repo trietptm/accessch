@@ -1,6 +1,8 @@
 #include "pch.h"
-#include "filehlp.h"
+#include "../inc/accessch.h"
+#include "flt.h"
 
+#include "filehlp.h"
 #include "security.h"
 
 FileInterceptorContext::FileInterceptorContext (
