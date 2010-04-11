@@ -780,6 +780,7 @@ PostCreate (
     if ( FlagOn( FltObjects->FileObject->Flags,  FO_VOLUME_OPEN ) )
     {
         // volume open
+        return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
     __try
@@ -795,6 +796,44 @@ PostCreate (
             pStreamContext = NULL;
             __leave;
         }
+        
+//////////////////////////////////////////////////////////////////////////
+        /*if ( !FlagOn( pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
+        {
+            HANDLE sectionHandle = NULL;
+            PVOID sectionObject = NULL;
+            LARGE_INTEGER sectionFileSize = {0, 0};
+            
+            OBJECT_ATTRIBUTES oa;
+                        
+            InitializeObjectAttributes (
+                &oa,
+                NULL,
+                OBJ_KERNEL_HANDLE,
+                NULL,
+                NULL
+                );
+
+            status = FsRtlCreateSectionForDataScan (
+                &sectionHandle,
+                &sectionObject,
+                &sectionFileSize,
+                FltObjects->FileObject,
+                SECTION_MAP_READ | SECTION_QUERY,
+                &oa,
+                0,
+                PAGE_READONLY,
+                SEC_COMMIT,
+                0
+                );
+            
+            if ( NT_SUCCESS( status ) )
+            {
+                ObDereferenceObject( sectionObject );
+                ZwClose( sectionHandle );
+            }
+        }*/
+//////////////////////////////////////////////////////////////////////////
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext Context( Data, FltObjects );

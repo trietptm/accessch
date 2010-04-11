@@ -253,6 +253,7 @@ GenerateStreamContext (
 
     if ( NT_SUCCESS( status ) )
     {
+        ASSERT( *ppStreamContext );
         return status;
     }
 
@@ -264,47 +265,58 @@ GenerateStreamContext (
         (PFLT_CONTEXT*) ppStreamContext
         );
 
+    if ( !NT_SUCCESS( status ) )
+    {
+        *ppStreamContext = NULL;
+
+        return status;
+    }
+    RtlZeroMemory( *ppStreamContext, sizeof( STREAM_CONTEXT ) );
+
+    status = FltGetInstanceContext (
+        FltObjects->Instance,
+        (PFLT_CONTEXT *) &InstanceContext
+        );
+
+    ASSERT( NT_SUCCESS( status ) );
+
+    (*ppStreamContext)->m_InstanceContext = InstanceContext;
+
+    BOOLEAN bIsDirectory;
+
+    //! \todo: safe call on Vista sp1 or higher!
+    status = FltIsDirectory (
+        FltObjects->FileObject,
+        FltObjects->Instance,
+        &bIsDirectory
+        );
+
     if ( NT_SUCCESS( status ) )
     {
-        RtlZeroMemory( *ppStreamContext, sizeof( STREAM_CONTEXT ) );
-
-        status = FltGetInstanceContext (
-            FltObjects->Instance,
-            (PFLT_CONTEXT *) &InstanceContext
-            );
-
-        ASSERT( NT_SUCCESS( status ) );
-
-        (*ppStreamContext)->m_InstanceContext = InstanceContext;
-
-        BOOLEAN bIsDirectory;
-
-        status = FltIsDirectory (
-            FltObjects->FileObject,
-            FltObjects->Instance,
-            &bIsDirectory
-            );
-
-        if ( NT_SUCCESS( status ) )
+        if ( bIsDirectory )
         {
-            if ( bIsDirectory )
-            {
-                InterlockedOr (
-                    &(*ppStreamContext)->m_Flags,
-                    _STREAM_FLAGS_DIRECTORY
-                    );
-            }
+            InterlockedOr (
+                &(*ppStreamContext)->m_Flags,
+                _STREAM_FLAGS_DIRECTORY
+                );
         }
+    }
 
-        status = FltSetStreamContext (
-            FltObjects->Instance,
-            FltObjects->FileObject,
-            FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
-            *ppStreamContext,
-            NULL
-            );
+    status = FltSetStreamContext (
+        FltObjects->Instance,
+        FltObjects->FileObject,
+        FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
+        *ppStreamContext,
+        NULL
+        );
 
+    if ( !NT_SUCCESS( status ) )
+    {
         ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
+    }
+    else
+    {
+        ASSERT( *ppStreamContext );
     }
 
     return status;
