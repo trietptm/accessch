@@ -798,7 +798,7 @@ PostCreate (
         }
         
 //////////////////////////////////////////////////////////////////////////
-        /*if ( !FlagOn( pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
+        if ( !FlagOn( pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
         {
             HANDLE sectionHandle = NULL;
             PVOID sectionObject = NULL;
@@ -829,10 +829,19 @@ PostCreate (
             
             if ( NT_SUCCESS( status ) )
             {
+                PVOID mappedBase;
+                SIZE_T viewSize = sectionFileSize.QuadPart;
+                status = MmMapViewInSystemSpace( sectionObject, &mappedBase, &viewSize );
+                if ( NT_SUCCESS ( status ) )
+                {
+                    //! read data from mappedBase. size viewSize
+                    MmUnmapViewInSystemSpace( mappedBase );
+                }
+
                 ObDereferenceObject( sectionObject );
                 ZwClose( sectionHandle );
             }
-        }*/
+        }
 //////////////////////////////////////////////////////////////////////////
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
