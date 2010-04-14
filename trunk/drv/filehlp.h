@@ -24,9 +24,17 @@ typedef struct _STREAM_HANDLE_CONTEXT
 class FileInterceptorContext
 {
 private:
+    // intercepted data
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
 
+    // data access
+    HANDLE                      m_SectionHandle;
+    PVOID                       m_SectionObject;
+    LARGE_INTEGER               m_SectionFileSize;
+    PVOID                       m_MappedBase;
+    
+    // queryed parameters
     HANDLE                      m_RequestorProcessId;
     HANDLE                      m_RequestorThreadId;
     PINSTANCE_CONTEXT           m_InstanceContext;
@@ -41,6 +49,10 @@ public:
         );
 
     ~FileInterceptorContext (
+        );
+
+    NTSTATUS
+    CreateSectionForData (
         );
 
     __checkReturn
