@@ -234,8 +234,7 @@ Unload (
 
 
 // ----------------------------------------------------------------------------
-
-void
+VOID
 ContextCleanup (
     __in PVOID Pool,
     __in FLT_CONTEXT_TYPE ContextType
@@ -797,53 +796,6 @@ PostCreate (
             __leave;
         }
         
-//////////////////////////////////////////////////////////////////////////
-        if ( !FlagOn( pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
-        {
-            HANDLE sectionHandle = NULL;
-            PVOID sectionObject = NULL;
-            LARGE_INTEGER sectionFileSize = {0, 0};
-            
-            OBJECT_ATTRIBUTES oa;
-                        
-            InitializeObjectAttributes (
-                &oa,
-                NULL,
-                OBJ_KERNEL_HANDLE,
-                NULL,
-                NULL
-                );
-
-            status = FsRtlCreateSectionForDataScan (
-                &sectionHandle,
-                &sectionObject,
-                &sectionFileSize,
-                FltObjects->FileObject,
-                SECTION_MAP_READ | SECTION_QUERY,
-                &oa,
-                0,
-                PAGE_READONLY,
-                SEC_COMMIT,
-                0
-                );
-            
-            if ( NT_SUCCESS( status ) )
-            {
-                PVOID mappedBase;
-                SIZE_T viewSize = sectionFileSize.QuadPart;
-                status = MmMapViewInSystemSpace( sectionObject, &mappedBase, &viewSize );
-                if ( NT_SUCCESS ( status ) )
-                {
-                    //! read data from mappedBase. size viewSize
-                    MmUnmapViewInSystemSpace( mappedBase );
-                }
-
-                ObDereferenceObject( sectionObject );
-                ZwClose( sectionHandle );
-            }
-        }
-//////////////////////////////////////////////////////////////////////////
-
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext Context( Data, FltObjects );
         EventData event (
@@ -862,6 +814,15 @@ PostCreate (
             &&
             FlagOn( Verdict, VERDICT_ASK ) )
         {
+            if ( !FlagOn( pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
+            {
+                status = Context.CreateSectionForData();
+                if ( NT_SUCCESS( status ) )
+                {
+                    event.EventFlagsSet( _EVENT_FLAG_IO );
+                }
+            }
+
             PortAskUser( &event );
         }
     }

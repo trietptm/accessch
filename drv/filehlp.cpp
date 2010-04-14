@@ -10,6 +10,11 @@ FileInterceptorContext::FileInterceptorContext (
     PCFLT_RELATED_OBJECTS FltObjects
     ) : m_Data( Data ), m_FltObjects( FltObjects )
 {
+    m_SectionHandle = NULL;
+    m_SectionObject = NULL;
+    m_SectionFileSize.QuadPart = 0;
+    m_MappedBase = NULL;
+    
     m_RequestorProcessId = 0;
     m_RequestorThreadId = 0;
     m_InstanceContext = 0;
@@ -22,12 +27,67 @@ FileInterceptorContext::FileInterceptorContext (
 FileInterceptorContext::~FileInterceptorContext (
     )
 {
+    if ( m_MappedBase )
+    {
+        MmUnmapViewInSystemSpace( m_MappedBase );
+        m_MappedBase = NULL;
+
+        ObDereferenceObject( m_SectionObject );
+        ZwClose( m_SectionHandle );
+    }
     ReleaseContext( (PFLT_CONTEXT*) &m_InstanceContext );
     ReleaseContext( (PFLT_CONTEXT*) &m_StreamContext );
     ReleaseFileNameInfo( &m_FileNameInfo );
     SecurityFreeSid( &m_Sid );
 };
 
+__checkReturn
+NTSTATUS
+FileInterceptorContext::CreateSectionForData (
+        )
+{
+    OBJECT_ATTRIBUTES oa;
+                        
+    InitializeObjectAttributes (
+        &oa,
+        NULL,
+        OBJ_KERNEL_HANDLE,
+        NULL,
+        NULL
+        );
+
+    NTSTATUS status = FsRtlCreateSectionForDataScan (
+        &m_SectionHandle,
+        &m_SectionObject,
+        &m_SectionFileSize,
+        m_FltObjects->FileObject,
+        SECTION_MAP_READ | SECTION_QUERY,
+        &oa,
+        0,
+        PAGE_READONLY,
+        SEC_COMMIT,
+        0
+        );
+            
+    if ( NT_SUCCESS( status ) )
+    {
+        PVOID mappedBase;
+        SIZE_T viewSize = m_SectionFileSize.QuadPart;
+        status = MmMapViewInSystemSpace( m_SectionObject, &m_MappedBase, &viewSize );
+        if ( !NT_SUCCESS ( status ) )
+        {
+            ObDereferenceObject( m_SectionObject );
+            m_SectionObject = NULL;
+
+            ZwClose( m_SectionHandle );
+            m_SectionHandle = NULL;
+
+            m_MappedBase = NULL;
+        }
+    }
+    
+    return status;
+}
 
 __checkReturn
 NTSTATUS

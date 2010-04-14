@@ -11,6 +11,12 @@ NTSTATUS
     __deref_out_opt PULONG DataSize
     );
 
+enum EVENT_FLAGS
+{
+    _EVENT_FLAG_NONE     = 0x0000,
+    _EVENT_FLAG_IO       = 0x0001,
+};
+
 class EventData
 {
 private:
@@ -20,6 +26,7 @@ private:
     Interceptors            m_InterceptorId;
     ULONG                   m_Major;
     ULONG                   m_Minor;
+    EVENT_FLAGS             m_Flags;
     ULONG                   m_ParamsCount;
     PParameters             m_Params;
 
@@ -37,11 +44,27 @@ public:
         m_InterceptorId( InterceptorId ),
         m_Major( Major ),
         m_Minor( Minor ),
+        m_Flags( _EVENT_FLAG_NONE ),
         m_ParamsCount( ParamsCount ),
         m_Params( Params )
     {
         ASSERT( Opaque );
         ASSERT( QueryFunc );
+    }
+
+    EVENT_FLAGS
+    EventFlagsSet( 
+        __in EVENT_FLAGS Flag
+        )
+    {
+        return (EVENT_FLAGS) FlagOn( m_Flags, Flag );
+    }
+
+    EVENT_FLAGS
+    EventFlagsGet (
+        )
+    {
+        return m_Flags;
     }
 
     ULONG
