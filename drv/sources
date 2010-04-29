@@ -29,5 +29,6 @@ SOURCES= \
 		filehlp.cpp \
 		volhlp.cpp \
 		flt.cpp \
+		eventqueue.cpp \
 		security.cpp \
 		accessch.rc

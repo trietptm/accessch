@@ -19,7 +19,7 @@ struct FilterDataBinary
     UCHAR                   m_Data[1];
 };
 
-struct FIlterOperand
+struct FilterOperand
 {
     OperationId             m_Operation;
     FilterDataType          m_Type;
@@ -33,6 +33,7 @@ struct ParameterEntry
 {
     Parameters              m_Parameter;
     struct ParameterEntry*  m_HorizontalNext;
+    FilterOperand           m_Operand;
 }*PParameterEntry;
 
 struct ParametersArray
@@ -47,6 +48,9 @@ struct Filter
     ParametersArray*        m_Array;
     ParameterEntry          m_Start;
 };
+
+// ---
+
 
 NTSTATUS
 FilterEvent (

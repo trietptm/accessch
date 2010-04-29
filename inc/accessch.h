@@ -42,6 +42,7 @@ typedef struct _SINGLE_PARAMETER
 
 typedef struct _MESSAGE_DATA
 {
+    ULONG               m_EventId;
     ULONG               m_ParametersCount;
     SINGLE_PARAMETER    m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;

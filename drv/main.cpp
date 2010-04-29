@@ -9,6 +9,7 @@
 
 #include "../inc/accessch.h"
 #include "flt.h"
+#include "eventqueue.h"
 #include "filehlp.h"
 
 #include <specstrings.h>
@@ -165,6 +166,9 @@ DriverEntry (
 
     Globals.m_FilterDriverObject = DriverObject;
     FltInitializePushLock( &Globals.m_ClientPortLock );
+
+    EventQueue_Init();
+
     __try
     {
         status = FltRegisterFilter (
@@ -226,6 +230,7 @@ Unload (
     }
 
     FltCloseCommunicationPort( Globals.m_Port );
+    EventQueue_Done();
     FltUnregisterFilter( Globals.m_Filter );
     FltDeletePushLock( &Globals.m_ClientPortLock );
 
@@ -389,7 +394,7 @@ PortDisconnect (
 
     FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
 
-    ExFreePool( pPortContext );
+    FREE_POOL( pPortContext );
 }
 
 __checkReturn
@@ -592,11 +597,13 @@ __checkReturn
 NTSTATUS
 PortAllocateMessage (
     __in EventData *Event,
+    __in QueuedItem* QueuedItem,
     __deref_out_opt PVOID* ppMessage,
     __out_opt PULONG pMessageSize
     )
 {
-    ASSERT( Event );
+    ASSERT( ARGUMENT_PRESENT( Event ) );
+    ASSERT( ARGUMENT_PRESENT( QueuedItem ) );
     
     NTSTATUS status;
 
@@ -641,6 +648,7 @@ PortAllocateMessage (
         return STATUS_NO_MEMORY;
     }
 
+    pMsg->m_EventId = QueuedItem->GetId();
     pMsg->m_ParametersCount = count;
     
     PSINGLE_PARAMETER parameter = pMsg->m_Parameters;
@@ -678,8 +686,7 @@ PortReleaseMessage (
     if ( !*ppMessage )
         return;
 
-    ExFreePool( *ppMessage );
-    *ppMessage = NULL;
+    FREE_POOL( *ppMessage );
 }
 
 __checkReturn
@@ -691,6 +698,7 @@ PortAskUser (
     NTSTATUS status;
     PFLT_PORT pPort = NULL;
     PVOID pMessage = NULL;
+    QueuedItem* pQueuedItem = NULL;
 
     __try
     {
@@ -705,9 +713,17 @@ PortAskUser (
         REPLY_RESULT ReplyResult;
         ULONG ReplyLength = sizeof( ReplyResult );
         ULONG MessageSize = 0;
+        
+        status = EventQueue_Add( Event, &pQueuedItem );
+        if ( NT_SUCCESS( pQueuedItem ) )
+        {
+            pQueuedItem = NULL;
+            __leave;
+        }
 
         status = PortAllocateMessage (
             Event,
+            pQueuedItem,
             &pMessage,
             &MessageSize
             );
@@ -735,6 +751,7 @@ PortAskUser (
     }
     __finally
     {
+        EventQueue_WaitAndDestroy( &pQueuedItem );
         PortRelease( &pPort );
         PortReleaseMessage( &pMessage );
     }

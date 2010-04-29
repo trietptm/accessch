@@ -69,7 +69,7 @@ SecurityAllocateCopySid (
     status = RtlCopySid( SidLength, *ppSid, pSid );
     if ( !NT_SUCCESS( status ) )
     {
-        ExFreePool( *ppSid );
+        FREE_POOL( *ppSid );
     }
 
     return status;
@@ -147,8 +147,7 @@ SecurityGetSid (
     {
         if ( pTokenUser )
         {
-            ExFreePool( pTokenUser );
-            pTokenUser = NULL;
+            FREE_POOL( pTokenUser );
         }
 
         if ( pAccessToken )
@@ -171,6 +170,5 @@ SecurityFreeSid (
     if ( !*ppSid )
         return;
 
-    ExFreePool( *ppSid );
-    *ppSid = NULL;
+    FREE_POOL( *ppSid );
 }

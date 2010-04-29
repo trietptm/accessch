@@ -64,6 +64,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\eventqueue.cpp" />
     <ClCompile Include="..\..\filehlp.cpp" />
     <ClCompile Include="..\..\flt.cpp" />
     <ClCompile Include="..\..\main.cpp" />
@@ -72,6 +73,7 @@
     <ClCompile Include="..\..\volhlp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\eventqueue.h" />
     <ClInclude Include="..\..\filehlp.h" />
     <ClInclude Include="..\..\flt.h" />
     <ClInclude Include="..\..\main.h" />
