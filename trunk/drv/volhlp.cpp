@@ -54,8 +54,7 @@ QueryDeviceProperty (
             return status;
         }
 
-        ExFreePool( pBuffer );
-        pBuffer = NULL;
+        FREE_POOL( pBuffer );
     }
 
     ASSERT( !pBuffer );
@@ -87,8 +86,7 @@ GetRemovableProperty (
         
         pVolumeContext->m_RemovablePolicy = *pRemovalPolicy;
 
-        ExFreePool( pBuffer );
-        pBuffer = NULL;
+        FREE_POOL( pBuffer );
     }
 
     return status;
@@ -172,8 +170,7 @@ GetMediaSerialNumber (
     {
         if ( QueryBuffer )
         {
-            ExFreePool( QueryBuffer );
-            QueryBuffer = NULL;
+            FREE_POOL( QueryBuffer );
         }
     }
 
@@ -263,8 +260,7 @@ GetDeviceInfo (
     {
         if ( QueryBuffer )
         {
-            ExFreePool( QueryBuffer );
-            QueryBuffer = NULL;
+            FREE_POOL( QueryBuffer );
         }
     }
 
