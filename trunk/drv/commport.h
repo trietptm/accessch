@@ -1,12 +1,14 @@
 #ifndef __commport_h
 #define __commport_h
 
+// создание общего порта
 NTSTATUS
 PortCreate (
     __in PFLT_FILTER pFilter,
     __deref_out_opt PFLT_PORT* ppPort
     );
 
+// cb-функция установки соединения с юзером
 NTSTATUS
 PortConnect (
     __in PFLT_PORT ClientPort,
@@ -16,11 +18,13 @@ PortConnect (
     __deref_out_opt PVOID *ConnectionCookie
     );
 
+// cb-функция отключение юзера от драйвера
 void
 PortDisconnect (
     __in PVOID ConnectionCookie
     );
 
+// cb-функция запроса из юзера
 NTSTATUS
 PortMessageNotify (
     __in PVOID ConnectionCookie,
@@ -31,15 +35,42 @@ PortMessageNotify (
     __out PULONG ReturnOutputBufferLength
     );
 
+//+ взаимодействие с юзером
+
+// захват порта
 __checkReturn
 NTSTATUS
 PortQueryConnected (
     __deref_out_opt PFLT_PORT* ppPort
     );
 
+// освобождение порта
 void
 PortRelease (
     __deref_in PFLT_PORT* ppPort
+    );
+
+// создание события
+__checkReturn
+NTSTATUS
+PortAllocateMessage (
+    __in EventData *Event,
+    __in QueuedItem* QueuedItem,
+    __deref_out_opt PVOID* ppMessage,
+    __out_opt PULONG pMessageSize
+    );
+
+// освобождение события
+void
+PortReleaseMessage (
+    __deref_in PVOID* ppMessage
+    );
+
+// посылка сообщения в юзер
+__checkReturn
+NTSTATUS
+PortAskUser (
+    __in EventData *Event
     );
 
 #endif // __commport_h
