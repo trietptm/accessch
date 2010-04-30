@@ -8,4 +8,9 @@
 #include <ntstrsafe.h>
 #include <ntdddisk.h>
 
+MODE
+SetPreviousMode (
+    MODE OperationMode
+    );
+
 #include "mm.h"
