@@ -1,7 +1,11 @@
 #include "pch.h"
-#include "commport.h"
-#include "main.h"
 #include "../inc/accessch.h"
+
+#include "main.h"
+#include "eventqueue.h"
+#include "flt.h"
+
+#include "commport.h"
 
 typedef struct _PORT_CONTEXT
 {
@@ -190,4 +194,170 @@ PortRelease (
 {
     if ( *ppPort )
         *ppPort = NULL;
+}
+
+__checkReturn
+NTSTATUS
+PortAllocateMessage (
+    __in EventData *Event,
+    __in QueuedItem* QueuedItem,
+    __deref_out_opt PVOID* ppMessage,
+    __out_opt PULONG pMessageSize
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( Event ) );
+    ASSERT( ARGUMENT_PRESENT( QueuedItem ) );
+    
+    NTSTATUS status;
+
+    PMESSAGE_DATA pMsg;
+    ULONG MessageSize = FIELD_OFFSET( MESSAGE_DATA, m_Parameters );
+
+    ULONG count = Event->GetParametersCount();
+
+    PVOID data;
+    ULONG datasize;
+    Parameters parameterId;
+    for ( ULONG cou = 0; cou < count; cou++ )
+    {
+        parameterId = Event->GetParameterId( cou );
+        status = Event->QueryParameter (
+            parameterId,
+            &data,
+            &datasize
+            );
+        if ( !NT_SUCCESS( status ) )
+        {
+            return status;
+        }
+
+        MessageSize += FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize;
+    }
+
+    if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
+    {
+        ASSERT( !MessageSize );
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
+        PagedPool,
+        MessageSize,
+        _ALLOC_TAG
+        );
+
+    if ( !pMsg )
+    {
+        return STATUS_NO_MEMORY;
+    }
+
+    pMsg->m_EventId = QueuedItem->GetId();
+    pMsg->m_ParametersCount = count;
+    
+    PSINGLE_PARAMETER parameter = pMsg->m_Parameters;
+    for ( ULONG cou = 0; cou < count; cou++ )
+    {
+        parameterId = Event->GetParameterId( cou );
+        status = Event->QueryParameter (
+            parameterId,
+            &data,
+            &datasize
+            );
+
+        ASSERT( NT_SUCCESS ( status ) );
+        parameter->m_Id = parameterId;
+        parameter->m_Size = datasize;
+        RtlCopyMemory( parameter->m_Data, data, datasize );
+
+        parameter = (PSINGLE_PARAMETER) Add2Ptr (
+            parameter,
+            FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize
+            );
+    }
+
+    *ppMessage = pMsg;
+    *pMessageSize = MessageSize;
+
+    return STATUS_SUCCESS;
+}
+
+void
+PortReleaseMessage (
+    __deref_in PVOID* ppMessage
+    )
+{
+    if ( !*ppMessage )
+        return;
+
+    FREE_POOL( *ppMessage );
+}
+
+__checkReturn
+NTSTATUS
+PortAskUser (
+    __in EventData *Event
+    )
+{
+    NTSTATUS status;
+    PFLT_PORT pPort = NULL;
+    PVOID pMessage = NULL;
+    QueuedItem* pQueuedItem = NULL;
+
+    __try
+    {
+        status = PortQueryConnected( &pPort );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pPort = NULL;
+            __leave;
+        }
+
+        // send data to R3
+        REPLY_RESULT ReplyResult;
+        ULONG ReplyLength = sizeof( ReplyResult );
+        ULONG MessageSize = 0;
+        
+        status = EventQueue_Add( Event, &pQueuedItem );
+        if ( NT_SUCCESS( pQueuedItem ) )
+        {
+            pQueuedItem = NULL;
+            __leave;
+        }
+
+        status = PortAllocateMessage (
+            Event,
+            pQueuedItem,
+            &pMessage,
+            &MessageSize
+            );
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            pMessage = NULL;
+            __leave;
+        }
+
+        status = FltSendMessage (
+            Globals.m_Filter,
+            &pPort,
+            pMessage,
+            MessageSize,
+            &ReplyResult,
+            &ReplyLength,
+            NULL
+            );
+
+        if ( !NT_SUCCESS( status ) || ReplyLength != sizeof( ReplyResult) )
+        {
+            RtlZeroMemory( &ReplyResult, sizeof( ReplyResult) );
+        }
+    }
+    __finally
+    {
+        EventQueue_WaitAndDestroy( &pQueuedItem );
+        PortRelease( &pPort );
+        PortReleaseMessage( &pMessage );
+    }
+
+    return STATUS_SUCCESS;
 }
