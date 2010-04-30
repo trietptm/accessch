@@ -12,7 +12,4 @@ typedef struct _GLOBALS
     PFLT_PORT               m_ClientPort;
 }GLOBALS, *PGLOBALS;
 
-typedef struct _PORT_CONTEXT
-{
-    PFLT_PORT               m_Connection;
-}PORT_CONTEXT, *PPORT_CONTEXT;
+extern GLOBALS Globals;
