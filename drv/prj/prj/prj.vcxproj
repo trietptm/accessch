@@ -49,6 +49,7 @@
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
     <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir)..</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug x64|Win32'">
     <NMakeOutput>prj.exe</NMakeOutput>
@@ -64,6 +65,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\commport.cpp" />
     <ClCompile Include="..\..\eventqueue.cpp" />
     <ClCompile Include="..\..\filehlp.cpp" />
     <ClCompile Include="..\..\flt.cpp" />
@@ -73,6 +75,7 @@
     <ClCompile Include="..\..\volhlp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\commport.h" />
     <ClInclude Include="..\..\eventqueue.h" />
     <ClInclude Include="..\..\filehlp.h" />
     <ClInclude Include="..\..\flt.h" />

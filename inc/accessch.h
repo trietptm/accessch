@@ -2,13 +2,15 @@
 #define __accesscheck_h
 
 #define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
+#define ACCESSCH_MAX_CONNECTIONS    1
+
 #define DRV_EVENT_CONTENT_SIZE      0x1000
 
-#define _STREAM_FLAGS_DIRECTORY        0x00000001
+#define _STREAM_FLAGS_DIRECTORY     0x00000001
 
 typedef enum Interceptors
 {
-    FILE_MINIFILTER = 0,
+    FILE_MINIFILTER                 = 0,
 };
 
 typedef enum Parameters
@@ -22,10 +24,10 @@ typedef enum Parameters
 } *PParameters;
 
 typedef ULONG VERDICT, *PVERDICT;
-#define VERDICT_NOT_FILTERED    0x0000
-#define VERDICT_ALLOW           0x0001
-#define VERDICT_NOT_DENY        0x0002
-#define VERDICT_ASK             0x0004
+#define VERDICT_NOT_FILTERED        0x0000
+#define VERDICT_ALLOW               0x0001
+#define VERDICT_NOT_DENY            0x0002
+#define VERDICT_ASK                 0x0004
 
 #include <pshpack8.h>
 typedef struct _REPLY_RESULT

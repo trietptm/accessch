@@ -4,4 +4,4 @@
 call C:\WinDDK\7600.16385.1\bin\setenv.bat C:\WinDDK\7600.16385.1 %1 %2 %3
 cd /D %4
 rem buildprefast.cmd 
-build -cC
+build %5
