@@ -55,6 +55,12 @@ FileInterceptorContext::CreateSectionForData (
         NULL,
         NULL
         );
+    
+    MODE prevMode = KernelMode;
+    if ( KernelMode != ExGetPreviousMode() )
+    {
+        prevMode = SetPreviousMode( KernelMode );
+    }
 
     NTSTATUS status = FsRtlCreateSectionForDataScan (
         &m_SectionHandle,
@@ -84,6 +90,11 @@ FileInterceptorContext::CreateSectionForData (
 
             m_MappedBase = NULL;
         }
+    }
+
+    if ( prevMode == UserMode )
+    {
+        SetPreviousMode( UserMode );
     }
     
     return status;

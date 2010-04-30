@@ -24,6 +24,8 @@ Parameters gFileCommonParams[] = {
     PARAMETER_SID
 };
 
+ULONG gPreviousModeOffset = 0;
+
 // prototypes
 extern "C"
 {
@@ -118,6 +120,56 @@ FLT_REGISTRATION filterRegistration = {
 #endif //FLT_MGR_LONGHORN
 };
 
+/* Return relative offset from begin _KTHREAD */
+__checkReturn
+NTSTATUS
+GetPreviousModeOffset (
+    )
+{
+#if defined (_WIN64)
+#define MOVE_OFFSET 9
+	if (*((ULONG*)ExGetPreviousMode) != (ULONG)0x048B4865) /* mov eax,gs:[] */
+#else
+#define MOVE_OFFSET 6
+	if (*((USHORT*)ExGetPreviousMode) != (USHORT)0xA164) /* mov eax,fs:[] */
+#endif
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( *( ( USHORT* )( &( ( char* ) ExGetPreviousMode )[ MOVE_OFFSET ] ) )
+        != (USHORT) 0x808A ) /* mov al,[eax+0xXX] */
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    gPreviousModeOffset = ( ULONG )( *( ( USHORT* )( & ( 
+        ( char* ) ExGetPreviousMode ) [ MOVE_OFFSET + 2 ] ) ) );
+    
+    return STATUS_SUCCESS;
+}
+
+/* Switch to disable NAPI hook protection
+    return previos state of MODE */
+MODE
+SetPreviousMode (
+    MODE OperationMode
+    )
+{
+	char *pETO = NULL;
+	MODE PreviousMode;
+    
+    ASSERT( gPreviousModeOffset );
+
+	pETO = (char*) PsGetCurrentThread();
+
+	PreviousMode = (MODE) pETO[ gPreviousModeOffset ];
+	pETO[ gPreviousModeOffset ] = OperationMode;
+
+	return PreviousMode;
+}
+
+
 NTSTATUS
 DriverEntry (
     __in PDRIVER_OBJECT DriverObject,
@@ -137,6 +189,13 @@ DriverEntry (
 
     __try
     {
+        status = GetPreviousModeOffset();
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+
         status = FltRegisterFilter (
             DriverObject,
             (PFLT_REGISTRATION) &filterRegistration,
