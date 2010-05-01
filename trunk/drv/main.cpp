@@ -169,7 +169,6 @@ SetPreviousMode (
 	return PreviousMode;
 }
 
-
 NTSTATUS
 DriverEntry (
     __in PDRIVER_OBJECT DriverObject,
@@ -436,6 +435,38 @@ InstanceSetup (
 }
 
 __checkReturn
+BOOLEAN
+IsSkipPostCreate (
+     __in PFLT_CALLBACK_DATA Data,
+     __in PCFLT_RELATED_OBJECTS FltObjects,
+     __in FLT_POST_OPERATION_FLAGS Flags
+    )
+{
+    if ( STATUS_REPARSE == Data->IoStatus.Status )
+    {
+        // skip reparse op
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+    {
+        // skip failed op
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+    if ( IsPassThrough( FltObjects, Flags ) )
+    {
+        // wrong state
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    if ( FlagOn( FltObjects->FileObject->Flags,  FO_VOLUME_OPEN ) )
+    {
+        // volume open
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+}
+
+__checkReturn
 FLT_POSTOP_CALLBACK_STATUS
 PostCreate (
     __inout PFLT_CALLBACK_DATA Data,
@@ -451,27 +482,8 @@ PostCreate (
 
     PSTREAM_CONTEXT pStreamContext = NULL;
 
-    if ( STATUS_REPARSE == Data->IoStatus.Status )
+    if ( IsSkipPostCreate( Data, FltObjects, Flags ) )
     {
-        // skip reparse op
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
-    {
-        // skip failed op
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    if ( IsPassThrough( FltObjects, Flags ) )
-    {
-        // wrong state
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    if ( FlagOn( FltObjects->FileObject->Flags,  FO_VOLUME_OPEN ) )
-    {
-        // volume open
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
