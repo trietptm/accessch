@@ -505,7 +505,8 @@ PostCreate (
         FileInterceptorContext Context( Data, FltObjects );
         EventData event (
             &Context,
-            QueryFileParameter,
+            FileQueryParameter,
+            FileObjectRequest,
             FILE_MINIFILTER,
             IRP_MJ_CLEANUP,
             0,
@@ -553,7 +554,8 @@ PreCleanup (
     FileInterceptorContext Context( Data, FltObjects );
     EventData event (
         &Context,
-        QueryFileParameter,
+        FileQueryParameter,
+        FileObjectRequest,
         FILE_MINIFILTER,
         IRP_MJ_CREATE,
         0,

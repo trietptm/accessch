@@ -11,6 +11,16 @@ NTSTATUS
     __deref_out_opt PULONG DataSize
     );
 
+typedef
+__checkReturn
+NTSTATUS
+( *PFN_OBJECT_REQUEST ) (
+    __in PVOID Opaque,
+    __in NOTIFY_COMMANDS Command,
+    __in_opt PVOID OutputBuffer,
+    __inout_opt PULONG OutputBufferSize
+    );
+
 enum EVENT_FLAGS
 {
     _EVENT_FLAG_NONE     = 0x0000,
@@ -23,6 +33,7 @@ private:
 
     PVOID                   m_Opaque;
     PFN_QUERY_EVENT_PARAM   m_QueryFunc;
+    PFN_OBJECT_REQUEST      m_pfnObjectRequest;
     Interceptors            m_InterceptorId;
     ULONG                   m_Major;
     ULONG                   m_Minor;
@@ -34,6 +45,7 @@ public:
     EventData (
         __in PVOID Opaque,
         __in PFN_QUERY_EVENT_PARAM QueryFunc,
+        __in_opt PFN_OBJECT_REQUEST ObjectRequest,
         __in Interceptors InterceptorId,
         __in ULONG Major,
         __in ULONG Minor,
@@ -41,6 +53,7 @@ public:
         __in PParameters Params
         ) : m_Opaque( Opaque ),
         m_QueryFunc( QueryFunc ),
+        m_pfnObjectRequest( ObjectRequest),
         m_InterceptorId( InterceptorId ),
         m_Major( Major ),
         m_Minor( Minor ),
@@ -115,6 +128,26 @@ public:
         }
 
         return status;
+    }
+
+    NTSTATUS
+    ObjectRequst (
+        __in NOTIFY_COMMANDS Command,
+        __in_opt PVOID OutputBuffer,
+        __inout_opt PULONG OutputBufferSize
+        )
+    {
+        if ( m_pfnObjectRequest )
+        {
+            return m_pfnObjectRequest (
+                m_Opaque,
+                Command,
+                OutputBuffer,
+                OutputBufferSize
+                );
+        }
+
+        return STATUS_NOT_SUPPORTED;
     }
 };
 

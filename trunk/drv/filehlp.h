@@ -40,6 +40,14 @@ private:
     PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
     PSID                        m_Sid;
     LUID                        m_Luid;
+
+private:
+    NTSTATUS
+    CreateSectionForData (
+        __deref_out PHANDLE Section,
+        __out PLARGE_INTEGER Size
+        );
+
 public:
     FileInterceptorContext (
         PFLT_CALLBACK_DATA Data,
@@ -49,18 +57,20 @@ public:
     ~FileInterceptorContext (
         );
 
+    __checkReturn
     NTSTATUS
-    CreateSectionForData (
-        __deref_out PHANDLE Section,
-        __out PLARGE_INTEGER Size
+    QueryParameter (
+        __in_opt Parameters ParameterId,
+        __deref_out_opt PVOID* Data,
+        __deref_out_opt PULONG DataSize
         );
 
     __checkReturn
     NTSTATUS
-    QueryFileParameter (
-        __in_opt Parameters ParameterId,
-        __deref_out_opt PVOID* Data,
-        __deref_out_opt PULONG DataSize
+    FileInterceptorContext::ObjectRequest (
+        __in NOTIFY_COMMANDS Command,
+        __in_opt PVOID OutputBuffer,
+        __inout_opt PULONG OutputBufferSize
         );
 };
 
@@ -91,11 +101,20 @@ SecurityFreeSid (
 
 __checkReturn
 NTSTATUS
-QueryFileParameter (
+FileQueryParameter (
     __in PVOID Opaque,
     __in_opt Parameters ParameterId,
     __deref_out_opt PVOID* Data,
     __deref_out_opt PULONG DataSize
+    );
+
+__checkReturn
+NTSTATUS
+FileObjectRequest (
+    __in PVOID Opaque,
+    __in NOTIFY_COMMANDS Command,
+    __in_opt PVOID OutputBuffer,
+    __inout_opt PULONG OutputBufferSize
     );
 
 __checkReturn

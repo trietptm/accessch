@@ -175,6 +175,7 @@ PortMessageNotify (
     {
         return STATUS_INVALID_PARAMETER;
     }
+    
     __try
     {
         PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) InputBuffer;
@@ -194,8 +195,13 @@ PortMessageNotify (
             if ( NT_SUCCESS( status ) )
             {
                 NC_IOPREPARE prepare;
+                ULONG preparesize = sizeof( prepare );
 
-                status = pEvent->ObjectRequst( ntfcom_PrepareIO, &prepare );
+                status = pEvent->ObjectRequst (
+                    ntfcom_PrepareIO,
+                    &prepare,
+                    &preparesize
+                    );
 
                 if ( NT_SUCCESS( status ) )
                 {
@@ -209,14 +215,18 @@ PortMessageNotify (
             break;
         }
     }
-    __except( EXCEPTION_EXECUTE_HANDLER )
+    __finally
     {
-        status = GetExceptionCode();
-    }
+        if ( AbnormalTermination() )
+        {
+            status = STATUS_UNHANDLED_EXCEPTION;
+        }
 
-    if ( pItem )
-    {
-        pItem->Release();
+        if ( pItem )
+        {
+            pItem->Release();
+            pItem = NULL;
+        }
     }
 
     return status;
