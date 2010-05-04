@@ -65,7 +65,11 @@ FileInterceptorContext::CreateSectionForData (
         0
         );
             
-    if ( !NT_SUCCESS( status ) )
+    if ( NT_SUCCESS( status ) )
+    {
+        ASSERT( !IsKernelHandle( Section ) );
+    }
+    else
     {
         m_SectionObject = NULL;
     }
@@ -75,7 +79,7 @@ FileInterceptorContext::CreateSectionForData (
 
 __checkReturn
 NTSTATUS
-FileInterceptorContext::QueryFileParameter (
+FileInterceptorContext::QueryParameter (
     __in_opt Parameters ParameterId,
     __deref_out_opt PVOID* Data,
     __deref_out_opt PULONG DataSize
@@ -195,6 +199,47 @@ FileInterceptorContext::QueryFileParameter (
     return status;
 }
 
+__checkReturn
+NTSTATUS
+FileInterceptorContext::ObjectRequest (
+    __in NOTIFY_COMMANDS Command,
+    __in_opt PVOID OutputBuffer,
+    __inout_opt PULONG OutputBufferSize
+    )
+{
+    NTSTATUS status = STATUS_NOT_SUPPORTED;
+
+    switch( Command )
+    {
+    case ntfcom_PrepareIO:
+        if (
+            OutputBuffer
+            &&
+            OutputBufferSize
+            &&
+            *OutputBufferSize >= sizeof(NC_IOPREPARE)
+            )
+        {
+            HANDLE hSection;
+            LARGE_INTEGER size;
+            status = CreateSectionForData( &hSection, &size );
+            if ( NT_SUCCESS( status ) )
+            {
+                PNC_IOPREPARE prepare = (NC_IOPREPARE*) OutputBuffer;
+                prepare->m_Section = hSection;
+                prepare->m_IoSize = size;
+            }
+        }
+        break;
+
+    default:
+        __debugbreak();
+        break;
+    }
+
+    return status;
+}
+
 //////////////////////////////////////////////////////////////////////////
 __checkReturn
 NTSTATUS
@@ -254,19 +299,43 @@ ReleaseContextImp (
 
 __checkReturn
 NTSTATUS
-QueryFileParameter (
+FileQueryParameter (
     __in PVOID Opaque,
     __in_opt Parameters ParameterId,
     __deref_out_opt PVOID* Data,
     __deref_out_opt PULONG DataSize
     )
 {
+    ASSERT( ARGUMENT_PRESENT( Opaque ) );
+
     FileInterceptorContext *fileContext = (FileInterceptorContext*) Opaque;
    
-    NTSTATUS status = fileContext->QueryFileParameter (
+    NTSTATUS status = fileContext->QueryParameter (
         ParameterId,
         Data,
         DataSize
+        );
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+FileObjectRequest (
+    __in PVOID Opaque,
+    __in NOTIFY_COMMANDS Command,
+    __in_opt PVOID OutputBuffer,
+    __inout_opt PULONG OutputBufferSize
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( Opaque ) );
+
+    FileInterceptorContext *fileContext = (FileInterceptorContext*) Opaque;
+   
+    NTSTATUS status = fileContext->ObjectRequest (
+        Command,
+        OutputBuffer,
+        OutputBufferSize
         );
 
     return status;
