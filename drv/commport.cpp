@@ -156,12 +156,67 @@ PortMessageNotify (
 
     PPORT_CONTEXT pPortContext = (PPORT_CONTEXT) ConnectionCookie;
 
+    QueuedItem *pItem = NULL;
+    EventData *pEvent = NULL;
+
     *ReturnOutputBufferLength = 0;
 
+    //! \todo: remove
+    __debugbreak();
+
     ASSERT( pPortContext != NULL );
-    if ( !pPortContext )
+    if (
+        !pPortContext
+        ||
+        !InputBuffer
+        ||
+        InputBufferSize < sizeof( NOTIFY_COMMAND)
+        )
     {
         return STATUS_INVALID_PARAMETER;
+    }
+    __try
+    {
+        PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) InputBuffer;
+        switch( pCommand->m_Command )
+        {
+        case ntfcom_PrepareIO:
+            status = STATUS_INVALID_PARAMETER;
+            if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
+            {
+                status = EventQueue_Lookup (
+                    pCommand->m_EventId,
+                    &pItem,
+                    (PVOID*) &pEvent
+                    );
+            }
+
+            if ( NT_SUCCESS( status ) )
+            {
+                NC_IOPREPARE prepare;
+
+                status = pEvent->ObjectRequst( ntfcom_PrepareIO, &prepare );
+
+                if ( NT_SUCCESS( status ) )
+                {
+                    *(PNC_IOPREPARE) OutputBuffer = prepare;
+                }
+            }
+            break;
+        
+        default:
+            ASSERT( FALSE );
+            break;
+        }
+    }
+    __except( EXCEPTION_EXECUTE_HANDLER )
+    {
+        status = GetExceptionCode();
+    }
+
+    if ( pItem )
+    {
+        pItem->Release();
     }
 
     return status;

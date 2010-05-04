@@ -26,10 +26,12 @@ typedef enum Parameters
 typedef ULONG VERDICT, *PVERDICT;
 #define VERDICT_NOT_FILTERED        0x0000
 #define VERDICT_ALLOW               0x0001
-#define VERDICT_NOT_DENY            0x0002
+#define VERDICT_DENY                0x0002
 #define VERDICT_ASK                 0x0004
 
 #include <pshpack8.h>
+
+// send message communication  
 typedef struct _REPLY_RESULT
 {
     ULONG               m_Flags;
@@ -48,6 +50,30 @@ typedef struct _MESSAGE_DATA
     ULONG               m_ParametersCount;
     SINGLE_PARAMETER    m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;
+
+// notify strutures
+typedef enum _NOTIFY_COMMANDS
+{
+    // common commands
+    ntfcom_Connect       = 0x0001,
+    
+    // object's commands
+    ntfcom_PrepareIO     = 0x0100 // result struct
+} NOTIFY_COMMANDS;
+
+typedef struct _NOTIFY_COMMAND
+{
+    ULONG               m_Reserved;
+    NOTIFY_COMMANDS     m_Command;
+    ULONG               m_EventId;
+} NOTIFY_COMMAND, *PNOTIFY_COMMAND;
+
+// ntfcom_PrepareIO
+typedef struct _NC_IOPREPARE
+{
+    HANDLE              m_Section;
+    LARGE_INTEGER       m_IoSize;
+} NC_IOPREPARE, *PNC_IOPREPARE;
 
 #include <poppack.h>
 

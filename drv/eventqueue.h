@@ -4,6 +4,8 @@
 struct QueuedItem
 {
 public:
+        LIST_ENTRY      m_List;
+public:
 
         QueuedItem();
         ~QueuedItem();
@@ -15,6 +17,10 @@ public:
         WaitForRelease();
 
         VOID
+        Release (
+            );
+
+        VOID
         InsertItem (
             PLIST_ENTRY List
             );
@@ -23,7 +29,6 @@ public:
         RemoveItem();
 
 private:
-    LIST_ENTRY      m_List;
     EX_RUNDOWN_REF  m_Ref;
     ULONG           m_Id;
 };
@@ -47,6 +52,13 @@ EventQueue_Add (
 VOID
 EventQueue_WaitAndDestroy (
     __in QueuedItem **Item
+    );
+
+NTSTATUS
+EventQueue_Lookup (
+    __in ULONG EventId,
+    __deref_out_opt QueuedItem **Item,
+    __out_opt PVOID *Event
     );
 
 #endif // __eventqueue_h

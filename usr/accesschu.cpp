@@ -100,22 +100,114 @@ WaitForSingleMessage (
     return hResult;
 }
 
+HRESULT
+Nc_ExecuteObjectRequest (
+    __in PCOMMUNICATIONS CommPort,
+    __in PNOTIFY_COMMAND Command,
+    __in NOTIFY_COMMANDS CommandId,
+    __in ULONG EventId,
+    __out PVOID OutBuffer,
+    __inout PULONG Size
+    )
+{
+    ZeroMemory( Command, sizeof( NOTIFY_COMMAND) );
+    Command->m_Command = CommandId;
+    Command->m_EventId = EventId;
+
+   HRESULT hResult = FilterSendMessage (
+       CommPort->m_hPort,
+       Command,
+       sizeof( NOTIFY_COMMAND),
+       OutBuffer,
+       *Size,
+       Size
+       );
+
+   return hResult;
+}
+
+HRESULT
+PrepareIo (
+    __in PCOMMUNICATIONS CommPort,
+    __in PMESSAGE_DATA pData,
+    __deref_out_opt PVOID* MemPtr,
+    __out SIZE_T* IoSize
+    )
+{
+    HRESULT hResult;
+
+    NOTIFY_COMMAND command;
+    NC_IOPREPARE prepare;
+    ULONG size = sizeof( NC_IOPREPARE );
+    hResult = Nc_ExecuteObjectRequest (
+        CommPort,
+        &command,
+        ntfcom_PrepareIO,
+        pData->m_EventId,
+        &prepare,
+        &size
+        );
+
+    if ( !SUCCEEDED( hResult ) )
+    {
+        return hResult;
+    }
+
+    *MemPtr = MapViewOfFile (
+        prepare.m_Section,
+        FILE_MAP_READ,
+        0,
+        0,
+        (SIZE_T) prepare.m_IoSize.QuadPart
+        );
+
+    if ( *MemPtr )
+    {
+        CloseHandle( prepare.m_Section );
+        *IoSize = (SIZE_T) prepare.m_IoSize.QuadPart;
+        
+        return S_OK;
+    }
+
+    //! \todo: prepare real error code
+
+    return E_FAIL;
+};
+
+void
+ScanObject (
+    __in PCOMMUNICATIONS CommPort,
+    __in PMESSAGE_DATA pData
+    )
+{
+    assert( pData );
+
+    PVOID pMemPtr = NULL;
+    SIZE_T iosize;
+    if ( !PrepareIo( CommPort, pData, &pMemPtr, &iosize ))
+    {
+        return;
+    }
+
+    UnmapViewOfFile( pMemPtr ); 
+}
+
 DWORD
 WINAPI
 WaiterThread (
     __in  LPVOID lpParameter
     )
 {
-    PCOMMUNICATIONS pComm = (PCOMMUNICATIONS) lpParameter;
-    assert( pComm );
+    PCOMMUNICATIONS pCommPort = (PCOMMUNICATIONS) lpParameter;
+    assert( pCommPort );
 
     HRESULT hResult;
     do
     {
         PDRVEVENT_OVLP pEvent;
         hResult = WaitForSingleMessage (
-            pComm->m_hPort,
-            pComm->m_hCompletion,
+            pCommPort->m_hPort,
+            pCommPort->m_hCompletion,
             &pEvent
             );
 
@@ -130,6 +222,8 @@ WaiterThread (
             pData->m_ParametersCount
             );
 
+        ScanObject( pCommPort, pData );
+
         // release
         
         REPLY_MESSAGE Reply;
@@ -139,7 +233,7 @@ WaiterThread (
         Reply.m_ReplyHeader.MessageId = pEvent->m_Header.MessageId;
 
         hResult = FilterReplyMessage (
-            pComm->m_hPort,
+            pCommPort->m_hPort,
             (PFILTER_REPLY_HEADER) &Reply,
             sizeof(Reply)
             );
