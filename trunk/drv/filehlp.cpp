@@ -10,11 +10,8 @@ FileInterceptorContext::FileInterceptorContext (
     PCFLT_RELATED_OBJECTS FltObjects
     ) : m_Data( Data ), m_FltObjects( FltObjects )
 {
-    m_SectionHandle = NULL;
     m_SectionObject = NULL;
-    m_SectionFileSize.QuadPart = 0;
-    m_MappedBase = NULL;
-    
+   
     m_RequestorProcessId = 0;
     m_RequestorThreadId = 0;
     m_InstanceContext = 0;
@@ -27,14 +24,11 @@ FileInterceptorContext::FileInterceptorContext (
 FileInterceptorContext::~FileInterceptorContext (
     )
 {
-    if ( m_MappedBase )
+    if ( m_SectionObject )
     {
-        MmUnmapViewInSystemSpace( m_MappedBase );
-        m_MappedBase = NULL;
-
         ObDereferenceObject( m_SectionObject );
-        ZwClose( m_SectionHandle );
     }
+
     ReleaseContext( (PFLT_CONTEXT*) &m_InstanceContext );
     ReleaseContext( (PFLT_CONTEXT*) &m_StreamContext );
     ReleaseFileNameInfo( &m_FileNameInfo );
@@ -44,7 +38,9 @@ FileInterceptorContext::~FileInterceptorContext (
 __checkReturn
 NTSTATUS
 FileInterceptorContext::CreateSectionForData (
-        )
+    __deref_out PHANDLE Section,
+    __out PLARGE_INTEGER Size
+    )
 {
     OBJECT_ATTRIBUTES oa;
                         
@@ -56,16 +52,10 @@ FileInterceptorContext::CreateSectionForData (
         NULL
         );
     
-    MODE prevMode = KernelMode;
-    if ( KernelMode != ExGetPreviousMode() )
-    {
-        prevMode = SetPreviousMode( KernelMode );
-    }
-
     NTSTATUS status = FsRtlCreateSectionForDataScan (
-        &m_SectionHandle,
+        Section,
         &m_SectionObject,
-        &m_SectionFileSize,
+        Size,
         m_FltObjects->FileObject,
         SECTION_MAP_READ | SECTION_QUERY,
         &oa,
@@ -75,28 +65,11 @@ FileInterceptorContext::CreateSectionForData (
         0
         );
             
-    if ( NT_SUCCESS( status ) )
+    if ( !NT_SUCCESS( status ) )
     {
-        PVOID mappedBase;
-        SIZE_T viewSize = m_SectionFileSize.QuadPart;
-        status = MmMapViewInSystemSpace( m_SectionObject, &m_MappedBase, &viewSize );
-        if ( !NT_SUCCESS ( status ) )
-        {
-            ObDereferenceObject( m_SectionObject );
-            m_SectionObject = NULL;
-
-            ZwClose( m_SectionHandle );
-            m_SectionHandle = NULL;
-
-            m_MappedBase = NULL;
-        }
+        m_SectionObject = NULL;
     }
 
-    if ( prevMode == UserMode )
-    {
-        SetPreviousMode( UserMode );
-    }
-    
     return status;
 }
 

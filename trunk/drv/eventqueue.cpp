@@ -37,6 +37,13 @@ QueuedItem::WaitForRelease (
 }
 
 VOID
+QueuedItem::Release (
+    )
+{
+    ExReleaseRundownProtection( &m_Ref );
+}
+
+VOID
 QueuedItem::InsertItem (
     PLIST_ENTRY List
     )
@@ -117,4 +124,40 @@ EventQueue_WaitAndDestroy (
     FREE_POOL( pItem );
 }
 
+NTSTATUS
+EventQueue_Lookup (
+    __in ULONG EventId,
+    __deref_out_opt QueuedItem **Item,
+    __out_opt PVOID *Event
+    )
+{
+    NTSTATUS status = STATUS_NOT_FOUND;
+    QueuedItem *pItem = NULL;
 
+    ASSERT( ARGUMENT_PRESENT( Item ) );
+    ASSERT( ARGUMENT_PRESENT( Event ) );
+
+    FltAcquirePushLockShared( &gQueueLock );
+
+    PLIST_ENTRY Flink;
+
+    Flink = gQueueItems.Flink;
+
+    while ( Flink != &gQueueItems )
+    {
+        pItem = CONTAINING_RECORD( Flink, QueuedItem, m_List );
+        Flink = Flink->Flink;
+
+        if ( pItem->GetId() == EventId )
+        {
+            *Item = pItem;
+            status = STATUS_SUCCESS;
+            
+            break;
+        }
+    }
+
+    FltReleasePushLock( &gQueueLock );
+    
+    return status;
+}

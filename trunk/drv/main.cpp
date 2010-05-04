@@ -521,11 +521,7 @@ PostCreate (
         {
             if ( !FlagOn( pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
             {
-                status = Context.CreateSectionForData();
-                if ( NT_SUCCESS( status ) )
-                {
-                    event.EventFlagsSet( _EVENT_FLAG_IO );
-                }
+                event.EventFlagsSet( _EVENT_FLAG_IO );
             }
 
             PortAskUser( &event );

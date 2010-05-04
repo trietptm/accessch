@@ -29,9 +29,7 @@ private:
     PCFLT_RELATED_OBJECTS       m_FltObjects;
 
     // data access
-    HANDLE                      m_SectionHandle;
     PVOID                       m_SectionObject;
-    LARGE_INTEGER               m_SectionFileSize;
     PVOID                       m_MappedBase;
     
     // queryed parameters
@@ -53,6 +51,8 @@ public:
 
     NTSTATUS
     CreateSectionForData (
+        __deref_out PHANDLE Section,
+        __out PLARGE_INTEGER Size
         );
 
     __checkReturn
