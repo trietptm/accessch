@@ -7,11 +7,18 @@ public:
         LIST_ENTRY      m_List;
 public:
 
-        QueuedItem();
+        QueuedItem (
+            __in PVOID Data
+            );
+        
         ~QueuedItem();
 
         ULONG
         GetId();
+
+        NTSTATUS
+        Acquire (
+            );
 
         VOID
         WaitForRelease();
@@ -28,9 +35,16 @@ public:
         VOID
         RemoveItem();
 
+        PVOID GetData (
+            )
+        {
+            return m_Data;
+        }
+
 private:
     EX_RUNDOWN_REF  m_Ref;
     ULONG           m_Id;
+    PVOID           m_Data;
 };
 
 // QUEUE procedures
@@ -57,8 +71,7 @@ EventQueue_WaitAndDestroy (
 NTSTATUS
 EventQueue_Lookup (
     __in ULONG EventId,
-    __deref_out_opt QueuedItem **Item,
-    __out_opt PVOID *Event
+    __deref_out_opt QueuedItem **Item
     );
 
 #endif // __eventqueue_h

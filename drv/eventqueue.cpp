@@ -7,6 +7,7 @@ EX_PUSH_LOCK    gQueueLock;
 //
 
 QueuedItem::QueuedItem (
+    __in PVOID Data
     )
 {
     m_Id = InterlockedIncrement( &gEventId );
@@ -14,6 +15,7 @@ QueuedItem::QueuedItem (
         m_Id = InterlockedIncrement( &gEventId );
 
     ExInitializeRundownProtection( &m_Ref );
+    m_Data = Data;
 }
 
 QueuedItem::~QueuedItem (
@@ -28,6 +30,13 @@ QueuedItem::GetId (
 {
     return m_Id;
 };
+
+NTSTATUS
+QueuedItem::Acquire (
+    )
+{
+    return ExAcquireRundownProtection( &m_Ref );
+}
 
 VOID
 QueuedItem::WaitForRelease (
@@ -86,21 +95,23 @@ EventQueue_Add (
 
     QueuedItem *pItem = (QueuedItem*) ExAllocatePoolWithTag (
         PagedPool,
-        sizeof(QueuedItem),
+        sizeof( QueuedItem ),
         _ALLOC_TAG
         );
 
-    if ( pItem )
+    if ( !pItem )
     {
         return STATUS_NO_MEMORY;
     }
-
-    pItem->QueuedItem::QueuedItem();
+    
+    pItem->QueuedItem::QueuedItem( Event );
 
     FltAcquirePushLockExclusive( &gQueueLock );
     pItem->InsertItem( &gQueueItems );
     FltReleasePushLock( &gQueueLock );
-    
+
+    *Item = pItem;
+
     return STATUS_SUCCESS;
 }
 
@@ -127,15 +138,13 @@ EventQueue_WaitAndDestroy (
 NTSTATUS
 EventQueue_Lookup (
     __in ULONG EventId,
-    __deref_out_opt QueuedItem **Item,
-    __out_opt PVOID *Event
+    __deref_out_opt QueuedItem **Item
     )
 {
     NTSTATUS status = STATUS_NOT_FOUND;
     QueuedItem *pItem = NULL;
 
     ASSERT( ARGUMENT_PRESENT( Item ) );
-    ASSERT( ARGUMENT_PRESENT( Event ) );
 
     FltAcquirePushLockShared( &gQueueLock );
 
@@ -151,8 +160,8 @@ EventQueue_Lookup (
         if ( pItem->GetId() == EventId )
         {
             *Item = pItem;
-            status = STATUS_SUCCESS;
-            
+            status = pItem->Acquire();
+           
             break;
         }
     }

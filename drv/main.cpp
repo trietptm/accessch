@@ -502,7 +502,7 @@ PostCreate (
         }
         
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects );
+        FileInterceptorContext Context( Data, FltObjects, pStreamContext );
         EventData event (
             &Context,
             FileQueryParameter,
@@ -545,35 +545,54 @@ PreCleanup (
     )
 {
     NTSTATUS status;
-    UNREFERENCED_PARAMETER( Data );
     UNREFERENCED_PARAMETER( CompletionContext );
+
+    PSTREAM_CONTEXT pStreamContext = NULL;
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
 
-    VERDICT Verdict = VERDICT_NOT_FILTERED;
-    FileInterceptorContext Context( Data, FltObjects );
-    EventData event (
-        &Context,
-        FileQueryParameter,
-        FileObjectRequest,
-        FILE_MINIFILTER,
-        IRP_MJ_CREATE,
-        0,
-        ARRAYSIZE( gFileCommonParams ),
-        gFileCommonParams
-        );;
-
-    status = FilterEvent( &event, &Verdict );
-
-    if ( NT_SUCCESS( status )
-        &&
-        FlagOn( Verdict, VERDICT_ASK ) )
+    __try
     {
-        status = PortAskUser( &event );
-        if ( NT_SUCCESS( status ) )
+        status = GenerateStreamContext (
+            Globals.m_Filter,
+            FltObjects,
+            &pStreamContext
+            );
+        if ( !NT_SUCCESS( status ) )
         {
-            //! \todo PreCleanup( AskUser complete )
+            pStreamContext = NULL;
+            __leave;
         }
+
+        VERDICT Verdict = VERDICT_NOT_FILTERED;
+        FileInterceptorContext Context( Data, FltObjects, pStreamContext );
+        EventData event (
+            &Context,
+            FileQueryParameter,
+            FileObjectRequest,
+            FILE_MINIFILTER,
+            IRP_MJ_CREATE,
+            0,
+            ARRAYSIZE( gFileCommonParams ),
+            gFileCommonParams
+            );
+
+        status = FilterEvent( &event, &Verdict );
+
+        if ( NT_SUCCESS( status )
+            &&
+            FlagOn( Verdict, VERDICT_ASK ) )
+        {
+            status = PortAskUser( &event );
+            if ( NT_SUCCESS( status ) )
+            {
+                //! \todo PreCleanup( AskUser complete )
+            }
+        }
+    }
+    __finally
+    {
+        ReleaseContext( &pStreamContext );
     }
 
     return fltStatus;
