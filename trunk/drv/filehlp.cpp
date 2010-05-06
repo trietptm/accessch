@@ -7,9 +7,13 @@
 
 FileInterceptorContext::FileInterceptorContext (
     PFLT_CALLBACK_DATA Data,
-    PCFLT_RELATED_OBJECTS FltObjects
-    ) : m_Data( Data ), m_FltObjects( FltObjects )
+    PCFLT_RELATED_OBJECTS FltObjects,
+    PSTREAM_CONTEXT pStreamContext
+    ) : m_Data( Data ),
+    m_FltObjects( FltObjects ),
+    m_pStreamContext( pStreamContext )
 {
+    m_Section = NULL;
     m_SectionObject = NULL;
    
     m_RequestorProcessId = 0;
@@ -24,6 +28,14 @@ FileInterceptorContext::FileInterceptorContext (
 FileInterceptorContext::~FileInterceptorContext (
     )
 {
+    if ( m_Section )
+    {
+        if ( IsKernelHandle( m_Section ) )
+        {
+            ZwClose( m_Section );
+        }
+    }
+
     if ( m_SectionObject )
     {
         ObDereferenceObject( m_SectionObject );
@@ -42,8 +54,13 @@ FileInterceptorContext::CreateSectionForData (
     __out PLARGE_INTEGER Size
     )
 {
+    if ( FlagOn( m_pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     OBJECT_ATTRIBUTES oa;
-                        
+
     InitializeObjectAttributes (
         &oa,
         NULL,
@@ -53,7 +70,7 @@ FileInterceptorContext::CreateSectionForData (
         );
     
     NTSTATUS status = FsRtlCreateSectionForDataScan (
-        Section,
+        &m_Section,
         &m_SectionObject,
         Size,
         m_FltObjects->FileObject,
@@ -67,7 +84,15 @@ FileInterceptorContext::CreateSectionForData (
             
     if ( NT_SUCCESS( status ) )
     {
-        ASSERT( !IsKernelHandle( Section ) );
+        if ( IsKernelHandle( Section ) )
+        {
+            // nothing todo - use kernel read routine
+            *Section = 0;
+        }
+        else
+        {
+            *Section = m_Section;
+        }
     }
     else
     {

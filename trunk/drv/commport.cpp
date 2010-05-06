@@ -187,13 +187,13 @@ PortMessageNotify (
             {
                 status = EventQueue_Lookup (
                     pCommand->m_EventId,
-                    &pItem,
-                    (PVOID*) &pEvent
+                    &pItem
                     );
             }
 
             if ( NT_SUCCESS( status ) )
             {
+                pEvent = (EventData*) pItem->GetData();
                 NC_IOPREPARE prepare;
                 ULONG preparesize = sizeof( prepare );
 
@@ -383,7 +383,7 @@ PortAskUser (
         ULONG MessageSize = 0;
         
         status = EventQueue_Add( Event, &pQueuedItem );
-        if ( NT_SUCCESS( pQueuedItem ) )
+        if ( !NT_SUCCESS( status ) )
         {
             pQueuedItem = NULL;
             __leave;
@@ -419,7 +419,11 @@ PortAskUser (
     }
     __finally
     {
-        EventQueue_WaitAndDestroy( &pQueuedItem );
+        if ( pQueuedItem )
+        {
+            EventQueue_WaitAndDestroy( &pQueuedItem );
+        }
+
         PortRelease( &pPort );
         PortReleaseMessage( &pMessage );
     }

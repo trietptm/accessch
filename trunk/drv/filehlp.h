@@ -27,8 +27,10 @@ private:
     // intercepted data
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
+    PSTREAM_CONTEXT             m_pStreamContext;
 
     // data access
+    HANDLE                      m_Section;
     PVOID                       m_SectionObject;
     PVOID                       m_MappedBase;
     
@@ -51,7 +53,8 @@ private:
 public:
     FileInterceptorContext (
         PFLT_CALLBACK_DATA Data,
-        PCFLT_RELATED_OBJECTS FltObjects
+        PCFLT_RELATED_OBJECTS FltObjects,
+        PSTREAM_CONTEXT pStreamContext
         );
 
     ~FileInterceptorContext (
