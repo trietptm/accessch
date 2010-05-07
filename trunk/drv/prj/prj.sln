@@ -1,21 +1,36 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+# Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prj", "prj\prj.vcxproj", "{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug x64|Win32 = Debug x64|Win32
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		DebugVista|Win32 = DebugVista|Win32
+		DebugVista|x64 = DebugVista|x64
+		DebugW7|Win32 = DebugW7|Win32
+		DebugW7|x64 = DebugW7|x64
+		DebugWnet|Win32 = DebugWnet|Win32
+		DebugWnet|x64 = DebugWnet|x64
+		ReleaseW7|Win32 = ReleaseW7|Win32
+		ReleaseW7|x64 = ReleaseW7|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.Debug x64|Win32.ActiveCfg = Debug x64|Win32
-		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.Debug x64|Win32.Build.0 = Debug x64|Win32
-		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.Debug|Win32.ActiveCfg = Debug|Win32
-		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.Debug|Win32.Build.0 = Debug|Win32
-		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.Release|Win32.ActiveCfg = Release|Win32
-		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.Release|Win32.Build.0 = Release|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugVista|Win32.ActiveCfg = DebugVista|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugVista|Win32.Build.0 = DebugVista|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugVista|x64.ActiveCfg = DebugVista|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugVista|x64.Build.0 = DebugVista|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugW7|Win32.ActiveCfg = Debug|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugW7|Win32.Build.0 = Debug|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugW7|x64.ActiveCfg = Debug|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugW7|x64.Build.0 = Debug|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugWnet|Win32.ActiveCfg = DebugWnet|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugWnet|Win32.Build.0 = DebugWnet|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugWnet|x64.ActiveCfg = DebugWnet|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugWnet|x64.Build.0 = DebugWnet|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.ReleaseW7|Win32.ActiveCfg = Release|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.ReleaseW7|Win32.Build.0 = Release|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.ReleaseW7|x64.ActiveCfg = Release|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.ReleaseW7|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
