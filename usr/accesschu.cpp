@@ -191,9 +191,21 @@ ScanObject (
         return;
     }
     
-    char buf = ((char*) pMemPtr)[0];
-    if ( buf )
+
+    __try
     {
+        for (SIZE_T cou = 0; cou < iosize % 0x1000; cou++ )
+        {
+            char buf = ((char*) pMemPtr + cou * 0x1000 )[0];
+            if ( buf )
+            {
+                // simulate
+            }
+        }
+    }
+    __finally
+    {
+
     }
 
     UnmapViewOfFile( pMemPtr ); 
