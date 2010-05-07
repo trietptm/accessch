@@ -191,7 +191,6 @@ ScanObject (
         return;
     }
     
-
     __try
     {
         for (SIZE_T cou = 0; cou < iosize % 0x1000; cou++ )
@@ -203,7 +202,7 @@ ScanObject (
             }
         }
     }
-    __finally
+    __except(EXCEPTION_EXECUTE_HANDLER)
     {
 
     }
