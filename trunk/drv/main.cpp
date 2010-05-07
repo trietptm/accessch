@@ -445,25 +445,28 @@ IsSkipPostCreate (
     if ( STATUS_REPARSE == Data->IoStatus.Status )
     {
         // skip reparse op
-        return FLT_POSTOP_FINISHED_PROCESSING;
+        return TRUE;
     }
 
     if ( !NT_SUCCESS( Data->IoStatus.Status ) )
     {
         // skip failed op
-        return FLT_POSTOP_FINISHED_PROCESSING;
+        return TRUE;
     }
+    
     if ( IsPassThrough( FltObjects, Flags ) )
     {
         // wrong state
-        return FLT_POSTOP_FINISHED_PROCESSING;
+        return TRUE;
     }
 
     if ( FlagOn( FltObjects->FileObject->Flags,  FO_VOLUME_OPEN ) )
     {
         // volume open
-        return FLT_POSTOP_FINISHED_PROCESSING;
+        return TRUE;
     }
+
+    return FALSE;
 }
 
 __checkReturn
