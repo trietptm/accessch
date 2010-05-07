@@ -184,9 +184,16 @@ ScanObject (
 
     PVOID pMemPtr = NULL;
     SIZE_T iosize;
-    if ( !PrepareIo( CommPort, pData, &pMemPtr, &iosize ))
+    
+    HRESULT hResult = PrepareIo( CommPort, pData, &pMemPtr, &iosize );
+    if ( !SUCCEEDED( hResult ) )
     {
         return;
+    }
+    
+    char buf = ((char*) pMemPtr)[0];
+    if ( buf )
+    {
     }
 
     UnmapViewOfFile( pMemPtr ); 

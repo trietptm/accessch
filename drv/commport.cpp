@@ -161,9 +161,6 @@ PortMessageNotify (
 
     *ReturnOutputBufferLength = 0;
 
-    //! \todo: remove
-    __debugbreak();
-
     ASSERT( pPortContext != NULL );
     if (
         !pPortContext

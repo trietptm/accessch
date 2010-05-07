@@ -86,11 +86,26 @@ FileInterceptorContext::CreateSectionForData (
     {
         if ( IsKernelHandle( Section ) )
         {
-            // nothing todo - use kernel read routine
-            *Section = 0;
+            status = ObOpenObjectByPointer (
+                m_SectionObject,
+                0,
+                NULL,
+                GENERIC_READ,
+                NULL,
+                KernelMode,
+                Section
+                );
+            
+            if ( !NT_SUCCESS( status ) )
+            {
+                __debugbreak();
+                *Section = 0;
+                status = STATUS_SUCCESS; // read using kernel routine
+            }
         }
         else
         {
+            __debugbreak();
             *Section = m_Section;
         }
     }
