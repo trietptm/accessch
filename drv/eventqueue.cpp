@@ -74,7 +74,7 @@ EventQueue_Init (
     )
 {
     InitializeListHead( &gQueueItems );
-    ExInitializePushLock( &gQueueLock );
+    FltInitializePushLock( &gQueueLock );
 }
 
 VOID
