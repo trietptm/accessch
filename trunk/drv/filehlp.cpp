@@ -84,7 +84,7 @@ FileInterceptorContext::CreateSectionForData (
             
     if ( NT_SUCCESS( status ) )
     {
-        if ( IsKernelHandle( Section ) )
+        if ( IsKernelHandle( m_Section ) )
         {
             status = ObOpenObjectByPointer (
                 m_SectionObject,
