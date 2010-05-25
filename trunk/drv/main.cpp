@@ -120,6 +120,10 @@ FLT_REGISTRATION filterRegistration = {
 #endif //FLT_MGR_LONGHORN
 };
 
+
+#if ( NTDDI_VERSION < NTDDI_WIN6 )
+
+#pragma message ( "SetPreviousMode for XP or 2003" )
 /* Return relative offset from begin _KTHREAD */
 __checkReturn
 NTSTATUS
@@ -169,6 +173,8 @@ SetPreviousMode (
 	return PreviousMode;
 }
 
+#endif // ( NTDDI_VERSION < NTDDI_WIN6 )
+
 NTSTATUS
 DriverEntry (
     __in PDRIVER_OBJECT DriverObject,
@@ -188,12 +194,13 @@ DriverEntry (
 
     __try
     {
+#if ( NTDDI_VERSION < NTDDI_WIN6 )
         status = GetPreviousModeOffset();
         if ( !NT_SUCCESS( status ) )
         {
             __leave;
         }
-
+#endif // ( NTDDI_VERSION < NTDDI_WIN6 )
 
         status = FltRegisterFilter (
             DriverObject,
