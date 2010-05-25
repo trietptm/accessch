@@ -16,16 +16,6 @@
 #include "flt.h"
 #include "volhlp.h"
 
-Parameters gFileCommonParams[] = {
-    PARAMETER_FILE_NAME,
-    PARAMETER_REQUESTOR_PROCESS_ID,
-    PARAMETER_CURRENT_THREAD_ID,
-    PARAMETER_LUID,
-    PARAMETER_SID,
-    PARAMETER_ACCESS_MODE,
-    PARAMETER_CREATE_OPTIONS,
-};
-
 ULONG gPreviousModeOffset = 0;
 
 // prototypes
@@ -508,18 +498,17 @@ PostCreate (
             FileObjectRequest,
             FILE_MINIFILTER,
             IRP_MJ_CLEANUP,
-            0,
-            ARRAYSIZE( gFileCommonParams ),
-            gFileCommonParams
+            0
             );
 
-        status = FilterEvent( &event, &Verdict );
+		PARAMS_MASK params2user;
+        status = FilterEvent( &event, &Verdict, &params2user );
 
         if ( NT_SUCCESS( status )
             &&
             FlagOn( Verdict, VERDICT_ASK ) )
         {
-            status = PortAskUser( &event );
+            status = PortAskUser( &event, params2user );
             if ( NT_SUCCESS( status ) )
             {
                 // nothing todo
@@ -556,18 +545,17 @@ PreCleanup (
             FileObjectRequest,
             FILE_MINIFILTER,
             IRP_MJ_CREATE,
-            0,
-            ARRAYSIZE( gFileCommonParams ),
-            gFileCommonParams
+            0
             );
 
-        status = FilterEvent( &event, &Verdict );
+		PARAMS_MASK params2user;
+        status = FilterEvent( &event, &Verdict, &params2user );
 
         if ( NT_SUCCESS( status )
             &&
             FlagOn( Verdict, VERDICT_ASK ) )
         {
-            status = PortAskUser( &event );
+            status = PortAskUser( &event, params2user );
             if ( NT_SUCCESS( status ) )
             {
                 // nothing todo

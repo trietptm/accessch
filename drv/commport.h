@@ -57,7 +57,8 @@ PortAllocateMessage (
     __in EventData *Event,
     __in QueuedItem* QueuedItem,
     __deref_out_opt PVOID* ppMessage,
-    __out_opt PULONG pMessageSize
+    __out_opt PULONG pMessageSize,
+	__in PARAMS_MASK ParamsMask
     );
 
 // освобождение события
@@ -70,7 +71,8 @@ PortReleaseMessage (
 __checkReturn
 NTSTATUS
 PortAskUser (
-    __in EventData *Event
+    __in EventData *Event,
+	__in PARAMS_MASK ParamsMask
     );
 
 #endif // __commport_h

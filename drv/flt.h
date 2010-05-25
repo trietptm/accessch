@@ -37,8 +37,6 @@ private:
     ULONG                   m_Major;
     ULONG                   m_Minor;
     EVENT_FLAGS             m_Flags;
-    ULONG                   m_ParamsCount;
-    PParameters             m_Params;
 
 public:
     EventData (
@@ -47,18 +45,14 @@ public:
         __in_opt PFN_OBJECT_REQUEST ObjectRequest,
         __in Interceptors InterceptorId,
         __in ULONG Major,
-        __in ULONG Minor,
-        __in ULONG ParamsCount,
-        __in PParameters Params
+        __in ULONG Minor
         ) : m_Opaque( Opaque ),
         m_QueryFunc( QueryFunc ),
         m_pfnObjectRequest( ObjectRequest),
         m_InterceptorId( InterceptorId ),
         m_Major( Major ),
         m_Minor( Minor ),
-        m_Flags( _EVENT_FLAG_NONE ),
-        m_ParamsCount( ParamsCount ),
-        m_Params( Params )
+        m_Flags( _EVENT_FLAG_NONE )
     {
         ASSERT( Opaque );
         ASSERT( QueryFunc );
@@ -77,23 +71,6 @@ public:
         )
     {
         return m_Flags;
-    }
-
-    ULONG
-    GetParametersCount (
-        )
-    {
-        return m_ParamsCount;
-    }
-
-    Parameters
-    GetParameterId (
-        __in_opt ULONG ParameterNumber
-        )
-    {
-        ASSERT( ParameterNumber <= m_ParamsCount );
-
-        return m_Params[ ParameterNumber ];
     }
 
     NTSTATUS
@@ -153,7 +130,8 @@ public:
 NTSTATUS
 FilterEvent (
     __in EventData *Event,
-    __inout PVERDICT Verdict
+    __inout PVERDICT Verdict,
+	__out PARAMS_MASK *ParamsMask
     );
 
 #endif //__flt_h
