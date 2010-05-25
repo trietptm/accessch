@@ -68,6 +68,15 @@ FileInterceptorContext::CreateSectionForData (
         NULL,
         NULL
         );
+
+#if ( NTDDI_VERSION < NTDDI_WIN6 )
+    KPROCESSOR_MODE prevmode = ExGetPreviousMode();
+
+    if ( prevmode == UserMode )
+    {
+        SetPreviousMode( KernelMode );
+    }
+#endif // ( NTDDI_VERSION < NTDDI_WIN6 )
     
     NTSTATUS status = FsRtlCreateSectionForDataScan (
         &m_Section,
@@ -81,6 +90,13 @@ FileInterceptorContext::CreateSectionForData (
         SEC_COMMIT,
         0
         );
+
+#if ( NTDDI_VERSION < NTDDI_WIN6 )
+    if ( prevmode == UserMode )
+    {
+        SetPreviousMode( UserMode );
+    }
+#endif // ( NTDDI_VERSION < NTDDI_WIN6 )
             
     if ( NT_SUCCESS( status ) )
     {

@@ -15,4 +15,12 @@
 	(( _handle ) != NtCurrentThread()) && \
 	(( _handle ) != NtCurrentProcess()) )
 
+#if ( NTDDI_VERSION < NTDDI_WIN6 )
+MODE
+SetPreviousMode (
+    MODE OperationMode
+    );
+
+#endif // ( NTDDI_VERSION < NTDDI_WIN6 )
+
 #include "mm.h"

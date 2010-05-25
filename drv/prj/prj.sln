@@ -11,6 +11,8 @@ Global
 		DebugW7|x64 = DebugW7|x64
 		DebugWnet|Win32 = DebugWnet|Win32
 		DebugWnet|x64 = DebugWnet|x64
+		DebugXP|Win32 = DebugXP|Win32
+		DebugXP|x64 = DebugXP|x64
 		ReleaseW7|Win32 = ReleaseW7|Win32
 		ReleaseW7|x64 = ReleaseW7|x64
 	EndGlobalSection
@@ -27,6 +29,10 @@ Global
 		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugWnet|Win32.Build.0 = DebugWnet|Win32
 		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugWnet|x64.ActiveCfg = DebugWnet|x64
 		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugWnet|x64.Build.0 = DebugWnet|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugXP|Win32.ActiveCfg = DebugXP|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugXP|Win32.Build.0 = DebugXP|Win32
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugXP|x64.ActiveCfg = DebugXP|x64
+		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.DebugXP|x64.Build.0 = DebugXP|x64
 		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.ReleaseW7|Win32.ActiveCfg = Release|Win32
 		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.ReleaseW7|Win32.Build.0 = Release|Win32
 		{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}.ReleaseW7|x64.ActiveCfg = Release|x64
