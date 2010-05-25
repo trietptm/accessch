@@ -519,7 +519,11 @@ PostCreate (
             &&
             FlagOn( Verdict, VERDICT_ASK ) )
         {
-            PortAskUser( &event );
+            status = PortAskUser( &event );
+            if ( NT_SUCCESS( status ) )
+            {
+                // nothing todo
+            }
         }
     }
     __finally
@@ -566,7 +570,7 @@ PreCleanup (
             status = PortAskUser( &event );
             if ( NT_SUCCESS( status ) )
             {
-                // \todo PreCleanup( AskUser complete )
+                // nothing todo
             }
         }
     }
