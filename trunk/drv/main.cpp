@@ -530,11 +530,6 @@ PostCreate (
             &&
             FlagOn( Verdict, VERDICT_ASK ) )
         {
-            if ( !FlagOn( pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
-            {
-                event.EventFlagsSet( _EVENT_FLAG_IO );
-            }
-
             PortAskUser( &event );
         }
     }
