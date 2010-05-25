@@ -27,7 +27,9 @@ private:
     // intercepted data
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
-    PSTREAM_CONTEXT             m_pStreamContext;
+    
+    // service field
+    PSTREAM_CONTEXT             m_StreamContext;
 
     // data access
     HANDLE                      m_Section;
@@ -38,12 +40,19 @@ private:
     HANDLE                      m_RequestorProcessId;
     HANDLE                      m_RequestorThreadId;
     PINSTANCE_CONTEXT           m_InstanceContext;
-    PSTREAM_CONTEXT             m_StreamContext;
     PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
     PSID                        m_Sid;
     LUID                        m_Luid;
 
+    ULONG                       m_Dummy;
+
 private:
+    __checkReturn
+    NTSTATUS
+    CheckAccessContext (
+        );
+
+    __checkReturn
     NTSTATUS
     CreateSectionForData (
         __deref_out PHANDLE Section,
@@ -53,8 +62,7 @@ private:
 public:
     FileInterceptorContext (
         PFLT_CALLBACK_DATA Data,
-        PCFLT_RELATED_OBJECTS FltObjects,
-        PSTREAM_CONTEXT pStreamContext
+        PCFLT_RELATED_OBJECTS FltObjects
         );
 
     ~FileInterceptorContext (

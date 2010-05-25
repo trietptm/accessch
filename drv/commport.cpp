@@ -105,7 +105,7 @@ PortConnect (
 
         pPortContext->m_Connection = ClientPort;
 
-        //! \todo  revise single port connection
+        // \todo  revise single port connection
         Globals.m_ClientPort = ClientPort;
 
         *ConnectionCookie = pPortContext;

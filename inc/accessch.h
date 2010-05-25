@@ -21,6 +21,8 @@ typedef enum Parameters
     PARAMETER_CURRENT_THREAD_ID     = 3,
     PARAMETER_LUID                  = 4,
     PARAMETER_SID                   = 5,
+    PARAMETER_ACCESS_MODE           = 6,
+    PARAMETER_CREATE_OPTIONS        = 7,
 } *PParameters;
 
 typedef ULONG VERDICT, *PVERDICT;

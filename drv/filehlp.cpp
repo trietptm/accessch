@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "main.h"
 #include "../inc/accessch.h"
 #include "flt.h"
 
@@ -7,22 +8,23 @@
 
 FileInterceptorContext::FileInterceptorContext (
     PFLT_CALLBACK_DATA Data,
-    PCFLT_RELATED_OBJECTS FltObjects,
-    PSTREAM_CONTEXT pStreamContext
+    PCFLT_RELATED_OBJECTS FltObjects
     ) : m_Data( Data ),
-    m_FltObjects( FltObjects ),
-    m_pStreamContext( pStreamContext )
+    m_FltObjects( FltObjects )
 {
+    m_StreamContext = NULL;
+
     m_Section = NULL;
     m_SectionObject = NULL;
    
     m_RequestorProcessId = 0;
     m_RequestorThreadId = 0;
     m_InstanceContext = 0;
-    m_StreamContext = 0;
     m_FileNameInfo = 0;
     m_Sid = 0;
     SecurityLuidReset( &m_Luid );
+
+    m_Dummy = 0;
 };
 
 FileInterceptorContext::~FileInterceptorContext (
@@ -49,12 +51,43 @@ FileInterceptorContext::~FileInterceptorContext (
 
 __checkReturn
 NTSTATUS
+FileInterceptorContext::CheckAccessContext (
+    )
+{
+    if ( m_StreamContext )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    NTSTATUS status = GenerateStreamContext (
+        Globals.m_Filter,
+        m_FltObjects,
+        &m_StreamContext
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        m_StreamContext = NULL;
+    }
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
 FileInterceptorContext::CreateSectionForData (
     __deref_out PHANDLE Section,
     __out PLARGE_INTEGER Size
     )
 {
-    if ( FlagOn( m_pStreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
+    NTSTATUS status = CheckAccessContext(); 
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    if ( FlagOn( m_StreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
     {
         return STATUS_NOT_SUPPORTED;
     }
@@ -78,7 +111,7 @@ FileInterceptorContext::CreateSectionForData (
     }
 #endif // ( NTDDI_VERSION < NTDDI_WIN6 )
     
-    NTSTATUS status = FsRtlCreateSectionForDataScan (
+    status = FsRtlCreateSectionForDataScan (
         &m_Section,
         &m_SectionObject,
         Size,
@@ -141,6 +174,13 @@ FileInterceptorContext::QueryParameter (
     __deref_out_opt PULONG DataSize
     )
 {
+    //if ( FlagOn (
+    //    Data->Iopb->Parameters->Create.Options,
+    //    FILE_OPEN_NO_RECALL
+
+    // \todo PARAMETER_ACCESS_MODE,
+    // \todo PARAMETER_CREATE_OPTIONS,
+
     NTSTATUS status = STATUS_NOT_FOUND;
 
     ASSERT( ARGUMENT_PRESENT( Data ) );
@@ -245,6 +285,14 @@ FileInterceptorContext::QueryParameter (
         *DataSize = RtlLengthSid( m_Sid );
         status = STATUS_SUCCESS;
 
+        break;
+
+    case PARAMETER_ACCESS_MODE:
+    case PARAMETER_CREATE_OPTIONS:
+        *Data = &m_Dummy;
+        *DataSize = sizeof( m_Dummy );
+
+        status = STATUS_SUCCESS;
         break;
 
     default:
@@ -453,7 +501,7 @@ GenerateStreamContext (
 
     BOOLEAN bIsDirectory;
 
-    //! \todo: safe call on Vista sp1 or higher!
+    // \todo safe call on Vista sp1 or higher!
     status = FltIsDirectory (
         FltObjects->FileObject,
         FltObjects->Instance,

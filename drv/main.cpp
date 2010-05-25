@@ -4,7 +4,7 @@
 //    \description - sample driver
 //!
 
-//! \todo check necessary headers
+// \todo check necessary headers
 #include "main.h"
 
 #include "../inc/accessch.h"
@@ -21,7 +21,9 @@ Parameters gFileCommonParams[] = {
     PARAMETER_REQUESTOR_PROCESS_ID,
     PARAMETER_CURRENT_THREAD_ID,
     PARAMETER_LUID,
-    PARAMETER_SID
+    PARAMETER_SID,
+    PARAMETER_ACCESS_MODE,
+    PARAMETER_CREATE_OPTIONS,
 };
 
 ULONG gPreviousModeOffset = 0;
@@ -256,7 +258,7 @@ Unload (
 {
     if ( !FlagOn(Flags, FLTFL_FILTER_UNLOAD_MANDATORY) )
     {
-        //! \todo checks during Unload
+        // \todo checks during Unload
         //return STATUS_FLT_DO_NOT_DETACH;
     }
 
@@ -490,8 +492,6 @@ PostCreate (
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
     NTSTATUS status;
 
-    PSTREAM_CONTEXT pStreamContext = NULL;
-
     if ( IsSkipPostCreate( Data, FltObjects, Flags ) )
     {
         return FLT_POSTOP_FINISHED_PROCESSING;
@@ -499,20 +499,9 @@ PostCreate (
 
     __try
     {
-        status = GenerateStreamContext (
-            Globals.m_Filter,
-            FltObjects,
-            &pStreamContext
-            );
-
-        if ( !NT_SUCCESS( status ) )
-        {
-            pStreamContext = NULL;
-            __leave;
-        }
-        
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects, pStreamContext );
+        FileInterceptorContext Context( Data, FltObjects );
+
         EventData event (
             &Context,
             FileQueryParameter,
@@ -535,7 +524,6 @@ PostCreate (
     }
     __finally
     {
-        ReleaseContext( &pStreamContext );
     }
 
     return fltStatus;
@@ -552,25 +540,12 @@ PreCleanup (
     NTSTATUS status;
     UNREFERENCED_PARAMETER( CompletionContext );
 
-    PSTREAM_CONTEXT pStreamContext = NULL;
-
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
 
     __try
     {
-        status = GenerateStreamContext (
-            Globals.m_Filter,
-            FltObjects,
-            &pStreamContext
-            );
-        if ( !NT_SUCCESS( status ) )
-        {
-            pStreamContext = NULL;
-            __leave;
-        }
-
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects, pStreamContext );
+        FileInterceptorContext Context( Data, FltObjects );
         EventData event (
             &Context,
             FileQueryParameter,
@@ -591,13 +566,12 @@ PreCleanup (
             status = PortAskUser( &event );
             if ( NT_SUCCESS( status ) )
             {
-                //! \todo PreCleanup( AskUser complete )
+                // \todo PreCleanup( AskUser complete )
             }
         }
     }
     __finally
     {
-        ReleaseContext( &pStreamContext );
     }
 
     return fltStatus;

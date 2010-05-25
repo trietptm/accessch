@@ -2,7 +2,7 @@
 #include "../inc/accessch.h"
 #include "flt.h"
 
-//! \todo: описать типы для фильтрации!
+// \todo описать типы для фильтрации!
 #define FilterId            ULONG
 #define OperationId         ULONG
 #define FilterDataType      ULONG
