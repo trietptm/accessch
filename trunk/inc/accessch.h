@@ -15,21 +15,27 @@ typedef enum Interceptors
 
 typedef enum Parameters
 {
-    PARAMETER_FILE_NAME             = 0,
-    PARAMETER_VOLUME_NAME           = 1,
-    PARAMETER_REQUESTOR_PROCESS_ID  = 2,
-    PARAMETER_CURRENT_THREAD_ID     = 3,
-    PARAMETER_LUID                  = 4,
-    PARAMETER_SID                   = 5,
-    PARAMETER_ACCESS_MODE           = 6,
-    PARAMETER_CREATE_OPTIONS        = 7,
+	// bit position
+	PARAMETER_FILE_NAME             = 1,
+    PARAMETER_VOLUME_NAME           = 2,
+    PARAMETER_REQUESTOR_PROCESS_ID  = 3,
+    PARAMETER_CURRENT_THREAD_ID     = 4,
+    PARAMETER_LUID                  = 5,
+    PARAMETER_SID                   = 6,
+    PARAMETER_ACCESS_MODE           = 7,
+    PARAMETER_CREATE_OPTIONS        = 8,
 } *PParameters;
+
+#define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * sizeof( CHAR ) )
 
 typedef ULONG VERDICT, *PVERDICT;
 #define VERDICT_NOT_FILTERED        0x0000
 #define VERDICT_ALLOW               0x0001
 #define VERDICT_DENY                0x0002
 #define VERDICT_ASK                 0x0004
+
+#define Id2Bit( _id ) ( 1 << _id )
+#define PARAMS_MASK ULONG
 
 #include <pshpack8.h>
 
