@@ -24,7 +24,6 @@ NTSTATUS
 enum EVENT_FLAGS
 {
     _EVENT_FLAG_NONE     = 0x0000,
-    _EVENT_FLAG_IO       = 0x0001,
 };
 
 class EventData
