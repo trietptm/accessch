@@ -131,7 +131,7 @@ NTSTATUS
 FilterEvent (
     __in EventData *Event,
     __inout PVERDICT Verdict,
-	__out PARAMS_MASK *ParamsMask
+    __out PARAMS_MASK *ParamsMask
     );
 
 #endif //__flt_h

@@ -265,12 +265,12 @@ PortAllocateMessage (
     __in QueuedItem* QueuedItem,
     __deref_out_opt PVOID* ppMessage,
     __out_opt PULONG pMessageSize,
-	__in PARAMS_MASK ParamsMask
+    __in PARAMS_MASK ParamsMask
     )
 {
     ASSERT( ARGUMENT_PRESENT( Event ) );
     ASSERT( ARGUMENT_PRESENT( QueuedItem ) );
-	ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
+    ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
     
     NTSTATUS status;
 
@@ -279,25 +279,25 @@ PortAllocateMessage (
 
     PVOID data;
     ULONG datasize;
-	ULONG params2user = 0;
+    ULONG params2user = 0;
     for ( ULONG cou = 0; cou < _PARAMS_COUNT; cou++ )
     {
         if ( FlagOn( ParamsMask, 1 << cou ) )
-		{
-			status = Event->QueryParameter (
-				(Parameters) cou,
-				&data,
-				&datasize
-				);
-			
-			if ( !NT_SUCCESS( status ) )
-			{
-				return status;
-			}
+        {
+            status = Event->QueryParameter (
+                (Parameters) cou,
+                &data,
+                &datasize
+                );
+            
+            if ( !NT_SUCCESS( status ) )
+            {
+                return status;
+            }
 
-			params2user++;
-			MessageSize += FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize;
-		}
+            params2user++;
+            MessageSize += FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize;
+        }
     }
 
     if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
@@ -323,24 +323,24 @@ PortAllocateMessage (
     PSINGLE_PARAMETER parameter = pMsg->m_Parameters;
     for ( ULONG cou = 0; cou < _PARAMS_COUNT; cou++ )
     {
-		if ( FlagOn( ParamsMask, 1 << cou ) )
-		{
-			status = Event->QueryParameter (
-				(Parameters) cou,
-				&data,
-				&datasize
-				);
+        if ( FlagOn( ParamsMask, 1 << cou ) )
+        {
+            status = Event->QueryParameter (
+                (Parameters) cou,
+                &data,
+                &datasize
+                );
 
-			ASSERT( NT_SUCCESS ( status ) );
-			parameter->m_Id = (Parameters) cou;
-			parameter->m_Size = datasize;
-			RtlCopyMemory( parameter->m_Data, data, datasize );
+            ASSERT( NT_SUCCESS ( status ) );
+            parameter->m_Id = (Parameters) cou;
+            parameter->m_Size = datasize;
+            RtlCopyMemory( parameter->m_Data, data, datasize );
 
-			parameter = (PSINGLE_PARAMETER) Add2Ptr (
-				parameter,
-				FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize
-				);
-		}
+            parameter = (PSINGLE_PARAMETER) Add2Ptr (
+                parameter,
+                FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize
+                );
+        }
     }
 
     *ppMessage = pMsg;
@@ -356,8 +356,8 @@ PortReleaseMessage (
 {
     if ( !*ppMessage )
     {
-		return;
-	}
+        return;
+    }
 
     FREE_POOL( *ppMessage );
 }
@@ -366,7 +366,7 @@ __checkReturn
 NTSTATUS
 PortAskUser (
     __in EventData *Event,
-	__in PARAMS_MASK ParamsMask
+    __in PARAMS_MASK ParamsMask
     )
 {
     NTSTATUS status;
@@ -374,7 +374,7 @@ PortAskUser (
     PVOID pMessage = NULL;
     QueuedItem* pQueuedItem = NULL;
 
-	ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
+    ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
 
     __try
     {
@@ -402,7 +402,7 @@ PortAskUser (
             pQueuedItem,
             &pMessage,
             &MessageSize,
-			ParamsMask
+            ParamsMask
             );
 
         if ( !NT_SUCCESS( status ) )
