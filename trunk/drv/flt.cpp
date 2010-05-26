@@ -56,7 +56,7 @@ NTSTATUS
 FilterEvent (
     __in EventData *Event,
     __inout PVERDICT Verdict,
-	__out PARAMS_MASK *ParamsMask
+    __out PARAMS_MASK *ParamsMask
     )
 {
     UNREFERENCED_PARAMETER( Event );
@@ -64,12 +64,12 @@ FilterEvent (
 
     *Verdict = VERDICT_ASK;
 
-	*ParamsMask =
-		Id2Bit( PARAMETER_FILE_NAME )
-		|
-		Id2Bit ( PARAMETER_REQUESTOR_PROCESS_ID )
-		|
-		Id2Bit ( PARAMETER_REQUESTOR_PROCESS_ID );
-	
+    *ParamsMask =
+        Id2Bit( PARAMETER_FILE_NAME )
+        |
+        Id2Bit ( PARAMETER_VOLUME_NAME )
+        |
+        Id2Bit ( PARAMETER_REQUESTOR_PROCESS_ID );
+    
     return STATUS_SUCCESS;
 }

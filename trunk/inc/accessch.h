@@ -15,8 +15,8 @@ typedef enum Interceptors
 
 typedef enum Parameters
 {
-	// bit position
-	PARAMETER_FILE_NAME             = 1,
+    // bit position
+    PARAMETER_FILE_NAME             = 1,
     PARAMETER_VOLUME_NAME           = 2,
     PARAMETER_REQUESTOR_PROCESS_ID  = 3,
     PARAMETER_CURRENT_THREAD_ID     = 4,
