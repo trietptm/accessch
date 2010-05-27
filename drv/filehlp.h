@@ -78,7 +78,7 @@ public:
 
     __checkReturn
     NTSTATUS
-    FileInterceptorContext::ObjectRequest (
+    ObjectRequest (
         __in NOTIFY_COMMANDS Command,
         __in_opt PVOID OutputBuffer,
         __inout_opt PULONG OutputBufferSize
