@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "../inc/accessch.h"
 #include "flt.h"
+#include "excludes.h"
 
 // \todo описать типы для фильтрации!
 #define FilterId            ULONG
@@ -58,14 +59,12 @@ FilterEvent (
     __out PARAMS_MASK *ParamsMask
     )
 {
-    UNREFERENCED_PARAMETER( Event );
-    UNREFERENCED_PARAMETER( Verdict );
-
-    HANDLE requestorProcess;
+    PHANDLE pRequestorProcess;
     ULONG fieldSize;
+    
     NTSTATUS status = Event->QueryParameter (
         PARAMETER_REQUESTOR_PROCESS_ID,
-        &requestorProcess,
+        (PVOID*) &pRequestorProcess,
         &fieldSize
         );
     
@@ -74,7 +73,7 @@ FilterEvent (
         return STATUS_UNSUCCESSFUL;
     }
 
-    if ( IsInvisibleProcess( requestorProcess ) )
+    if ( IsInvisibleProcess( *pRequestorProcess ) )
     {
         return STATUS_NOT_SUPPORTED;
     }

@@ -226,6 +226,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\commport.cpp" />
     <ClCompile Include="..\..\eventqueue.cpp" />
+    <ClCompile Include="..\..\excludes.cpp" />
     <ClCompile Include="..\..\filehlp.cpp" />
     <ClCompile Include="..\..\flt.cpp" />
     <ClCompile Include="..\..\main.cpp" />
@@ -236,6 +237,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\commport.h" />
     <ClInclude Include="..\..\eventqueue.h" />
+    <ClInclude Include="..\..\excludes.h" />
     <ClInclude Include="..\..\filehlp.h" />
     <ClInclude Include="..\..\flt.h" />
     <ClInclude Include="..\..\main.h" />

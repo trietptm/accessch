@@ -197,7 +197,7 @@ DriverEntry (
     Globals.m_FilterDriverObject = DriverObject;
     FltInitializePushLock( &Globals.m_ClientPortLock );
 
-    EventQueue_Init();
+    QueuedItem::Initialize();
 
     __try
     {
@@ -269,7 +269,7 @@ Unload (
     }
 
     FltCloseCommunicationPort( Globals.m_Port );
-    EventQueue_Done();
+    QueuedItem::Destroy();
     FltUnregisterFilter( Globals.m_Filter );
     FltDeletePushLock( &Globals.m_ClientPortLock );
 
