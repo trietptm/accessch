@@ -29,17 +29,21 @@ DriverEntry (
 }
 
 NTSTATUS
+FLTAPI
 Unload (
     __in FLT_FILTER_UNLOAD_FLAGS Flags
     );
 
-void
+
+VOID
+FLTAPI
 ContextCleanup (
     __in PVOID Pool,
     __in FLT_CONTEXT_TYPE ContextType
     );
 
 NTSTATUS
+FLTAPI
 InstanceSetup (
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __in FLT_INSTANCE_SETUP_FLAGS Flags,
@@ -48,6 +52,7 @@ InstanceSetup (
     );
 
 FLT_POSTOP_CALLBACK_STATUS
+FLTAPI
 PostCreate (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -56,6 +61,7 @@ PostCreate (
     );
 
 FLT_PREOP_CALLBACK_STATUS
+FLTAPI
 PreCleanup (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -63,6 +69,7 @@ PreCleanup (
     );
 
 FLT_POSTOP_CALLBACK_STATUS
+FLTAPI
 PostWrite (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -77,10 +84,18 @@ PostWrite (
 GLOBALS Globals;
 
 const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
-    { FLT_INSTANCE_CONTEXT,      0, ContextCleanup,  sizeof(INSTANCE_CONTEXT),       _ALLOC_TAG, NULL, NULL, NULL },
-    { FLT_STREAM_CONTEXT,        0, ContextCleanup,  sizeof(STREAM_CONTEXT),         _ALLOC_TAG, NULL, NULL, NULL },
-    { FLT_STREAMHANDLE_CONTEXT,  0, ContextCleanup,  sizeof(STREAM_HANDLE_CONTEXT),  _ALLOC_TAG, NULL, NULL, NULL },
-    { FLT_VOLUME_CONTEXT,        0, NULL,            sizeof(VOLUME_CONTEXT),         _ALLOC_TAG, NULL, NULL, NULL} ,
+    { FLT_INSTANCE_CONTEXT, 0, ContextCleanup, 
+        sizeof(INSTANCE_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
+    
+    { FLT_STREAM_CONTEXT, 0, ContextCleanup,
+        sizeof(STREAM_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
+    
+    { FLT_STREAMHANDLE_CONTEXT,  0, ContextCleanup,
+        sizeof(STREAM_HANDLE_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
+    
+    { FLT_VOLUME_CONTEXT, 0, NULL, sizeof(VOLUME_CONTEXT),
+        _ALLOC_TAG, NULL, NULL, NULL} ,
+    
     { FLT_CONTEXT_END }
 };
 
@@ -124,17 +139,17 @@ GetPreviousModeOffset (
 {
 #if defined (_WIN64)
 #define MOVE_OFFSET 9
-    if (*((ULONG*)ExGetPreviousMode) != (ULONG)0x048B4865) /* mov eax,gs:[] */
+    if (*((ULONG*)ExGetPreviousMode) != (ULONG)0x048B4865) // mov eax,gs:[]
 #else
 #define MOVE_OFFSET 6
-    if (*((USHORT*)ExGetPreviousMode) != (USHORT)0xA164) /* mov eax,fs:[] */
+    if (*((USHORT*)ExGetPreviousMode) != (USHORT)0xA164) // mov eax,fs:[]
 #endif
     {
         return STATUS_UNSUCCESSFUL;
     }
 
     if ( *( ( USHORT* )( &( ( char* ) ExGetPreviousMode )[ MOVE_OFFSET ] ) )
-        != (USHORT) 0x808A ) /* mov al,[eax+0xXX] */
+        != (USHORT) 0x808A ) // mov al,[eax+0xXX]
     {
         return STATUS_UNSUCCESSFUL;
     }
@@ -146,7 +161,7 @@ GetPreviousModeOffset (
 }
 
 /* Switch to disable NAPI hook protection
-    return previos state of MODE */
+    return previous state of MODE */
 MODE
 SetPreviousMode (
     MODE OperationMode
@@ -242,6 +257,7 @@ DriverEntry (
 
 __checkReturn
 NTSTATUS
+FLTAPI
 Unload (
     __in FLT_FILTER_UNLOAD_FLAGS Flags
     )
@@ -263,6 +279,7 @@ Unload (
 
 // ----------------------------------------------------------------------------
 VOID
+FLTAPI
 ContextCleanup (
     __in PVOID Pool,
     __in FLT_CONTEXT_TYPE ContextType
@@ -339,6 +356,7 @@ IsPassThrough (
 
 __checkReturn
 NTSTATUS
+FLTAPI
 InstanceSetup (
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __in FLT_INSTANCE_SETUP_FLAGS Flags,
@@ -470,6 +488,7 @@ IsSkipPostCreate (
 
 __checkReturn
 FLT_POSTOP_CALLBACK_STATUS
+FLTAPI
 PostCreate (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -492,53 +511,6 @@ PostCreate (
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext Context( Data, FltObjects );
 
-        EventData event (
-            &Context,
-            FileQueryParameter,
-            FileObjectRequest,
-            FILE_MINIFILTER,
-            IRP_MJ_CLEANUP,
-            0
-            );
-
-        PARAMS_MASK params2user;
-        status = FilterEvent( &event, &Verdict, &params2user );
-
-        if ( NT_SUCCESS( status )
-            &&
-            FlagOn( Verdict, VERDICT_ASK ) )
-        {
-            status = PortAskUser( &event, params2user );
-            if ( NT_SUCCESS( status ) )
-            {
-                // nothing todo
-            }
-        }
-    }
-    __finally
-    {
-    }
-
-    return fltStatus;
-}
-
-__checkReturn
-FLT_PREOP_CALLBACK_STATUS
-PreCleanup (
-    __inout PFLT_CALLBACK_DATA Data,
-    __in PCFLT_RELATED_OBJECTS FltObjects,
-    __out PVOID *CompletionContext
-    )
-{
-    NTSTATUS status;
-    UNREFERENCED_PARAMETER( CompletionContext );
-
-    FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
-
-    __try
-    {
-        VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects );
         EventData event (
             &Context,
             FileQueryParameter,
@@ -570,7 +542,56 @@ PreCleanup (
 }
 
 __checkReturn
+FLT_PREOP_CALLBACK_STATUS
+FLTAPI
+PreCleanup (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __out PVOID *CompletionContext
+    )
+{
+    NTSTATUS status;
+    UNREFERENCED_PARAMETER( CompletionContext );
+
+    FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
+
+    __try
+    {
+        VERDICT Verdict = VERDICT_NOT_FILTERED;
+        FileInterceptorContext Context( Data, FltObjects );
+        EventData event (
+            &Context,
+            FileQueryParameter,
+            FileObjectRequest,
+            FILE_MINIFILTER,
+            IRP_MJ_CLEANUP,
+            0
+            );
+
+        PARAMS_MASK params2user;
+        status = FilterEvent( &event, &Verdict, &params2user );
+
+        if ( NT_SUCCESS( status )
+            &&
+            FlagOn( Verdict, VERDICT_ASK ) )
+        {
+            status = PortAskUser( &event, params2user );
+            if ( NT_SUCCESS( status ) )
+            {
+                // nothing todo
+            }
+        }
+    }
+    __finally
+    {
+    }
+
+    return fltStatus;
+}
+
+__checkReturn
 FLT_POSTOP_CALLBACK_STATUS
+FLTAPI
 PostWrite (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,

@@ -127,6 +127,7 @@ public:
     }
 };
 
+__checkReturn
 NTSTATUS
 FilterEvent (
     __in EventData *Event,

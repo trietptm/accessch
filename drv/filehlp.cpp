@@ -349,7 +349,7 @@ __checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
-    __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    __deref_out_opt PFLT_FILE_NAME_INFORMATION* FileNameInfo
     )
 {
     ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED
@@ -358,7 +358,7 @@ QueryFileNameInfo (
     NTSTATUS status = FltGetFileNameInformation (
         Data,
         QueryNameFlags,
-        ppFileNameInfo
+        FileNameInfo
         );
 
     if ( !NT_SUCCESS( status ) )
@@ -366,7 +366,7 @@ QueryFileNameInfo (
         return status;
     }
 
-    status = FltParseFileNameInformation( *ppFileNameInfo );
+    status = FltParseFileNameInformation( *FileNameInfo );
 
     ASSERT( NT_SUCCESS( status ) ); //ignore unsuccessful parse
 
@@ -375,30 +375,30 @@ QueryFileNameInfo (
 
 void
 ReleaseFileNameInfo (
-    __in_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    __in_opt PFLT_FILE_NAME_INFORMATION* FileNameInfo
     )
 {
-    ASSERT( ppFileNameInfo );
+    ASSERT( FileNameInfo );
 
-    if ( *ppFileNameInfo )
+    if ( *FileNameInfo )
     {
-        FltReleaseFileNameInformation( *ppFileNameInfo );
-        *ppFileNameInfo = NULL;
+        FltReleaseFileNameInformation( *FileNameInfo );
+        *FileNameInfo = NULL;
     };
 }
 
 void
 ReleaseContextImp (
-    __in_opt PFLT_CONTEXT* ppContext
+    __in_opt PFLT_CONTEXT* Context
     )
 {
-    if ( !*ppContext )
+    if ( !*Context )
     {
         return;
     }
 
-    FltReleaseContext( *ppContext );
-    *ppContext = NULL;
+    FltReleaseContext( *Context );
+    *Context = NULL;
 }
 
 __checkReturn
@@ -450,7 +450,7 @@ NTSTATUS
 GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __deref_out_opt PSTREAM_CONTEXT* ppStreamContext
+    __deref_out_opt PSTREAM_CONTEXT* StreamContext
     )
 {
     ASSERT( ARGUMENT_PRESENT( Filter ) );
@@ -465,12 +465,12 @@ GenerateStreamContext (
     status = FltGetStreamContext (
         FltObjects->Instance,
         FltObjects->FileObject,
-        (PFLT_CONTEXT*) ppStreamContext
+        (PFLT_CONTEXT*) StreamContext
         );
 
     if ( NT_SUCCESS( status ) )
     {
-        ASSERT( *ppStreamContext );
+        ASSERT( *StreamContext );
         return status;
     }
 
@@ -479,16 +479,16 @@ GenerateStreamContext (
         FLT_STREAM_CONTEXT,
         sizeof( STREAM_CONTEXT ),
         NonPagedPool,
-        (PFLT_CONTEXT*) ppStreamContext
+        (PFLT_CONTEXT*) StreamContext
         );
 
     if ( !NT_SUCCESS( status ) )
     {
-        *ppStreamContext = NULL;
+        *StreamContext = NULL;
 
         return status;
     }
-    RtlZeroMemory( *ppStreamContext, sizeof( STREAM_CONTEXT ) );
+    RtlZeroMemory( *StreamContext, sizeof( STREAM_CONTEXT ) );
 
     status = FltGetInstanceContext (
         FltObjects->Instance,
@@ -497,7 +497,7 @@ GenerateStreamContext (
 
     ASSERT( NT_SUCCESS( status ) );
 
-    (*ppStreamContext)->m_InstanceContext = InstanceContext;
+    (*StreamContext)->m_InstanceContext = InstanceContext;
 
     BOOLEAN bIsDirectory;
 
@@ -513,7 +513,7 @@ GenerateStreamContext (
         if ( bIsDirectory )
         {
             InterlockedOr (
-                &(*ppStreamContext)->m_Flags,
+                &(*StreamContext)->m_Flags,
                 _STREAM_FLAGS_DIRECTORY
                 );
         }
@@ -523,17 +523,17 @@ GenerateStreamContext (
         FltObjects->Instance,
         FltObjects->FileObject,
         FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
-        *ppStreamContext,
+        *StreamContext,
         NULL
         );
 
     if ( !NT_SUCCESS( status ) )
     {
-        ReleaseContext( (PFLT_CONTEXT*) ppStreamContext );
+        ReleaseContext( (PFLT_CONTEXT*) StreamContext );
     }
     else
     {
-        ASSERT( *ppStreamContext );
+        ASSERT( *StreamContext );
     }
 
     return status;

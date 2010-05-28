@@ -18,7 +18,7 @@ __checkReturn
 NTSTATUS
 FillVolumeProperties (
      __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in PVOLUME_CONTEXT pVolumeContext
+    __in PVOLUME_CONTEXT VolumeContext
     );
     
 #endif // __volhlp_h
