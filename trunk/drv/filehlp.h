@@ -90,24 +90,24 @@ __checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
-    __deref_out_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    __deref_out_opt PFLT_FILE_NAME_INFORMATION* FileNameInfo
     );
 
 void
 ReleaseFileNameInfo (
-    __in_opt PFLT_FILE_NAME_INFORMATION* ppFileNameInfo
+    __in_opt PFLT_FILE_NAME_INFORMATION* FileNameInfo
     );
 
 #define ReleaseContext( _context ) ReleaseContextImp( (PFLT_CONTEXT*) _context )
 
 void
 ReleaseContextImp (
-    __in_opt PFLT_CONTEXT* ppContext
+    __in_opt PFLT_CONTEXT* Context
     );
 
 void
 SecurityFreeSid (
-    __in PSID* ppSid
+    __in PSID* Sid
     );
 
 __checkReturn
@@ -133,7 +133,7 @@ NTSTATUS
 GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __deref_out_opt PSTREAM_CONTEXT* ppStreamContext
+    __deref_out_opt PSTREAM_CONTEXT* StreamContext
     );
 
 #endif // __filehlp_h

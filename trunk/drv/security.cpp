@@ -3,7 +3,7 @@
 __checkReturn
 NTSTATUS
 SecurityGetLuid (
-    __out PLUID pLuid
+    __out PLUID Luid
     )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
@@ -17,7 +17,7 @@ SecurityGetLuid (
 
     if ( pToken )
     {
-        status = SeQueryAuthenticationIdToken( pToken, pLuid );
+        status = SeQueryAuthenticationIdToken( pToken, Luid );
     }
 
     SeReleaseSubjectContext( &SubjectContext );
@@ -51,25 +51,25 @@ SecurityLuidReset (
 __checkReturn
 NTSTATUS
 SecurityAllocateCopySid (
-    __in PSID pSid,
-    __deref_out_opt PSID* ppSid
+    __in PSID SidSrc,
+    __deref_out_opt PSID* Sid
     )
 {
     NTSTATUS status;
-    ASSERT( RtlValidSid( pSid ) );
+    ASSERT( RtlValidSid( SidSrc ) );
 
-    ULONG SidLength = RtlLengthSid( pSid );
+    ULONG SidLength = RtlLengthSid( SidSrc );
 
-    *ppSid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
-    if ( !*ppSid )
+    *Sid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
+    if ( !*Sid )
     {
         return STATUS_NO_MEMORY;
     }
 
-    status = RtlCopySid( SidLength, *ppSid, pSid );
+    status = RtlCopySid( SidLength, *Sid, SidSrc );
     if ( !NT_SUCCESS( status ) )
     {
-        FREE_POOL( *ppSid );
+        FREE_POOL( *Sid );
     }
 
     return status;
@@ -79,7 +79,7 @@ __checkReturn
 NTSTATUS
 SecurityGetSid (
     __in_opt PFLT_CALLBACK_DATA Data,
-    __deref_out_opt PSID *ppSid
+    __deref_out_opt PSID *Sid
     )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
@@ -140,7 +140,7 @@ SecurityGetSid (
             __leave;
         }
 
-        *ppSid = pSid;
+        *Sid = pSid;
         pSid = NULL;
     }
     __finally
@@ -164,11 +164,11 @@ SecurityGetSid (
 
 void
 SecurityFreeSid (
-    __in PSID* ppSid
+    __in PSID* Sid
     )
 {
-    if ( !*ppSid )
+    if ( !*Sid )
         return;
 
-    FREE_POOL( *ppSid );
+    FREE_POOL( *Sid );
 }

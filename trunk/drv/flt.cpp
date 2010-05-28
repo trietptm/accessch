@@ -50,8 +50,7 @@ struct Filter
 };
 
 // ---
-
-
+__checkReturn
 NTSTATUS
 FilterEvent (
     __in EventData *Event,
@@ -61,6 +60,24 @@ FilterEvent (
 {
     UNREFERENCED_PARAMETER( Event );
     UNREFERENCED_PARAMETER( Verdict );
+
+    HANDLE requestorProcess;
+    ULONG fieldSize;
+    NTSTATUS status = Event->QueryParameter (
+        PARAMETER_REQUESTOR_PROCESS_ID,
+        &requestorProcess,
+        &fieldSize
+        );
+    
+    if ( !NT_SUCCESS( status ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( IsInvisibleProcess( requestorProcess ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
 
     *Verdict = VERDICT_ASK;
 

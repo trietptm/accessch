@@ -4,8 +4,8 @@
 // создание общего порта
 NTSTATUS
 PortCreate (
-    __in PFLT_FILTER pFilter,
-    __deref_out_opt PFLT_PORT* ppPort
+    __in PFLT_FILTER Filter,
+    __deref_out_opt PFLT_PORT* Port
     );
 
 // cb-функция установки соединения с юзером
@@ -41,13 +41,13 @@ PortMessageNotify (
 __checkReturn
 NTSTATUS
 PortQueryConnected (
-    __deref_out_opt PFLT_PORT* ppPort
+    __deref_out_opt PFLT_PORT* Port
     );
 
 // освобождение порта
 void
 PortRelease (
-    __deref_in PFLT_PORT* ppPort
+    __deref_in PFLT_PORT* Port
     );
 
 // создание события
@@ -56,15 +56,15 @@ NTSTATUS
 PortAllocateMessage (
     __in EventData *Event,
     __in QueuedItem* QueuedItem,
-    __deref_out_opt PVOID* ppMessage,
-    __out_opt PULONG pMessageSize,
+    __deref_out_opt PVOID* Message,
+    __out_opt PULONG MessageSize,
     __in PARAMS_MASK ParamsMask
     );
 
 // освобождение события
 void
 PortReleaseMessage (
-    __deref_in PVOID* ppMessage
+    __deref_in PVOID* Message
     );
 
 // посылка сообщения в юзер

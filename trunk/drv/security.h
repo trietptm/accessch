@@ -8,7 +8,7 @@
 __checkReturn
 NTSTATUS
 SecurityGetLuid (
-    __inout PLUID pLuid
+    __inout PLUID Luid
     );
 
 BOOLEAN
@@ -28,12 +28,12 @@ __checkReturn
 NTSTATUS
 SecurityGetSid (
     __in_opt PFLT_CALLBACK_DATA Data,
-    __deref_out_opt PSID *ppSid
+    __deref_out_opt PSID *Sid
     );
 
 void
 SecurityFreeSid (
-    __in PSID* ppSid
+    __in PSID* Sid
     );
 
 #endif // __security_h

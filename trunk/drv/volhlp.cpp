@@ -6,19 +6,19 @@ DEFINE_GUID( GET_MEDIA_SERIAL_NUMBER_GUID,
             0x4021, 0x4d20, 0x97, 0xec, 0x5a, 0xe2, 0x31, 0x89, 0x56, 0x6b );
 NTSTATUS
 QueryDeviceProperty (
-    __in PDEVICE_OBJECT pDevice,
+    __in PDEVICE_OBJECT Device,
     __in DEVICE_REGISTRY_PROPERTY DevProperty,
-    __out PVOID* ppBuffer,
-    __out PULONG pResultLenght
+    __out PVOID* Buffer,
+    __out PULONG ResultLenght
     )
 {
-    ASSERT( ARGUMENT_PRESENT( pDevice ) );
+    ASSERT( ARGUMENT_PRESENT( Device ) );
     NTSTATUS status;
     PVOID pBuffer = NULL;
     ULONG BufferSize = 0;
 
     status = IoGetDeviceProperty (
-        pDevice,
+        Device,
         DevProperty,
         BufferSize,
         NULL,
@@ -40,7 +40,7 @@ QueryDeviceProperty (
         }
 
         status = IoGetDeviceProperty (
-            pDevice,
+            Device,
             DevProperty,
             BufferSize,
             pBuffer,
@@ -49,8 +49,8 @@ QueryDeviceProperty (
 
         if ( NT_SUCCESS( status ) )
         {
-            *ppBuffer = pBuffer;
-            *pResultLenght = BufferSize;
+            *Buffer = pBuffer;
+            *ResultLenght = BufferSize;
             return status;
         }
 
@@ -65,15 +65,15 @@ QueryDeviceProperty (
 __checkReturn
 NTSTATUS
 GetRemovableProperty (
-    __in PDEVICE_OBJECT pDevice,
-    __in PVOLUME_CONTEXT pVolumeContext
+    __in PDEVICE_OBJECT Device,
+    __in PVOLUME_CONTEXT VolumeContext
     )
 {
     PVOID pBuffer = NULL;
     ULONG PropertySize;
 
     NTSTATUS status = QueryDeviceProperty (
-        pDevice,
+        Device,
         DevicePropertyRemovalPolicy,
         &pBuffer,
         &PropertySize
@@ -84,7 +84,7 @@ GetRemovableProperty (
         PDEVICE_REMOVAL_POLICY pRemovalPolicy =
             (PDEVICE_REMOVAL_POLICY) pBuffer;
         
-        pVolumeContext->m_RemovablePolicy = *pRemovalPolicy;
+        VolumeContext->m_RemovablePolicy = *pRemovalPolicy;
 
         FREE_POOL( pBuffer );
     }
@@ -94,7 +94,7 @@ GetRemovableProperty (
 
 NTSTATUS
 GetMediaSerialNumber (
-    __in PDEVICE_OBJECT pDevice
+    __in PDEVICE_OBJECT Device
     )
 {
     PIRP Irp;
@@ -120,7 +120,7 @@ GetMediaSerialNumber (
 
         Irp = IoBuildDeviceIoControlRequest (
             IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER,
-            pDevice,
+            Device,
             (PVOID) &GET_MEDIA_SERIAL_NUMBER_GUID,
             sizeof( GET_MEDIA_SERIAL_NUMBER_GUID ),
             QueryBuffer,
@@ -136,7 +136,7 @@ GetMediaSerialNumber (
             __leave;
         }
 
-        status = IoCallDriver( pDevice, Irp );
+        status = IoCallDriver( Device, Irp );
 
         if ( STATUS_PENDING == status )
         {
@@ -180,8 +180,8 @@ GetMediaSerialNumber (
 __checkReturn
 NTSTATUS
 GetDeviceInfo (
-    __in PDEVICE_OBJECT pDevice,
-    __in PVOLUME_CONTEXT pVolumeContext
+    __in PDEVICE_OBJECT Device,
+    __in PVOLUME_CONTEXT VolumeContext
     )
 {
     PIRP Irp;
@@ -209,7 +209,7 @@ GetDeviceInfo (
 
         Irp = IoBuildDeviceIoControlRequest (
             IOCTL_STORAGE_QUERY_PROPERTY,
-            pDevice,
+            Device,
             &PropQuery,
             sizeof( PropQuery ),
             QueryBuffer,
@@ -225,7 +225,7 @@ GetDeviceInfo (
             __leave;
         }
 
-        status = IoCallDriver( pDevice, Irp );
+        status = IoCallDriver( Device, Irp );
 
         if ( STATUS_PENDING == status )
         {
@@ -254,7 +254,7 @@ GetDeviceInfo (
         PSTORAGE_DEVICE_DESCRIPTOR pDesc = 
             (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer;
         
-        pVolumeContext->m_BusType = pDesc->BusType;
+        VolumeContext->m_BusType = pDesc->BusType;
     }
     __finally
     {
@@ -271,10 +271,10 @@ __checkReturn
 NTSTATUS
 FillVolumeProperties (
      __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in PVOLUME_CONTEXT pVolumeContext
+    __in PVOLUME_CONTEXT VolumeContext
     )
 {
-    ASSERT( ARGUMENT_PRESENT( pVolumeContext ) );
+    ASSERT( ARGUMENT_PRESENT( VolumeContext ) );
 
     NTSTATUS status;
     PDEVICE_OBJECT pDevice = NULL;
@@ -288,7 +288,7 @@ FillVolumeProperties (
             __leave;
         }
 
-        status = GetDeviceInfo( pDevice, pVolumeContext );
+        status = GetDeviceInfo( pDevice, VolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
       
         // \todo - need PDO object for GetRemovableProperty - Verifier BUGCHECK

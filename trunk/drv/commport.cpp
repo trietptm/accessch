@@ -18,8 +18,8 @@ typedef struct _PORT_CONTEXT
 __checkReturn
 NTSTATUS
 PortCreate (
-    __in PFLT_FILTER pFilter,
-    __deref_out_opt PFLT_PORT* ppPort
+    __in PFLT_FILTER Filter,
+    __deref_out_opt PFLT_PORT* Port
     )
 {
     NTSTATUS status;
@@ -42,8 +42,8 @@ PortCreate (
             );
 
         status = FltCreateCommunicationPort (
-            pFilter,
-            ppPort,
+            Filter,
+            Port,
             &oa,
             NULL,
             PortConnect,
@@ -56,7 +56,7 @@ PortCreate (
 
         if ( !NT_SUCCESS( status ) )
         {
-            *ppPort = NULL;
+            *Port = NULL;
         }
     }
 
@@ -232,7 +232,7 @@ PortMessageNotify (
 __checkReturn
 NTSTATUS
 PortQueryConnected (
-    __deref_out_opt PFLT_PORT* ppPort
+    __deref_out_opt PFLT_PORT* Port
     )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
@@ -240,7 +240,7 @@ PortQueryConnected (
     FltAcquirePushLockShared( &Globals.m_ClientPortLock );
     if ( Globals.m_ClientPort)
     {
-        *ppPort = Globals.m_ClientPort;
+        *Port = Globals.m_ClientPort;
         status = STATUS_SUCCESS;
     }
 
@@ -251,11 +251,11 @@ PortQueryConnected (
 
 void
 PortRelease (
-    __deref_in PFLT_PORT* ppPort
+    __deref_in PFLT_PORT* Port
     )
 {
-    if ( *ppPort )
-        *ppPort = NULL;
+    if ( *Port )
+        *Port = NULL;
 }
 
 __checkReturn
@@ -263,8 +263,8 @@ NTSTATUS
 PortAllocateMessage (
     __in EventData *Event,
     __in QueuedItem* QueuedItem,
-    __deref_out_opt PVOID* ppMessage,
-    __out_opt PULONG pMessageSize,
+    __deref_out_opt PVOID* Message,
+    __out_opt PULONG MessageSize,
     __in PARAMS_MASK ParamsMask
     )
 {
@@ -275,7 +275,7 @@ PortAllocateMessage (
     NTSTATUS status;
 
     PMESSAGE_DATA pMsg;
-    ULONG MessageSize = FIELD_OFFSET( MESSAGE_DATA, m_Parameters );
+    ULONG messageSize = FIELD_OFFSET( MESSAGE_DATA, m_Parameters );
 
     PVOID data;
     ULONG datasize;
@@ -296,11 +296,11 @@ PortAllocateMessage (
             }
 
             params2user++;
-            MessageSize += FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize;
+            messageSize += FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize;
         }
     }
 
-    if ( DRV_EVENT_CONTENT_SIZE < MessageSize )
+    if ( DRV_EVENT_CONTENT_SIZE < messageSize )
     {
         ASSERT( !MessageSize );
         return STATUS_NOT_SUPPORTED;
@@ -308,7 +308,7 @@ PortAllocateMessage (
 
     pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
         PagedPool,
-        MessageSize,
+        messageSize,
         _ALLOC_TAG
         );
 
@@ -343,23 +343,23 @@ PortAllocateMessage (
         }
     }
 
-    *ppMessage = pMsg;
-    *pMessageSize = MessageSize;
+    *Message = pMsg;
+    *MessageSize = messageSize;
 
     return STATUS_SUCCESS;
 }
 
 void
 PortReleaseMessage (
-    __deref_in PVOID* ppMessage
+    __deref_in PVOID* Message
     )
 {
-    if ( !*ppMessage )
+    if ( !*Message )
     {
         return;
     }
 
-    FREE_POOL( *ppMessage );
+    FREE_POOL( *Message );
 }
 
 __checkReturn
