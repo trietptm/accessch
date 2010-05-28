@@ -4,6 +4,7 @@
 #include "main.h"
 #include "eventqueue.h"
 #include "flt.h"
+#include "excludes.h"
 
 #include "commport.h"
 
@@ -107,6 +108,7 @@ PortConnect (
 
         // \todo  revise single port connection
         Globals.m_ClientPort = ClientPort;
+        RegisterInvisibleProcess( PsGetCurrentProcessId() );
 
         *ConnectionCookie = pPortContext;
     }
@@ -132,6 +134,8 @@ PortDisconnect (
     FltReleasePushLock( &Globals.m_ClientPortLock );
 
     FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
+
+    UnregisterInvisibleProcess( PsGetCurrentProcessId() );
 
     FREE_POOL( pPortContext );
 }
@@ -182,7 +186,7 @@ PortMessageNotify (
             status = STATUS_INVALID_PARAMETER;
             if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
             {
-                status = EventQueue_Lookup (
+                status = QueuedItem::Lookup (
                     pCommand->m_EventId,
                     &pItem
                     );
@@ -390,7 +394,7 @@ PortAskUser (
         ULONG ReplyLength = sizeof( ReplyResult );
         ULONG MessageSize = 0;
         
-        status = EventQueue_Add( Event, &pQueuedItem );
+        status = QueuedItem::Add( Event, &pQueuedItem );
         if ( !NT_SUCCESS( status ) )
         {
             pQueuedItem = NULL;
@@ -430,7 +434,7 @@ PortAskUser (
     {
         if ( pQueuedItem )
         {
-            EventQueue_WaitAndDestroy( &pQueuedItem );
+            pQueuedItem->WaitAndDestroy();
         }
 
         PortRelease( &pPort );
