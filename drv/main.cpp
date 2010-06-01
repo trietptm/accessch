@@ -509,7 +509,7 @@ PostCreate (
     __try
     {
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects );
+        FileInterceptorContext Context( Data, FltObjects, PostProcessing );
 
         EventData event (
             &Context,
@@ -558,7 +558,7 @@ PreCleanup (
     __try
     {
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects );
+        FileInterceptorContext Context( Data, FltObjects, PreProcessing );
         EventData event (
             &Context,
             FileQueryParameter,

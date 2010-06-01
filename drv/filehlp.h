@@ -27,6 +27,7 @@ private:
     // intercepted data
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
+    FltProcessingType           m_OperationType;
     
     // service field
     PSTREAM_CONTEXT             m_StreamContext;
@@ -44,8 +45,10 @@ private:
     PSID                        m_Sid;
     LUID                        m_Luid;
 
-    ULONG                       m_Dummy;
-
+    ACCESS_MASK                 m_DesiredAccess;
+    ULONG                       m_CreateOptions;
+    ULONG                       m_CreateMode;
+    
 private:
     __checkReturn
     NTSTATUS
@@ -61,8 +64,9 @@ private:
 
 public:
     FileInterceptorContext (
-        PFLT_CALLBACK_DATA Data,
-        PCFLT_RELATED_OBJECTS FltObjects
+        __in PFLT_CALLBACK_DATA Data,
+        __in PCFLT_RELATED_OBJECTS FltObjects,
+        __in FltProcessingType OperationType
         );
 
     ~FileInterceptorContext (
@@ -79,7 +83,7 @@ public:
     __checkReturn
     NTSTATUS
     ObjectRequest (
-        __in NOTIFY_COMMANDS Command,
+        __in NOTIFY_ID Command,
         __in_opt PVOID OutputBuffer,
         __inout_opt PULONG OutputBufferSize
         );
@@ -123,7 +127,7 @@ __checkReturn
 NTSTATUS
 FileObjectRequest (
     __in PVOID Opaque,
-    __in NOTIFY_COMMANDS Command,
+    __in NOTIFY_ID Command,
     __in_opt PVOID OutputBuffer,
     __inout_opt PULONG OutputBufferSize
     );
