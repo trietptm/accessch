@@ -7,10 +7,12 @@
 #include "security.h"
 
 FileInterceptorContext::FileInterceptorContext (
-    PFLT_CALLBACK_DATA Data,
-    PCFLT_RELATED_OBJECTS FltObjects
+    __in PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in FltProcessingType OperationType
     ) : m_Data( Data ),
-    m_FltObjects( FltObjects )
+    m_FltObjects( FltObjects ),
+    m_OperationType( OperationType )
 {
     m_StreamContext = NULL;
 
@@ -24,7 +26,9 @@ FileInterceptorContext::FileInterceptorContext (
     m_Sid = 0;
     SecurityLuidReset( &m_Luid );
 
-    m_Dummy = 0;
+    m_DesiredAccess = 0;
+    m_CreateOptions = 0;
+    m_CreateMode = 0;
 };
 
 FileInterceptorContext::~FileInterceptorContext (
@@ -174,17 +178,12 @@ FileInterceptorContext::QueryParameter (
     __deref_out_opt PULONG DataSize
     )
 {
-    //if ( FlagOn (
-    //    Data->Iopb->Parameters->Create.Options,
-    //    FILE_OPEN_NO_RECALL
-
-    // \todo PARAMETER_ACCESS_MODE,
-    // \todo PARAMETER_CREATE_OPTIONS,
-
     NTSTATUS status = STATUS_NOT_FOUND;
 
     ASSERT( ARGUMENT_PRESENT( Data ) );
     ASSERT( ARGUMENT_PRESENT( DataSize ) );
+
+    FLT_PARAMETERS *pFltParams = &m_Data->Iopb->Parameters;
 
     switch ( ParameterId )
     {
@@ -287,10 +286,87 @@ FileInterceptorContext::QueryParameter (
 
         break;
 
-    case PARAMETER_ACCESS_MODE:
+    case PARAMETER_DESIRED_ACCESS:
+        if ( IRP_MJ_CREATE == m_Data->Iopb->MajorFunction )
+        {
+            // get from request
+            // \todo FILE_OPEN_NO_RECALL
+            m_DesiredAccess = pFltParams->Create.SecurityContext->DesiredAccess;
+        }
+        else
+        {
+            // use stream handle context
+            status = STATUS_NOT_SUPPORTED;
+            break;
+        }
+
+        *Data = &m_DesiredAccess;
+        *DataSize = sizeof( m_DesiredAccess );
+
+        status = STATUS_SUCCESS;
+
+        break;
+
     case PARAMETER_CREATE_OPTIONS:
-        *Data = &m_Dummy;
-        *DataSize = sizeof( m_Dummy );
+        if ( IRP_MJ_CREATE == m_Data->Iopb->MajorFunction )
+        {
+            // get from request
+            // \todo FILE_OPEN_NO_RECALL 
+            m_CreateOptions = pFltParams->Create.Options & FILE_VALID_OPTION_FLAGS;
+        }
+        else
+        {
+            // use stream handle context
+            status = STATUS_NOT_SUPPORTED;
+            break;
+        }
+
+        *Data = &m_CreateOptions;
+        *DataSize = sizeof( m_CreateOptions );
+
+        break;
+
+    case PARAMETER_CREATE_MODE:
+        if ( IRP_MJ_CREATE == m_Data->Iopb->MajorFunction )
+        {
+            // get from request
+            m_CreateMode = (pFltParams->Create.Options >> 24) & 0xff;
+        }
+        else
+        {
+            // use stream handle context
+            status = STATUS_NOT_SUPPORTED;
+            break;
+        }
+
+        *Data = &m_CreateMode;
+        *DataSize = sizeof( m_CreateMode );
+
+        status = STATUS_SUCCESS;
+        break;
+
+    case PARAMETER_RESULT_STATUS:
+        if ( PreProcessing == m_OperationType )
+        {
+            status = STATUS_NOT_SUPPORTED;
+            break;
+        }
+        
+        *Data = &m_Data->IoStatus.Status;
+        *DataSize = sizeof( m_Data->IoStatus.Status );
+
+        status = STATUS_SUCCESS;
+        break;
+
+    case PARAMETER_RESULT_INFORMATION:
+        if ( PreProcessing == m_OperationType )
+        {
+            status = STATUS_NOT_SUPPORTED;
+            break;
+        }
+
+        *Data = &m_Data->IoStatus.Information;
+        *DataSize = sizeof( m_Data->IoStatus.Information );
 
         status = STATUS_SUCCESS;
         break;
@@ -306,7 +382,7 @@ FileInterceptorContext::QueryParameter (
 __checkReturn
 NTSTATUS
 FileInterceptorContext::ObjectRequest (
-    __in NOTIFY_COMMANDS Command,
+    __in NOTIFY_ID Command,
     __in_opt PVOID OutputBuffer,
     __inout_opt PULONG OutputBufferSize
     )
@@ -427,7 +503,7 @@ __checkReturn
 NTSTATUS
 FileObjectRequest (
     __in PVOID Opaque,
-    __in NOTIFY_COMMANDS Command,
+    __in NOTIFY_ID Command,
     __in_opt PVOID OutputBuffer,
     __inout_opt PULONG OutputBufferSize
     )

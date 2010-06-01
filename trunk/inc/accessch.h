@@ -22,8 +22,11 @@ typedef enum Parameters
     PARAMETER_CURRENT_THREAD_ID     = 4,
     PARAMETER_LUID                  = 5,
     PARAMETER_SID                   = 6,
-    PARAMETER_ACCESS_MODE           = 7,
+    PARAMETER_DESIRED_ACCESS        = 7,
     PARAMETER_CREATE_OPTIONS        = 8,
+    PARAMETER_CREATE_MODE           = 9,
+    PARAMETER_RESULT_STATUS         = 10,
+    PARAMETER_RESULT_INFORMATION    = 11,
 } *PParameters;
 
 #define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * sizeof( CHAR ) )
@@ -45,34 +48,34 @@ typedef struct _REPLY_RESULT
     ULONG               m_Flags;
 } REPLY_RESULT, *PREPLY_RESULT;
 
-typedef struct _SINGLE_PARAMETER
+typedef struct _EVENT_PARAMETER
 {
     Parameters          m_Id;
     ULONG               m_Size;
     UCHAR               m_Data[1];
-} SINGLE_PARAMETER, *PSINGLE_PARAMETER;
+} EVENT_PARAMETER, *PEVENT_PARAMETER;
 
 typedef struct _MESSAGE_DATA
 {
     ULONG               m_EventId;
     ULONG               m_ParametersCount;
-    SINGLE_PARAMETER    m_Parameters[1];
+    EVENT_PARAMETER    m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;
 
-// notify strutures
-typedef enum _NOTIFY_COMMANDS
+// notify structures
+typedef enum _NOTIFY_ID
 {
     // common commands
     ntfcom_Connect       = 0x0001,
     
     // object's commands
     ntfcom_PrepareIO     = 0x0100 // result struct
-} NOTIFY_COMMANDS;
+} NOTIFY_ID;
 
 typedef struct _NOTIFY_COMMAND
 {
     ULONG               m_Reserved;
-    NOTIFY_COMMANDS     m_Command;
+    NOTIFY_ID           m_Command;
     ULONG               m_EventId;
 } NOTIFY_COMMAND, *PNOTIFY_COMMAND;
 
@@ -82,6 +85,50 @@ typedef struct _NC_IOPREPARE
     HANDLE              m_Section;
     LARGE_INTEGER       m_IoSize;
 } NC_IOPREPARE, *PNC_IOPREPARE;
+
+// filters structures
+// основная сложность при работе с фильтрами в хелпере, который позволяет
+// формировать сложные структуры в r3
+
+#define FilterChain     PVOID
+
+typedef enum FltProcessingType
+{
+    PreProcessing   = 0x001,
+    PostProcessing  = 0x002,
+};
+typedef enum FltOperation
+{
+    _fltop_equ      = 0x0000,
+    _fltop_and      = 0x0001,
+};
+
+typedef struct _FILTER_PARAMETER
+{
+    ULONG               m_Size;
+    UCHAR               m_Data[1];
+} FILTER_PARAMETER, *PFILTER_PARAMETER;
+
+typedef struct _PARAM_ENTRY
+{
+    Parameters          m_Id;
+    ULONG               m_Count;
+    FltOperation        m_Operation;
+    FILTER_PARAMETER    m_FltData;
+}PARAM_ENTRY, *PPARAM_ENTRY;
+
+typedef struct _FILTER
+{
+    Interceptors        m_Interceptor;
+    ULONG               m_FunctionMj;
+    ULONG               m_FunctionMi;
+    FltProcessingType   m_ProcessingType;
+    ULONG               m_RequestTimeout;       //msec
+    ULONG               m_ParamsCount;
+    PARAM_ENTRY         m_Params[1];
+} FILTER,*PFILTER;
+
+// end filters structures
 
 #include <poppack.h>
 

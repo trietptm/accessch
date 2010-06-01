@@ -89,3 +89,15 @@ FilterEvent (
     
     return STATUS_SUCCESS;
 }
+
+__checkReturn
+NTSTATUS
+FilterAdd (
+    __in FilterChain *Filters,
+    __in ULONG ChainSize
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( Filters ) );
+
+    return STATUS_NOT_SUPPORTED;
+}

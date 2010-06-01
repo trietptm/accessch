@@ -16,7 +16,7 @@ __checkReturn
 NTSTATUS
 ( *PFN_OBJECT_REQUEST ) (
     __in PVOID Opaque,
-    __in NOTIFY_COMMANDS Command,
+    __in NOTIFY_ID Command,
     __in_opt PVOID OutputBuffer,
     __inout_opt PULONG OutputBufferSize
     );
@@ -51,11 +51,12 @@ public:
         m_pfnObjectRequest( ObjectRequest),
         m_InterceptorId( InterceptorId ),
         m_Major( Major ),
-        m_Minor( Minor ),
-        m_Flags( _EVENT_FLAG_NONE )
+        m_Minor( Minor )
     {
         ASSERT( Opaque );
         ASSERT( QueryFunc );
+
+        m_Flags  = _EVENT_FLAG_NONE;
     }
 
     EVENT_FLAGS
@@ -108,7 +109,7 @@ public:
 
     NTSTATUS
     ObjectRequst (
-        __in NOTIFY_COMMANDS Command,
+        __in NOTIFY_ID Command,
         __in_opt PVOID OutputBuffer,
         __inout_opt PULONG OutputBufferSize
         )

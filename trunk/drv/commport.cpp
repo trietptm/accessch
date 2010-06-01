@@ -300,7 +300,7 @@ PortAllocateMessage (
             }
 
             params2user++;
-            messageSize += FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize;
+            messageSize += FIELD_OFFSET( EVENT_PARAMETER, m_Data ) + datasize;
         }
     }
 
@@ -324,7 +324,7 @@ PortAllocateMessage (
     pMsg->m_EventId = QueuedItem->GetId();
     pMsg->m_ParametersCount = params2user;
     
-    PSINGLE_PARAMETER parameter = pMsg->m_Parameters;
+    PEVENT_PARAMETER parameter = pMsg->m_Parameters;
     for ( ULONG cou = 0; cou < _PARAMS_COUNT; cou++ )
     {
         if ( FlagOn( ParamsMask, 1 << cou ) )
@@ -340,9 +340,9 @@ PortAllocateMessage (
             parameter->m_Size = datasize;
             RtlCopyMemory( parameter->m_Data, data, datasize );
 
-            parameter = (PSINGLE_PARAMETER) Add2Ptr (
+            parameter = (PEVENT_PARAMETER) Add2Ptr (
                 parameter,
-                FIELD_OFFSET( SINGLE_PARAMETER, m_Data ) + datasize
+                FIELD_OFFSET( EVENT_PARAMETER, m_Data ) + datasize
                 );
         }
     }
