@@ -104,7 +104,7 @@ HRESULT
 Nc_ExecuteObjectRequest (
     __in PCOMMUNICATIONS CommPort,
     __in PNOTIFY_COMMAND Command,
-    __in NOTIFY_COMMANDS CommandId,
+    __in NOTIFY_ID CommandId,
     __in ULONG EventId,
     __out PVOID OutBuffer,
     __inout PULONG Size

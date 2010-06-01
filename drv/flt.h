@@ -126,6 +126,31 @@ public:
 
         return STATUS_NOT_SUPPORTED;
     }
+
+    inline
+    Interceptors
+    GetInterceptorId (
+        )
+    {
+        return m_InterceptorId;
+    };
+
+    inline
+    ULONG
+    GetMajor (
+        )
+    {
+        return m_Major;
+    };
+
+    inline
+    ULONG
+    GetMinor (
+        )
+    {
+        return m_Minor;
+    }
+
 };
 
 __checkReturn
