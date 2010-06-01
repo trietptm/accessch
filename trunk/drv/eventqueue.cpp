@@ -128,7 +128,6 @@ QueuedItem::WaitAndDestroy (
     FREE_POOL( ptr );
 }
 
-
 ULONG
 QueuedItem::GetId (
     )

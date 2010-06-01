@@ -322,6 +322,11 @@ PortAllocateMessage (
     }
 
     pMsg->m_EventId = QueuedItem->GetId();
+    
+    pMsg->m_Interceptor = Event->GetInterceptorId();
+    pMsg->m_FuncionMj = Event->GetMajor();
+    pMsg->m_FuncionMj = Event->GetMinor();
+
     pMsg->m_ParametersCount = params2user;
     
     PEVENT_PARAMETER parameter = pMsg->m_Parameters;

@@ -13,6 +13,12 @@ typedef enum Interceptors
     FILE_MINIFILTER                 = 0,
 };
 
+typedef enum FltProcessingType
+{
+    PreProcessing   = 0x001,
+    PostProcessing  = 0x002,
+};
+
 typedef enum Parameters
 {
     // bit position
@@ -58,8 +64,11 @@ typedef struct _EVENT_PARAMETER
 typedef struct _MESSAGE_DATA
 {
     ULONG               m_EventId;
+    Interceptors        m_Interceptor;
+    ULONG               m_FuncionMj;
+    ULONG               m_FuncionMi;
     ULONG               m_ParametersCount;
-    EVENT_PARAMETER    m_Parameters[1];
+    EVENT_PARAMETER     m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;
 
 // notify structures
@@ -92,11 +101,6 @@ typedef struct _NC_IOPREPARE
 
 #define FilterChain     PVOID
 
-typedef enum FltProcessingType
-{
-    PreProcessing   = 0x001,
-    PostProcessing  = 0x002,
-};
 typedef enum FltOperation
 {
     _fltop_equ      = 0x0000,
