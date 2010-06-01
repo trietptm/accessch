@@ -194,13 +194,13 @@ FileInterceptorContext::QueryParameter (
                 m_Data,
                 &m_FileNameInfo
                 );
-            
+
             if ( !NT_SUCCESS( status ) )
             {
                 break;
             }
         }
-        
+
         *Data = m_FileNameInfo->Name.Buffer;
         *DataSize = m_FileNameInfo->Name.Length;
         status = STATUS_SUCCESS;
@@ -302,7 +302,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_DesiredAccess;
         *DataSize = sizeof( m_DesiredAccess );
-
         status = STATUS_SUCCESS;
 
         break;
@@ -323,6 +322,7 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_CreateOptions;
         *DataSize = sizeof( m_CreateOptions );
+        status = STATUS_SUCCESS;
 
         break;
 
@@ -341,8 +341,8 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_CreateMode;
         *DataSize = sizeof( m_CreateMode );
-
         status = STATUS_SUCCESS;
+
         break;
 
     case PARAMETER_RESULT_STATUS:
@@ -354,8 +354,8 @@ FileInterceptorContext::QueryParameter (
         
         *Data = &m_Data->IoStatus.Status;
         *DataSize = sizeof( m_Data->IoStatus.Status );
-
         status = STATUS_SUCCESS;
+
         break;
 
     case PARAMETER_RESULT_INFORMATION:
@@ -367,8 +367,8 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_Data->IoStatus.Information;
         *DataSize = sizeof( m_Data->IoStatus.Information );
-
         status = STATUS_SUCCESS;
+
         break;
 
     default:
