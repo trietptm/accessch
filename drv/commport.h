@@ -72,7 +72,8 @@ __checkReturn
 NTSTATUS
 PortAskUser (
     __in EventData *Event,
-    __in PARAMS_MASK ParamsMask
+    __in PARAMS_MASK ParamsMask,
+    __inout VERDICT* Verdict
     );
 
 #endif // __commport_h
