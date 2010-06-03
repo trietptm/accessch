@@ -36,7 +36,10 @@ typedef enum Parameters
     PARAMETER_RESULT_INFORMATION    = 12,
 } *PParameters;
 
-#define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * sizeof( CHAR ) )
+#define Id2Bit( _id ) ( 1 << _id )
+
+#define PARAMS_MASK ULONG
+#define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * 8 )
 
 typedef ULONG VERDICT, *PVERDICT;
 #define VERDICT_NOT_FILTERED        0x0000
@@ -44,8 +47,6 @@ typedef ULONG VERDICT, *PVERDICT;
 #define VERDICT_DENY                0x0002
 #define VERDICT_ASK                 0x0004
 
-#define Id2Bit( _id ) ( 1 << _id )
-#define PARAMS_MASK ULONG
 
 #include <pshpack8.h>
 

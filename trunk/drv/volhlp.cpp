@@ -289,6 +289,10 @@ FillVolumeProperties (
         }
 
         status = GetDeviceInfo( pDevice, VolumeContext );
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
         //ASSERT( NT_SUCCESS( status ) );
       
         // \todo - need PDO object for GetRemovableProperty - Verifier BUGCHECK
