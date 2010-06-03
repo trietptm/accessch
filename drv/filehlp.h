@@ -21,13 +21,13 @@ typedef struct _STREAM_HANDLE_CONTEXT
 
 // ----------------------------------------------------------------------------
 
-class FileInterceptorContext
+class FileInterceptorContext : public InterceptorContext
 {
 private:
     // intercepted data
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
-    FltProcessingType           m_OperationType;
+    OperationPoint              m_OperationType;
     
     // service field
     PSTREAM_CONTEXT             m_StreamContext;
@@ -52,7 +52,7 @@ private:
 private:
     __checkReturn
     NTSTATUS
-    CheckAccessContext (
+    CheckAccessToStreamContext (
         );
 
     __checkReturn
@@ -66,7 +66,7 @@ public:
     FileInterceptorContext (
         __in PFLT_CALLBACK_DATA Data,
         __in PCFLT_RELATED_OBJECTS FltObjects,
-        __in FltProcessingType OperationType
+        __in OperationPoint OperationType
         );
 
     ~FileInterceptorContext (

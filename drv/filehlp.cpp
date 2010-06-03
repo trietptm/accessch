@@ -9,8 +9,9 @@
 FileInterceptorContext::FileInterceptorContext (
     __in PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in FltProcessingType OperationType
-    ) : m_Data( Data ),
+    __in OperationPoint OperationType
+    ) : InterceptorContext( OperationType ),
+    m_Data( Data ),
     m_FltObjects( FltObjects ),
     m_OperationType( OperationType )
 {
@@ -55,7 +56,7 @@ FileInterceptorContext::~FileInterceptorContext (
 
 __checkReturn
 NTSTATUS
-FileInterceptorContext::CheckAccessContext (
+FileInterceptorContext::CheckAccessToStreamContext (
     )
 {
     if ( m_StreamContext )
@@ -84,7 +85,7 @@ FileInterceptorContext::CreateSectionForData (
     __out PLARGE_INTEGER Size
     )
 {
-    NTSTATUS status = CheckAccessContext(); 
+    NTSTATUS status = CheckAccessToStreamContext(); 
 
     if ( !NT_SUCCESS( status ) )
     {
@@ -336,6 +337,7 @@ FileInterceptorContext::QueryParameter (
         {
             // use stream handle context
             status = STATUS_NOT_SUPPORTED;
+           
             break;
         }
 
@@ -475,50 +477,6 @@ ReleaseContextImp (
 
     FltReleaseContext( *Context );
     *Context = NULL;
-}
-
-__checkReturn
-NTSTATUS
-FileQueryParameter (
-    __in PVOID Opaque,
-    __in_opt Parameters ParameterId,
-    __deref_out_opt PVOID* Data,
-    __deref_out_opt PULONG DataSize
-    )
-{
-    ASSERT( ARGUMENT_PRESENT( Opaque ) );
-
-    FileInterceptorContext *fileContext = (FileInterceptorContext*) Opaque;
-   
-    NTSTATUS status = fileContext->QueryParameter (
-        ParameterId,
-        Data,
-        DataSize
-        );
-
-    return status;
-}
-
-__checkReturn
-NTSTATUS
-FileObjectRequest (
-    __in PVOID Opaque,
-    __in NOTIFY_ID Command,
-    __in_opt PVOID OutputBuffer,
-    __inout_opt PULONG OutputBufferSize
-    )
-{
-    ASSERT( ARGUMENT_PRESENT( Opaque ) );
-
-    FileInterceptorContext *fileContext = (FileInterceptorContext*) Opaque;
-   
-    NTSTATUS status = fileContext->ObjectRequest (
-        Command,
-        OutputBuffer,
-        OutputBufferSize
-        );
-
-    return status;
 }
 
 __checkReturn

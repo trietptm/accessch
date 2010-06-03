@@ -13,7 +13,7 @@ typedef enum Interceptors
     FILE_MINIFILTER                 = 0,
 };
 
-typedef enum FltProcessingType
+typedef enum OperationPoint
 {
     PreProcessing   = 0x001,
     PostProcessing  = 0x002,
@@ -22,17 +22,18 @@ typedef enum FltProcessingType
 typedef enum Parameters
 {
     // bit position
-    PARAMETER_FILE_NAME             = 1,
-    PARAMETER_VOLUME_NAME           = 2,
-    PARAMETER_REQUESTOR_PROCESS_ID  = 3,
-    PARAMETER_CURRENT_THREAD_ID     = 4,
-    PARAMETER_LUID                  = 5,
-    PARAMETER_SID                   = 6,
-    PARAMETER_DESIRED_ACCESS        = 7,
-    PARAMETER_CREATE_OPTIONS        = 8,
-    PARAMETER_CREATE_MODE           = 9,
-    PARAMETER_RESULT_STATUS         = 10,
-    PARAMETER_RESULT_INFORMATION    = 11,
+    PARAMETER_RESERVED              = 1,
+    PARAMETER_FILE_NAME             = 2,
+    PARAMETER_VOLUME_NAME           = 3,
+    PARAMETER_REQUESTOR_PROCESS_ID  = 4,
+    PARAMETER_CURRENT_THREAD_ID     = 5,
+    PARAMETER_LUID                  = 6,
+    PARAMETER_SID                   = 7,
+    PARAMETER_DESIRED_ACCESS        = 8,
+    PARAMETER_CREATE_OPTIONS        = 9,
+    PARAMETER_CREATE_MODE           = 10,
+    PARAMETER_RESULT_STATUS         = 11,
+    PARAMETER_RESULT_INFORMATION    = 12,
 } *PParameters;
 
 #define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * sizeof( CHAR ) )
@@ -67,6 +68,7 @@ typedef struct _MESSAGE_DATA
     Interceptors        m_Interceptor;
     ULONG               m_FuncionMj;
     ULONG               m_FuncionMi;
+    OperationPoint    m_OperationType;
     ULONG               m_ParametersCount;
     EVENT_PARAMETER     m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;
@@ -126,7 +128,7 @@ typedef struct _FILTER
     Interceptors        m_Interceptor;
     ULONG               m_FunctionMj;
     ULONG               m_FunctionMi;
-    FltProcessingType   m_ProcessingType;
+    OperationPoint    m_OperationType;
     ULONG               m_RequestTimeout;       //msec
     ULONG               m_ParamsCount;
     PARAM_ENTRY         m_Params[1];
