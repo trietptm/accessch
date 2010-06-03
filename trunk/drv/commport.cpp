@@ -376,7 +376,8 @@ __checkReturn
 NTSTATUS
 PortAskUser (
     __in EventData *Event,
-    __in PARAMS_MASK ParamsMask
+    __in PARAMS_MASK ParamsMask,
+    __inout VERDICT* Verdict
     )
 {
     NTSTATUS status;
@@ -385,6 +386,9 @@ PortAskUser (
     QueuedItem* pQueuedItem = NULL;
 
     ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
+
+    // \toso fill result verdict
+    UNREFERENCED_PARAMETER( Verdict );
 
     __try
     {

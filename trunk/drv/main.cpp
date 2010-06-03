@@ -520,15 +520,36 @@ PostCreate (
         PARAMS_MASK params2user;
         status = FilterEvent( &event, &Verdict, &params2user );
 
-        if ( NT_SUCCESS( status )
-            &&
-            FlagOn( Verdict, VERDICT_ASK ) )
+        if ( NT_SUCCESS( status ) )
         {
-            status = PortAskUser( &event, params2user );
-            if ( NT_SUCCESS( status ) )
+            if ( FlagOn( Verdict, VERDICT_ASK ) )
             {
-                // nothing todo
+               status = PortAskUser( &event, params2user, &Verdict );
+                if ( NT_SUCCESS( status ) )
+                {
+                    // nothing todo
+                }
             }
+
+            if ( FlagOn( Verdict, VERDICT_DENY ) )
+            {
+                Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+                Data->IoStatus.Information = 0;
+
+                if ( FlagOn( FltObjects->FileObject->Flags, FO_HANDLE_CREATED ) )
+                {
+                    // file already has handle(s)!
+                    // skip blocking
+                }
+                else
+                {
+                    FltCancelFileOpen (
+                        FltObjects->Instance,
+                        FltObjects->FileObject
+                        );
+                }
+            }
+
         }
     }
     __finally
@@ -570,7 +591,7 @@ PreCleanup (
             &&
             FlagOn( Verdict, VERDICT_ASK ) )
         {
-            status = PortAskUser( &event, params2user );
+            status = PortAskUser( &event, params2user, &Verdict );
             if ( NT_SUCCESS( status ) )
             {
                 // nothing todo

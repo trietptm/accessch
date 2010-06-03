@@ -6,6 +6,8 @@
 #include "filehlp.h"
 #include "security.h"
 
+// \todo FILE_OPEN_NO_RECALL
+
 FileInterceptorContext::FileInterceptorContext (
     __in PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -290,8 +292,6 @@ FileInterceptorContext::QueryParameter (
     case PARAMETER_DESIRED_ACCESS:
         if ( IRP_MJ_CREATE == m_Data->Iopb->MajorFunction )
         {
-            // get from request
-            // \todo FILE_OPEN_NO_RECALL
             m_DesiredAccess = pFltParams->Create.SecurityContext->DesiredAccess;
         }
         else
@@ -310,8 +310,6 @@ FileInterceptorContext::QueryParameter (
     case PARAMETER_CREATE_OPTIONS:
         if ( IRP_MJ_CREATE == m_Data->Iopb->MajorFunction )
         {
-            // get from request
-            // \todo FILE_OPEN_NO_RECALL 
             m_CreateOptions = pFltParams->Create.Options & FILE_VALID_OPTION_FLAGS;
         }
         else
@@ -330,7 +328,6 @@ FileInterceptorContext::QueryParameter (
     case PARAMETER_CREATE_MODE:
         if ( IRP_MJ_CREATE == m_Data->Iopb->MajorFunction )
         {
-            // get from request
             m_CreateMode = (pFltParams->Create.Options >> 24) & 0xff;
         }
         else
