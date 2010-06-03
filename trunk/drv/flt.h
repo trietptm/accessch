@@ -4,16 +4,6 @@
 typedef
 __checkReturn
 NTSTATUS
-( *PFN_QUERY_EVENT_PARAM ) (
-    __in PVOID Opaque,
-    __in_opt Parameters ParameterId,
-    __deref_out_opt PVOID* Data,
-    __deref_out_opt PULONG DataSize
-    );
-
-typedef
-__checkReturn
-NTSTATUS
 ( *PFN_OBJECT_REQUEST ) (
     __in PVOID Opaque,
     __in NOTIFY_ID Command,
@@ -21,57 +11,91 @@ NTSTATUS
     __inout_opt PULONG OutputBufferSize
     );
 
-enum EVENT_FLAGS
+class InterceptorContext
 {
-    _EVENT_FLAG_NONE     = 0x0000,
+public:
+    InterceptorContext (
+        __in OperationPoint OperationType
+        ) :
+        m_OperationType( OperationType )
+
+    {
+
+    };
+
+    ~InterceptorContext()
+    {
+
+    }
+
+    inline
+    OperationPoint
+    GetOperationType (
+        )
+    {
+        return m_OperationType;
+    }
+
+    __checkReturn
+    virtual
+    NTSTATUS
+    QueryParameter (
+        __in_opt Parameters ParameterId,
+        __deref_out_opt PVOID* Data,
+        __deref_out_opt PULONG DataSize
+        )
+    {
+        UNREFERENCED_PARAMETER( ParameterId );
+        UNREFERENCED_PARAMETER( Data );
+        UNREFERENCED_PARAMETER( DataSize );
+
+        ASSERT( FALSE );
+
+        return STATUS_NOT_IMPLEMENTED;
+    }
+
+    __checkReturn
+    virtual
+    NTSTATUS
+    ObjectRequest (
+        __in NOTIFY_ID Command,
+        __in_opt PVOID OutputBuffer,
+        __inout_opt PULONG OutputBufferSize
+        )
+    {
+        UNREFERENCED_PARAMETER( Command );
+        UNREFERENCED_PARAMETER( OutputBuffer );
+        UNREFERENCED_PARAMETER( OutputBufferSize );
+
+        ASSERT( FALSE );
+
+        return STATUS_NOT_IMPLEMENTED;
+    }
+    
+protected:
+    OperationPoint  m_OperationType;
 };
 
 class EventData
 {
 private:
 
-    PVOID                   m_Opaque;
-    PFN_QUERY_EVENT_PARAM   m_QueryFunc;
-    PFN_OBJECT_REQUEST      m_pfnObjectRequest;
+    InterceptorContext*     m_InterceptorContext;
     Interceptors            m_InterceptorId;
     ULONG                   m_Major;
     ULONG                   m_Minor;
-    EVENT_FLAGS             m_Flags;
 
 public:
     EventData (
-        __in PVOID Opaque,
-        __in PFN_QUERY_EVENT_PARAM QueryFunc,
-        __in_opt PFN_OBJECT_REQUEST ObjectRequest,
+        __in InterceptorContext* InterceptorContext,
         __in Interceptors InterceptorId,
         __in ULONG Major,
         __in ULONG Minor
-        ) : m_Opaque( Opaque ),
-        m_QueryFunc( QueryFunc ),
-        m_pfnObjectRequest( ObjectRequest),
+        ) : m_InterceptorContext( InterceptorContext ),
         m_InterceptorId( InterceptorId ),
         m_Major( Major ),
         m_Minor( Minor )
     {
-        ASSERT( Opaque );
-        ASSERT( QueryFunc );
-
-        m_Flags  = _EVENT_FLAG_NONE;
-    }
-
-    EVENT_FLAGS
-    EventFlagsSet( 
-        __in EVENT_FLAGS Flag
-        )
-    {
-        return (EVENT_FLAGS) FlagOn( m_Flags, Flag );
-    }
-
-    EVENT_FLAGS
-    EventFlagsGet (
-        )
-    {
-        return m_Flags;
     }
 
     NTSTATUS
@@ -81,7 +105,13 @@ public:
         __deref_out_opt PULONG DataSize
         )
     {
-        return m_QueryFunc( m_Opaque, PrarameterId, Data, DataSize ); 
+        NTSTATUS status = m_InterceptorContext->QueryParameter (
+            PrarameterId,
+            Data,
+            DataSize
+            );
+
+        return status;
     }
 
     NTSTATUS
@@ -92,7 +122,7 @@ public:
     {
         ULONG lenght;
         PVOID buffer;
-        NTSTATUS status = QueryParameter (
+        NTSTATUS status = m_InterceptorContext->QueryParameter (
             PrarameterId,
             &buffer,
             &lenght
@@ -107,6 +137,7 @@ public:
         return status;
     }
 
+    __checkReturn
     NTSTATUS
     ObjectRequst (
         __in NOTIFY_ID Command,
@@ -114,17 +145,13 @@ public:
         __inout_opt PULONG OutputBufferSize
         )
     {
-        if ( m_pfnObjectRequest )
-        {
-            return m_pfnObjectRequest (
-                m_Opaque,
-                Command,
-                OutputBuffer,
-                OutputBufferSize
-                );
-        }
+        NTSTATUS status = m_InterceptorContext->ObjectRequest (
+            Command,
+            OutputBuffer,
+            OutputBufferSize
+            );
 
-        return STATUS_NOT_SUPPORTED;
+        return status;
     }
 
     inline
@@ -151,6 +178,12 @@ public:
         return m_Minor;
     }
 
+    OperationPoint
+    GetOperationType (
+        )
+    {
+        return m_InterceptorContext->GetOperationType();
+    }
 };
 
 __checkReturn

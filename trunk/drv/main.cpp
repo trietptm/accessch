@@ -13,7 +13,6 @@
 #include "commport.h"
 #include "filehlp.h"
 
-#include "flt.h"
 #include "volhlp.h"
 
 ULONG gPreviousModeOffset = 0;
@@ -513,8 +512,6 @@ PostCreate (
 
         EventData event (
             &Context,
-            FileQueryParameter,
-            FileObjectRequest,
             FILE_MINIFILTER,
             IRP_MJ_CREATE,
             0
@@ -561,8 +558,6 @@ PreCleanup (
         FileInterceptorContext Context( Data, FltObjects, PreProcessing );
         EventData event (
             &Context,
-            FileQueryParameter,
-            FileObjectRequest,
             FILE_MINIFILTER,
             IRP_MJ_CLEANUP,
             0
