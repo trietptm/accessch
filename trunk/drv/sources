@@ -29,6 +29,8 @@ SOURCES= \
 		commport.cpp \
 		filehlp.cpp \
 		volhlp.cpp \
+		fileflt.cpp \
+		volumeflt.cpp \
 		flt.cpp \
 		eventqueue.cpp \
 		security.cpp \

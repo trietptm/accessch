@@ -227,17 +227,20 @@
     <ClCompile Include="..\..\commport.cpp" />
     <ClCompile Include="..\..\eventqueue.cpp" />
     <ClCompile Include="..\..\excludes.cpp" />
+    <ClCompile Include="..\..\fileflt.cpp" />
     <ClCompile Include="..\..\filehlp.cpp" />
     <ClCompile Include="..\..\flt.cpp" />
     <ClCompile Include="..\..\main.cpp" />
     <ClCompile Include="..\..\mm.cpp" />
     <ClCompile Include="..\..\security.cpp" />
     <ClCompile Include="..\..\volhlp.cpp" />
+    <ClCompile Include="..\..\volumeflt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\commport.h" />
     <ClInclude Include="..\..\eventqueue.h" />
     <ClInclude Include="..\..\excludes.h" />
+    <ClInclude Include="..\..\fileflt.h" />
     <ClInclude Include="..\..\filehlp.h" />
     <ClInclude Include="..\..\flt.h" />
     <ClInclude Include="..\..\main.h" />
@@ -246,6 +249,7 @@
     <ClInclude Include="..\..\security.h" />
     <ClInclude Include="..\..\ver.h" />
     <ClInclude Include="..\..\volhlp.h" />
+    <ClInclude Include="..\..\volumeflt.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

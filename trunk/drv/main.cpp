@@ -6,14 +6,17 @@
 
 // \todo check necessary headers
 #include "main.h"
-
 #include "../inc/accessch.h"
 #include "flt.h"
 #include "eventqueue.h"
 #include "commport.h"
-#include "filehlp.h"
 
 #include "volhlp.h"
+#include "volumeflt.h"
+
+#include "filehlp.h"
+#include "fileflt.h"
+
 
 ULONG gPreviousModeOffset = 0;
 
@@ -425,6 +428,31 @@ InstanceSetup (
         }
 
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
+
+        VERDICT Verdict = VERDICT_NOT_FILTERED;
+        VolumeInterceptorContext Context( FltObjects, pInstanceContext, PostProcessing );
+
+        EventData event (
+            &Context,
+            VOLUME_MINIFILTER,
+            EVENT_VOLUME_ATTACH,
+            0
+            );
+
+        PARAMS_MASK params2user;
+        status = FilterEvent( &event, &Verdict, &params2user );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            if ( FlagOn( Verdict, VERDICT_ASK ) )
+            {
+                status = PortAskUser( &event, params2user, &Verdict );
+                if ( NT_SUCCESS( status ) )
+                {
+                    // nothing todo
+                }
+            }
+        }
 
         status = FltSetInstanceContext (
             FltObjects->Instance,
