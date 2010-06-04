@@ -8,6 +8,8 @@
 #include <ntstrsafe.h>
 #include <ntdddisk.h>
 
+extern "C" NTSYSAPI USHORT NtBuildNumber;
+
 #define KERNEL_HANDLE_MASK ((ULONG_PTR)((LONG)0x80000000))
 
 #define IsKernelHandle( _handle ) \

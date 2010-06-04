@@ -476,6 +476,45 @@ ReleaseContextImp (
     *Context = NULL;
 }
 
+NTSTATUS
+IsDirectoryImp (
+    __in PFLT_INSTANCE Instance,
+    __in PFILE_OBJECT FileObject,
+    __out PBOOLEAN IsDirectory
+    )
+{
+    NTSTATUS status;
+
+    if ( NtBuildNumber >= 6001 )
+    {
+        status = FltIsDirectory (
+            FileObject,
+            Instance,
+            IsDirectory
+            );
+    }
+    else
+    {
+        FILE_STANDARD_INFORMATION fsi = {};
+        status = FltQueryInformationFile (
+            Instance,
+            FileObject,
+            &fsi,
+            sizeof( fsi ),
+            FileStandardInformation,
+            0
+            );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            *IsDirectory = fsi.Directory;
+        }
+    }
+
+    return status;
+}
+
+
 __checkReturn
 NTSTATUS
 GenerateStreamContext (
@@ -532,10 +571,9 @@ GenerateStreamContext (
 
     BOOLEAN bIsDirectory;
 
-    // \todo safe call on Vista sp1 or higher!
-    status = FltIsDirectory (
-        FltObjects->FileObject,
+    status = IsDirectoryImp (
         FltObjects->Instance,
+        FltObjects->FileObject,
         &bIsDirectory
         );
 
