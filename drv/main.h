@@ -13,3 +13,24 @@ typedef struct _GLOBALS
 }GLOBALS, *PGLOBALS;
 
 extern GLOBALS Globals;
+
+// ----------------------------------------------------------------------------
+//
+
+typedef struct _INSTANCE_CONTEXT
+{
+    DEVICE_TYPE             m_VolumeDeviceType;
+    FLT_FILESYSTEM_TYPE     m_VolumeFilesystemType;
+} INSTANCE_CONTEXT, *PINSTANCE_CONTEXT;
+
+typedef struct _STREAM_CONTEXT
+{
+    PINSTANCE_CONTEXT       m_InstanceContext;
+    LONG                    m_Flags;
+} STREAM_CONTEXT, *PSTREAM_CONTEXT;
+
+typedef struct _STREAM_HANDLE_CONTEXT
+{
+    PSTREAM_CONTEXT         m_StreamContext;
+    LUID                    m_Luid;
+} STREAM_HANDLE_CONTEXT, *PSTREAM_HANDLE_CONTEXT;

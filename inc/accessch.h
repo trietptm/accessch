@@ -11,6 +11,14 @@
 typedef enum Interceptors
 {
     FILE_MINIFILTER                 = 0,
+    VOLUME_MINIFILTER               = 1,
+};
+
+translate IRP_MJ_XXX to internal defines
+
+typedef enum DriverEvent
+{
+    EVENT_VOLUME_ATTACH             = 1,
 };
 
 typedef enum OperationPoint
