@@ -7,6 +7,25 @@
 
 // \todo FILE_OPEN_NO_RECALL
 
+DriverOperationId
+FileOperationSystemToInternal (
+    ULONG OperationId
+    )
+{
+    switch ( OperationId )
+    {
+    case IRP_MJ_CREATE:
+        return OP_FILE_CREATE;
+    
+    case IRP_MJ_CLEANUP:
+        return OP_FILE_CLEANUP;
+
+    default:
+        __debugbreak();
+    }
+
+    return OP_UNKNOWN;
+}
 
 //////////////////////////////////////////////////////////////////////////
 __checkReturn

@@ -1,6 +1,11 @@
 #ifndef __filehlp_h
 #define __filehlp_h
 
+DriverOperationId
+FileOperationSystemToInternal (
+    ULONG OperationId
+    );
+
 __checkReturn
 NTSTATUS
 QueryFileNameInfo (
