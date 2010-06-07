@@ -435,7 +435,7 @@ InstanceSetup (
         EventData event (
             &Context,
             VOLUME_MINIFILTER,
-            EVENT_VOLUME_ATTACH,
+            OP_VOLUME_ATTACH,
             0
             );
 
@@ -541,7 +541,7 @@ PostCreate (
         EventData event (
             &Context,
             FILE_MINIFILTER,
-            IRP_MJ_CREATE,
+            OP_FILE_CREATE,
             0
             );
 
@@ -608,7 +608,7 @@ PreCleanup (
         EventData event (
             &Context,
             FILE_MINIFILTER,
-            IRP_MJ_CLEANUP,
+            OP_FILE_CLEANUP,
             0
             );
 

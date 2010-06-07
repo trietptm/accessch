@@ -14,11 +14,12 @@ typedef enum Interceptors
     VOLUME_MINIFILTER               = 1,
 };
 
-translate IRP_MJ_XXX to internal defines
-
-typedef enum DriverEvent
+typedef enum DriverOperationId
 {
-    EVENT_VOLUME_ATTACH             = 1,
+    OP_UNKNOWN                      = -1,
+    OP_VOLUME_ATTACH                = 1,
+    OP_FILE_CREATE                  = 2,
+    OP_FILE_CLEANUP                 = 3,
 };
 
 typedef enum OperationPoint
@@ -75,9 +76,9 @@ typedef struct _MESSAGE_DATA
 {
     ULONG               m_EventId;
     Interceptors        m_Interceptor;
-    ULONG               m_FuncionMj;
+    DriverOperationId   m_OperationId;
     ULONG               m_FuncionMi;
-    OperationPoint    m_OperationType;
+    OperationPoint      m_OperationType;
     ULONG               m_ParametersCount;
     EVENT_PARAMETER     m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;

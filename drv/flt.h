@@ -82,14 +82,14 @@ private:
 
     InterceptorContext*     m_InterceptorContext;
     Interceptors            m_InterceptorId;
-    ULONG                   m_Major;
+    DriverOperationId       m_Major;
     ULONG                   m_Minor;
 
 public:
     EventData (
         __in InterceptorContext* InterceptorContext,
         __in Interceptors InterceptorId,
-        __in ULONG Major,
+        __in DriverOperationId Major,
         __in ULONG Minor
         ) : m_InterceptorContext( InterceptorContext ),
         m_InterceptorId( InterceptorId ),
@@ -163,8 +163,8 @@ public:
     };
 
     inline
-    ULONG
-    GetMajor (
+    DriverOperationId
+    GetOperationId (
         )
     {
         return m_Major;

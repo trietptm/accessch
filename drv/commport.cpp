@@ -324,8 +324,8 @@ PortAllocateMessage (
     pMsg->m_EventId = QueuedItem->GetId();
     
     pMsg->m_Interceptor = Event->GetInterceptorId();
-    pMsg->m_FuncionMj = Event->GetMajor();
-    pMsg->m_FuncionMj = Event->GetMinor();
+    pMsg->m_OperationId = Event->GetOperationId();
+    pMsg->m_FuncionMi = Event->GetMinor();
     pMsg->m_OperationType = Event->GetOperationType();
 
     pMsg->m_ParametersCount = params2user;
