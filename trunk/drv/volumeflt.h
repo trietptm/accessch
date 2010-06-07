@@ -14,16 +14,16 @@ public:
         );
 
     __checkReturn
-        NTSTATUS
-        QueryParameter (
+    NTSTATUS
+    QueryParameter (
         __in_opt Parameters ParameterId,
         __deref_out_opt PVOID* Data,
         __deref_out_opt PULONG DataSize
         );
 
     __checkReturn
-        NTSTATUS
-        ObjectRequest (
+    NTSTATUS
+    ObjectRequest (
         __in NOTIFY_ID Command,
         __in_opt PVOID OutputBuffer,
         __inout_opt PULONG OutputBufferSize

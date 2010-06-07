@@ -30,7 +30,32 @@ VolumeInterceptorContext::QueryParameter (
     __deref_out_opt PULONG DataSize
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    NTSTATUS status = STATUS_NOT_FOUND;
+
+    switch( ParameterId )
+    {
+    case PARAMETER_DEVICE_TYPE:
+        *Data = &m_InstanceContext->m_VolumeDeviceType;
+        *DataSize = sizeof( m_InstanceContext->m_VolumeDeviceType );
+        status = STATUS_SUCCESS;
+
+        break;
+
+    case PARAMETER_FILESYSTEM_TYPE:
+        *Data = &m_InstanceContext->m_VolumeDeviceType;
+        *DataSize = sizeof( m_InstanceContext->m_VolumeDeviceType );
+        status = STATUS_SUCCESS;
+
+        break;
+
+    case PARAMETER_BUS_TYPE:
+        break;
+
+    case PARAMETER_DEVICE_ID:
+        break;
+    }
+
+    return status;
 }
 
 __checkReturn

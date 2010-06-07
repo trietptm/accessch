@@ -147,69 +147,69 @@
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk W7 x86 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk W7 x86 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk W7 x86 $(ProjectDir)..\....</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk W7 x86 $(ProjectDir)..\.... -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugVista|Win32'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x86 $(ProjectDir)..\....</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WLH x86 $(ProjectDir)..\.... -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|Win32'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WXP x86 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk WXP x86 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WXP x86 $(ProjectDir)..\..</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WXP x86 $(ProjectDir)..\.. -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugWnet|Win32'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WNET x86 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk WNET x86 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WNET x86 $(ProjectDir)..\....</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WNET x86 $(ProjectDir)..\.... -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x86 $(ProjectDir)..\....</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WLH x86 $(ProjectDir)..\.... -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugVista|x64'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk WLH x86 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x86 $(ProjectDir)..\....</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WLH x86 $(ProjectDir)..\.... -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|x64'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WXP x64 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk WXP x64 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WXP x64 $(ProjectDir)..\..</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WXP x64 $(ProjectDir)..\.. -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugWnet|x64'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WNET x64 $(SolutionDir)..</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk WNET x64 $(SolutionDir).. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WNET x64 $(ProjectDir)..\....</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WNET x64 $(ProjectDir)..\.... -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug x64|Win32'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x64 $(SolutionDir)..</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x64 $(ProjectDir)..\....</NMakeBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug x64|x64'">
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x64 $(SolutionDir)..</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WLH x64 $(ProjectDir)..\....</NMakeBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>prj.exe</NMakeOutput>

@@ -31,7 +31,8 @@ typedef enum OperationPoint
 typedef enum Parameters
 {
     // bit position
-    PARAMETER_RESERVED              = 1,
+    PARAMETER_RESERVED0             = 0,
+    PARAMETER_RESERVED1             = 1,
     PARAMETER_FILE_NAME             = 2,
     PARAMETER_VOLUME_NAME           = 3,
     PARAMETER_REQUESTOR_PROCESS_ID  = 4,
@@ -43,11 +44,18 @@ typedef enum Parameters
     PARAMETER_CREATE_MODE           = 10,
     PARAMETER_RESULT_STATUS         = 11,
     PARAMETER_RESULT_INFORMATION    = 12,
+    PARAMETER_DEVICE_TYPE           = 13,
+    PARAMETER_FILESYSTEM_TYPE       = 14,
+    PARAMETER_BUS_TYPE              = 15,
+    PARAMETER_DEVICE_ID             = 16,
+
+    //
+    PARAMETER_MAXIMUM               = 63
 } *PParameters;
 
 #define Id2Bit( _id ) ( 1 << _id )
 
-#define PARAMS_MASK ULONG
+#define PARAMS_MASK __int64
 #define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * 8 )
 
 typedef ULONG VERDICT, *PVERDICT;
@@ -55,7 +63,6 @@ typedef ULONG VERDICT, *PVERDICT;
 #define VERDICT_ALLOW               0x0001
 #define VERDICT_DENY                0x0002
 #define VERDICT_ASK                 0x0004
-
 
 #include <pshpack8.h>
 
