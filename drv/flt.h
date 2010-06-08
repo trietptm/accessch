@@ -1,16 +1,6 @@
 #ifndef __flt_h
 #define __flt_h
 
-typedef
-__checkReturn
-NTSTATUS
-( *PFN_OBJECT_REQUEST ) (
-    __in PVOID Opaque,
-    __in NOTIFY_ID Command,
-    __in_opt PVOID OutputBuffer,
-    __inout_opt PULONG OutputBufferSize
-    );
-
 class InterceptorContext
 {
 public:

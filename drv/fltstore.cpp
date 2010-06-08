@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "../inc/accessch.h"
+#include "flt.h"
 #include "fltstore.h"
 
 RTL_AVL_TABLE FiltersTree::m_Tree;
@@ -30,6 +31,8 @@ Filters::Filters (
         );
     
     RtlClearAllBits( &m_ActiveFilters );
+
+    InitializeListHead( &m_FilteringHead );
 }
 
 Filters::~Filters (
@@ -46,6 +49,24 @@ Filters::Release (
     )
 {
     ExReleaseRundownProtection( &m_Ref );
+}
+
+VERDICT
+Filters::GetVerdict (
+    __in EventData *Event,
+    __out PARAMS_MASK *ParamsMask
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( Event ) );
+    ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
+    
+    FltAcquirePushLockShared( &m_AccessLock );
+
+    // \todo enum in m_FilteringHead and gather filters matched event
+
+    FltReleasePushLock( &m_AccessLock );
+
+    return VERDICT_NOT_FILTERED;
 }
 
 //////////////////////////////////////////////////////////////////////////
