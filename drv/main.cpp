@@ -8,6 +8,7 @@
 #include "main.h"
 #include "../inc/accessch.h"
 #include "flt.h"
+#include "fltstore.h"
 #include "eventqueue.h"
 #include "commport.h"
 
@@ -200,6 +201,7 @@ DriverEntry (
     FltInitializePushLock( &Globals.m_ClientPortLock );
 
     QueuedItem::Initialize();
+    FiltersTree::Initialize();
 
     __try
     {
@@ -271,8 +273,11 @@ Unload (
     }
 
     FltCloseCommunicationPort( Globals.m_Port );
-    QueuedItem::Destroy();
     FltUnregisterFilter( Globals.m_Filter );
+
+    QueuedItem::Destroy();
+    FiltersTree::Destroy();
+
     FltDeletePushLock( &Globals.m_ClientPortLock );
 
     return STATUS_SUCCESS;

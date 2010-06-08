@@ -32,7 +32,7 @@ FilterEvent (
         return STATUS_NOT_SUPPORTED;
     }
 
-    Filters* pFilter = GetFiltersByOperation (
+    Filters* pFilter = FiltersTree::GetFiltersByOperation (
         Event->GetInterceptorId(),
         Event->GetOperationId(),
         Event->GetMinor(),
