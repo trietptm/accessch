@@ -1,20 +1,20 @@
 #ifndef __fltstore_h
 #define __fltstore_h
 
-typedef ULONG FilterId;
+#define FilterId ULONG
 
 #define NumberOfBits 256
 
-typedef enum OpertorId
+typedef enum _OpertorId
 {
     fltop_AND           = 0,
-};
+} OpertorId;
 
-typedef struct FltData
+typedef struct _FltData
 {
     ULONG               m_DataSize;
-    CHAR                m_Data[1];
-};
+    UCHAR               m_Data[1];
+} FltData;
 
 typedef struct _FilterEntry
 {
@@ -23,8 +23,9 @@ typedef struct _FilterEntry
     ULONG               m_FiltersCount;
     FilterId*           m_Filters;
     FltData             m_Data;
-};
+} FilterEntry;
 
+//////////////////////////////////////////////////////////////////////////
 class Filters
 {
 public:
@@ -44,13 +45,33 @@ private:
 
 //////////////////////////////////////////////////////////////////////////
 
-__checkReturn
-Filters*
-GetFiltersByOperation (
-    __in Interceptors Interceptor,
-    __in DriverOperationId Operation,
-    __in_opt ULONG Minor,
-    __in OperationPoint OperationType
-    );
+class FiltersTree
+{
+public:
+    static
+    VOID
+    Initialize (
+        );
+
+    static
+    VOID
+    Destroy (
+        );
+
+    __checkReturn
+    static
+    Filters*
+    GetFiltersByOperation (
+        __in Interceptors Interceptor,
+        __in DriverOperationId Operation,
+        __in_opt ULONG Minor,
+        __in OperationPoint OperationType
+        );
+
+public:
+    FiltersTree();
+    ~FiltersTree();
+};
+
 
 #endif //__fltstore_h

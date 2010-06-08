@@ -35,9 +35,35 @@ Filters::Release (
 
 //////////////////////////////////////////////////////////////////////////
 
+VOID
+FiltersTree::Initialize (
+    )
+{
+
+}
+
+VOID
+FiltersTree::Destroy (
+    )
+{
+
+}
+
+FiltersTree::FiltersTree (
+    )
+{
+
+}
+
+FiltersTree::~FiltersTree (
+    )
+{
+
+}
+
 __checkReturn
 Filters*
-GetFiltersByOperation (
+FiltersTree::GetFiltersByOperation (
     __in Interceptors Interceptor,
     __in DriverOperationId Operation,
     __in_opt ULONG Minor,
