@@ -63,11 +63,11 @@ FilterEvent (
 __checkReturn
 NTSTATUS
 FilterAdd (
-    __in FilterChain *Filters,
+    __in FilterChain *Chain,
     __in ULONG ChainSize
     )
 {
-    ASSERT( ARGUMENT_PRESENT( Filters ) );
+    ASSERT( ARGUMENT_PRESENT( Chain ) );
 
     return STATUS_NOT_SUPPORTED;
 }
