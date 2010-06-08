@@ -58,6 +58,10 @@ public:
     Destroy (
         );
 
+    static RTL_AVL_COMPARE_ROUTINE Compare;
+    static RTL_AVL_ALLOCATE_ROUTINE Allocate;
+    static RTL_AVL_FREE_ROUTINE Free;
+  
     __checkReturn
     static
     Filters*
@@ -67,6 +71,9 @@ public:
         __in_opt ULONG Minor,
         __in OperationPoint OperationType
         );
+private:
+    static RTL_AVL_TABLE    m_Tree;
+    static EX_PUSH_LOCK     m_AccessLock;
 
 public:
     FiltersTree();
