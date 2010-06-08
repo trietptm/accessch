@@ -30,6 +30,7 @@ public:
         );
 
 private:
+    HANDLE                  m_RequestorPid;
     PCFLT_RELATED_OBJECTS   m_FltObjects;
     PINSTANCE_CONTEXT       m_InstanceContext;
 };

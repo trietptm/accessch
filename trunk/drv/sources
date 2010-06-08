@@ -32,6 +32,7 @@ SOURCES= \
 		fileflt.cpp \
 		volumeflt.cpp \
 		flt.cpp \
+		fltstore.cpp \
 		eventqueue.cpp \
 		security.cpp \
 		excludes.cpp \

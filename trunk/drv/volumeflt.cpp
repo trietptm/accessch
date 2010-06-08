@@ -13,7 +13,7 @@ VolumeInterceptorContext::VolumeInterceptorContext (
     m_FltObjects( FltObjects ),
     m_InstanceContext( InstanceContext )
 {
-
+    m_RequestorPid = 0;
 }
 
 VolumeInterceptorContext::~VolumeInterceptorContext (
@@ -34,6 +34,12 @@ VolumeInterceptorContext::QueryParameter (
 
     switch( ParameterId )
     {
+    case PARAMETER_REQUESTOR_PROCESS_ID:
+        *Data = &m_RequestorPid;
+        *DataSize = sizeof( m_RequestorPid );
+
+        break;
+
     case PARAMETER_DEVICE_TYPE:
         *Data = &m_InstanceContext->m_VolumeDeviceType;
         *DataSize = sizeof( m_InstanceContext->m_VolumeDeviceType );
