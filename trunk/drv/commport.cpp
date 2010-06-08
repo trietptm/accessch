@@ -286,7 +286,7 @@ PortAllocateMessage (
     ULONG params2user = 0;
     for ( ULONG cou = 0; cou < _PARAMS_COUNT; cou++ )
     {
-        if ( FlagOn( ParamsMask, 1 << cou ) )
+        if ( FlagOn( ParamsMask, (PARAMS_MASK) 1 << cou ) )
         {
             status = Event->QueryParameter (
                 (Parameters) cou,
@@ -333,7 +333,7 @@ PortAllocateMessage (
     PEVENT_PARAMETER parameter = pMsg->m_Parameters;
     for ( ULONG cou = 0; cou < _PARAMS_COUNT; cou++ )
     {
-        if ( FlagOn( ParamsMask, 1 << cou ) )
+        if ( FlagOn( ParamsMask, (PARAMS_MASK) 1 << cou ) )
         {
             status = Event->QueryParameter (
                 (Parameters) cou,
