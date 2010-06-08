@@ -62,6 +62,24 @@ Filters::GetVerdict (
     
     FltAcquirePushLockShared( &m_AccessLock );
 
+    if ( !IsListEmpty( &m_FilteringHead ) )
+    {
+        PLIST_ENTRY Flink = m_FilteringHead.Flink;
+        while ( Flink != &m_FilteringHead )
+        {
+            FilterEntry* pEntry = CONTAINING_RECORD (
+                Flink,
+                FilterEntry,
+                m_List
+                );
+
+            Flink = Flink->Flink;
+
+            // \todo pEntry->m_NumbersCount
+        }
+
+    }
+
     // \todo enum in m_FilteringHead and gather filters matched event
 
     FltReleasePushLock( &m_AccessLock );
