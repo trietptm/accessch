@@ -10,8 +10,8 @@
 
 typedef enum Interceptors
 {
-    FILE_MINIFILTER                 = 0,
-    VOLUME_MINIFILTER               = 1,
+    FILE_MINIFILTER                 = 1,
+    VOLUME_MINIFILTER               = 2,
 };
 
 typedef enum DriverOperationId
