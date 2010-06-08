@@ -7,6 +7,7 @@ Filters::Filters (
 {
     ExInitializeRundownProtection( &m_Ref );
     FltInitializePushLock( &m_AccessLock );
+    
     RtlInitializeBitMap (
         &m_ActiveFilters,
         m_ActiveFiltersBuffer,
@@ -40,7 +41,7 @@ GetFiltersByOperation (
     __in Interceptors Interceptor,
     __in DriverOperationId Operation,
     __in_opt ULONG Minor,
-    OperationPoint OperationType
+    __in OperationPoint OperationType
     )
 {
     return NULL;
