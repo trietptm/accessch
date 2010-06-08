@@ -20,8 +20,8 @@ typedef struct _FilterEntry
 {
     LIST_ENTRY          m_List;
     OpertorId           m_Operation;
-    ULONG               m_FiltersCount;
-    FilterId*           m_Filters;
+    ULONG               m_NumbersCount;
+    PULONG              m_FilterNumbers;
     FltData             m_Data;
 } FilterEntry;
 
@@ -35,12 +35,19 @@ public:
     void
     Release();
 
+    VERDICT
+    GetVerdict (
+        __in EventData *Event,
+        __out PARAMS_MASK *ParamsMask
+        );
+
 private:
     EX_RUNDOWN_REF      m_Ref;
     EX_PUSH_LOCK        m_AccessLock;
 
     RTL_BITMAP          m_ActiveFilters;
     ULONG               m_ActiveFiltersBuffer[ NumberOfBits / sizeof(ULONG) ];
+    LIST_ENTRY          m_FilteringHead;
 };
 
 //////////////////////////////////////////////////////////////////////////

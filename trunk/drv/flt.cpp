@@ -41,14 +41,7 @@ FilterEvent (
     
     if ( pFilter )
     {
-        *Verdict = VERDICT_ASK;
-
-        *ParamsMask =
-            Id2Bit( PARAMETER_FILE_NAME )
-            |
-            Id2Bit ( PARAMETER_VOLUME_NAME )
-            |
-            Id2Bit ( PARAMETER_REQUESTOR_PROCESS_ID );
+        *Verdict = pFilter->GetVerdict( Event, ParamsMask );
 
         pFilter->Release();
     }
