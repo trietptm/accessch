@@ -32,6 +32,10 @@ public:
     Filters();
     ~Filters();
 
+    NTSTATUS
+    AddRef (
+        );
+
     void
     Release();
 
@@ -55,7 +59,7 @@ private:
 
     RTL_BITMAP          m_ActiveFilters;
     ULONG               m_ActiveFiltersBuffer[ NumberOfBits / sizeof(ULONG) ];
-    LIST_ENTRY          m_FilteringHead;
+    LIST_ENTRY          m_FilterEntryList;
 };
 
 //////////////////////////////////////////////////////////////////////////
