@@ -33,6 +33,61 @@ typedef struct _REPLY_MESSAGE {
 #include <poppack.h>
 
 HRESULT
+CreateFilters (
+    __in PCOMMUNICATIONS CommPort
+    )
+{
+    assert( CommPort );
+
+    HRESULT hResult = E_FAIL;
+
+    // create filters manually
+    char buffer[0x1000];
+
+    _asm int 3;
+
+    memset( buffer, 0, sizeof( buffer) );
+
+    PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) buffer;
+    pCommand->m_Command = ntfcom_FiltersChain;
+
+    PFILTERS_CHAIN pChain = (PFILTERS_CHAIN) pCommand->m_Data;
+
+    pChain->m_Count = 1;
+    pChain->m_Entry[0].m_Operation = _fltchain_add;
+    
+    PFILTER pFilter = pChain->m_Entry[0].m_Filter;
+    pFilter->m_Interceptor = FILE_MINIFILTER;
+    pFilter->m_FunctionMj = OP_FILE_CREATE;
+    pFilter->m_OperationType = PostProcessing;
+    pFilter->m_RequestTimeout = 0;
+    pFilter->m_ParamsCount = 1;
+
+    PPARAM_ENTRY pEntry = pFilter->m_Params;
+
+    pEntry->m_Id = PARAMETER_DESIRED_ACCESS;
+    pEntry->m_Operation = _fltop_and;
+    pEntry->m_FltData.m_Size = sizeof( ACCESS_MASK );
+    
+    ACCESS_MASK *pMask = (ACCESS_MASK*) pEntry->m_FltData.m_Data;
+    *pMask = GENERIC_READ | GENERIC_EXECUTE;
+
+    ULONG requestsize = (ULONG) ((char*)pMask - buffer) + sizeof( ACCESS_MASK );
+
+    DWORD retsize;
+    hResult = FilterSendMessage (
+        CommPort->m_hPort,
+        pCommand,
+        requestsize,
+        NULL,
+        0,
+        &retsize
+        );
+
+    return hResult;
+}
+
+HRESULT
 WaitForSingleMessage (
     __in HANDLE hPort,
     __in HANDLE hCompletion,
@@ -313,6 +368,13 @@ main (
         COMMUNICATIONS Comm;
         Comm.m_hPort = hPort;
         Comm.m_hCompletion = hCompletion;
+
+        hResult = CreateFilters( &Comm );
+        if ( IS_ERROR( hResult ) )
+        {
+            printf( "Add filters failed. Error 0x%x\n", hResult );
+            __leave;
+        }
 
         for ( int thc = 0; thc < THREAD_MAXCOUNT_WAITERS; thc++ )
         {

@@ -94,17 +94,22 @@ typedef struct _MESSAGE_DATA
 typedef enum _NOTIFY_ID
 {
     // common commands
-    ntfcom_Connect       = 0x0001,
+    ntfcom_Connect       = 0001,
+    ntfcom_FiltersChain  = 0050,
     
     // object's commands
-    ntfcom_PrepareIO     = 0x0100 // result struct
+    ntfcom_PrepareIO     = 0100 // result struct
 } NOTIFY_ID;
 
 typedef struct _NOTIFY_COMMAND
 {
     ULONG               m_Reserved;
     NOTIFY_ID           m_Command;
-    ULONG               m_EventId;
+    union 
+    {
+        ULONG           m_EventId;
+        UCHAR           m_Data[1];
+    };
 } NOTIFY_COMMAND, *PNOTIFY_COMMAND;
 
 // ntfcom_PrepareIO
@@ -117,8 +122,6 @@ typedef struct _NC_IOPREPARE
 // filters structures
 // основная сложность при работе с фильтрами в хелпере, который позволяет
 // формировать сложные структуры в r3
-
-#define FilterChain     PVOID
 
 typedef enum FltOperation
 {
@@ -143,14 +146,39 @@ typedef struct _PARAM_ENTRY
 typedef struct _FILTER
 {
     Interceptors        m_Interceptor;
-    ULONG               m_FunctionMj;
+    DriverOperationId   m_FunctionMj;
     ULONG               m_FunctionMi;
-    OperationPoint    m_OperationType;
+    OperationPoint      m_OperationType;
     ULONG               m_RequestTimeout;       //msec
     ULONG               m_ParamsCount;
     PARAM_ENTRY         m_Params[1];
 } FILTER,*PFILTER;
 
+#define FILTER_ID ULONG
+
+typedef enum ChainOperation
+{
+    _fltchain_add       = 0,
+    _fltchain_del       = 1,
+};
+
+typedef struct _CHAIN_ENTRY
+{
+    ChainOperation      m_Operation;
+    union
+    {
+        FILTER          m_Filter[1];    // add filters
+        FILTER_ID       m_Id[1];        // delete filters
+    };
+
+} CHAIN_ENTRY,*PCHAIN_ENTRY;
+
+typedef struct _FILTERS_CHAIN
+{
+    ULONG               m_Count;
+    CHAIN_ENTRY         m_Entry[1];
+
+} FILTERS_CHAIN, *PFILTERS_CHAIN;
 // end filters structures
 
 #include <poppack.h>

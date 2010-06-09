@@ -40,6 +40,14 @@ public:
         __in EventData *Event,
         __out PARAMS_MASK *ParamsMask
         );
+    
+    NTSTATUS
+    AddFilter (
+        __in_opt ULONG RequestTimeout,
+        __in ULONG ParamsCount,
+        __in PPARAM_ENTRY Params,
+        __out FILTER_ID* FilterId
+        );
 
 private:
     EX_RUNDOWN_REF      m_Ref;
@@ -72,12 +80,23 @@ public:
     __checkReturn
     static
     Filters*
-    GetFiltersByOperation (
+    GetFiltersBy (
         __in Interceptors Interceptor,
         __in DriverOperationId Operation,
         __in_opt ULONG Minor,
         __in OperationPoint OperationType
         );
+    
+    __checkReturn
+    static
+    Filters*
+    GetOrCreateFiltersBy (
+        __in Interceptors Interceptor,
+        __in DriverOperationId Operation,
+        __in_opt ULONG Minor,
+        __in OperationPoint OperationType
+        );
+    
 private:
     static RTL_AVL_TABLE    m_Tree;
     static EX_PUSH_LOCK     m_AccessLock;
