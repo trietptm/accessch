@@ -32,7 +32,7 @@ Filters::Filters (
     
     RtlClearAllBits( &m_ActiveFilters );
 
-    InitializeListHead( &m_FilteringHead );
+    InitializeListHead( &m_FilterEntryList );
 }
 
 Filters::~Filters (
@@ -42,6 +42,14 @@ Filters::~Filters (
 
     ExRundownCompleted( &m_Ref );
     FltDeletePushLock( &m_AccessLock);
+}
+
+NTSTATUS
+Filters::AddRef (
+    )
+{
+    NTSTATUS status = ExAcquireRundownProtection( &m_Ref );
+    return status;
 }
 
 void
@@ -62,10 +70,10 @@ Filters::GetVerdict (
     
     FltAcquirePushLockShared( &m_AccessLock );
 
-    if ( !IsListEmpty( &m_FilteringHead ) )
+    if ( !IsListEmpty( &m_FilterEntryList ) )
     {
-        PLIST_ENTRY Flink = m_FilteringHead.Flink;
-        while ( Flink != &m_FilteringHead )
+        PLIST_ENTRY Flink = m_FilterEntryList.Flink;
+        while ( Flink != &m_FilterEntryList )
         {
             FilterEntry* pEntry = CONTAINING_RECORD (
                 Flink,
@@ -222,9 +230,36 @@ FiltersTree::GetFiltersBy (
     __in OperationPoint OperationType
     )
 {
-    // \todo lookup
+    Filters* pFilters = NULL;
 
-    return NULL;
+    ITEM_FILTERS item;
+    item.m_Interceptor = Interceptor;
+    item.m_Operation = Operation;
+    item.m_Minor = Minor;
+    item.m_OperationType = OperationType;
+
+    FltAcquirePushLockShared( &m_AccessLock );
+
+    PITEM_FILTERS pItem = (PITEM_FILTERS) RtlLookupElementGenericTableAvl (
+        &m_Tree,
+        &item
+        );
+
+    if ( pItem)
+    {
+        pFilters = pItem->m_Filters;
+
+        NTSTATUS status = pFilters->AddRef();
+        if ( !NT_SUCCESS( status ) )
+        {
+            pFilters = NULL;
+        }
+
+    }
+
+    FltReleasePushLock( &m_AccessLock );
+
+    return pFilters;
 }
 
 __checkReturn
@@ -236,6 +271,57 @@ FiltersTree::GetOrCreateFiltersBy (
     __in OperationPoint OperationType
     )
 {
-    // \todo lookup and create if not found
-    return NULL;
+    Filters* pFilters = NULL;
+
+    ITEM_FILTERS item;
+    item.m_Interceptor = Interceptor;
+    item.m_Operation = Operation;
+    item.m_Minor = Minor;
+    item.m_OperationType = OperationType;
+    
+    BOOLEAN newElement;
+    
+    FltAcquirePushLockExclusive( &m_AccessLock );
+
+    PITEM_FILTERS pItem = (PITEM_FILTERS) RtlInsertElementGenericTableAvl (
+        &m_Tree,
+        &item,
+        sizeof( item ),
+        &newElement
+        );
+    
+    if ( pItem)
+    {
+        if ( newElement )
+        {
+            pItem->m_Filters = (Filters*) ExAllocatePoolWithTag (
+                PagedPool,
+                sizeof(Filters),
+                _ALLOC_TAG
+                );
+        
+            if ( pItem->m_Filters )
+            {
+                pFilters = pItem->m_Filters;
+                pFilters->Filters::Filters();
+            }
+        }
+        else
+        {
+            pFilters = pItem->m_Filters;
+        }
+    }
+
+    if ( pFilters )
+    {
+        NTSTATUS status = pFilters->AddRef();
+        if ( !NT_SUCCESS( status ) )
+        {
+            pFilters = NULL;
+        }
+    }
+
+    FltReleasePushLock( &m_AccessLock );
+
+    return pFilters;
 }
