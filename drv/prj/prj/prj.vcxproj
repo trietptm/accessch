@@ -147,8 +147,8 @@
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd chk W7 x86 $(ProjectDir)..\....</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>..\..\!build.cmd chk W7 x86 $(ProjectDir)..\.. -cC</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd chk WIN7 x86 $(ProjectDir)..\..</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>..\..\!build.cmd chk WIN7 x86 $(ProjectDir)..\.. -cC</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugVista|Win32'">
     <NMakeOutput>prj.exe</NMakeOutput>

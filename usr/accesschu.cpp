@@ -44,8 +44,6 @@ CreateFilters (
     // create filters manually
     char buffer[0x1000];
 
-    _asm int 3;
-
     memset( buffer, 0, sizeof( buffer) );
 
     PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) buffer;
