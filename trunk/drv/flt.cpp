@@ -61,6 +61,7 @@ FilterProceedChain (
     )
 {
     NTSTATUS status = STATUS_SUCCESS;
+    
     ASSERT( ARGUMENT_PRESENT( Chain ) );
 
     Filters* pFilters = NULL;
@@ -69,42 +70,42 @@ FilterProceedChain (
    {
         PCHAIN_ENTRY pEntry = Chain->m_Entry;
 
-       for ( ULONG item = 0; item < Chain->m_Count; item++ )
-       {
-           switch( pEntry->m_Operation )
-           {
-           case _fltchain_add:
-               {
-                   Filters* pFilters = FiltersTree::GetOrCreateFiltersBy (
-                       pEntry->m_Filter[0].m_Interceptor,
-                       pEntry->m_Filter[0].m_FunctionMj,
-                       pEntry->m_Filter[0].m_FunctionMi,
-                       pEntry->m_Filter[0].m_OperationType
-                       );
+        for ( ULONG item = 0; item < Chain->m_Count; item++ )
+        {
+            switch( pEntry->m_Operation )
+            {
+            case _fltchain_add:
+                {
+                    Filters* pFilters = FiltersTree::GetOrCreateFiltersBy (
+                        pEntry->m_Filter[0].m_Interceptor,
+                        pEntry->m_Filter[0].m_FunctionMj,
+                        pEntry->m_Filter[0].m_FunctionMi,
+                        pEntry->m_Filter[0].m_OperationType
+                        );
 
-                   if ( pFilters )
-                   {
-                       FILTER_ID id;
-                       status = pFilters->AddFilter (
-                           pEntry->m_Filter->m_RequestTimeout,
-                           pEntry->m_Filter->m_ParamsCount,
-                           pEntry->m_Filter->m_Params,
-                           &id
-                           );
+                    if ( pFilters )
+                    {
+                        FILTER_ID id;
+                        status = pFilters->AddFilter (
+                            pEntry->m_Filter->m_RequestTimeout,
+                            pEntry->m_Filter->m_ParamsCount,
+                            pEntry->m_Filter->m_Params,
+                            &id
+                            );
 
-                       pFilters->Release();
-                       pFilters = NULL;
-                   }
-                   else
-                   {
-                       status = STATUS_UNSUCCESSFUL;
-                       break;
-                   }
-               }
+                        pFilters->Release();
+                        pFilters = NULL;
+                    }
+                    else
+                    {
+                        status = STATUS_UNSUCCESSFUL;
+                        break;
+                    }
+                }
 
-               break;
-           }
-       }
+                break;
+            }
+        }
    }
    __finally
    {
