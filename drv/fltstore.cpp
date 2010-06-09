@@ -87,6 +87,22 @@ Filters::GetVerdict (
     return VERDICT_NOT_FILTERED;
 }
 
+__checkReturn
+NTSTATUS
+Filters::AddFilter (
+    __in_opt ULONG RequestTimeout,
+    __in ULONG ParamsCount,
+    __in PPARAM_ENTRY Params,
+    __out FILTER_ID* FilterId
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( Params ) );
+    ASSERT( ARGUMENT_PRESENT( FilterId ) );
+
+    return STATUS_NOT_IMPLEMENTED;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 VOID
@@ -94,6 +110,7 @@ FiltersTree::Initialize (
     )
 {
     FltInitializePushLock( &m_AccessLock );
+
     RtlInitializeGenericTableAvl (
         &m_Tree,
         FiltersTree::Compare,
@@ -198,12 +215,27 @@ FiltersTree::~FiltersTree (
 
 __checkReturn
 Filters*
-FiltersTree::GetFiltersByOperation (
+FiltersTree::GetFiltersBy (
     __in Interceptors Interceptor,
     __in DriverOperationId Operation,
     __in_opt ULONG Minor,
     __in OperationPoint OperationType
     )
 {
+    // \todo lookup
+
+    return NULL;
+}
+
+__checkReturn
+Filters*
+FiltersTree::GetOrCreateFiltersBy (
+    __in Interceptors Interceptor,
+    __in DriverOperationId Operation,
+    __in_opt ULONG Minor,
+    __in OperationPoint OperationType
+    )
+{
+    // \todo lookup and create if not found
     return NULL;
 }

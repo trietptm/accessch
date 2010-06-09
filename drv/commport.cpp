@@ -10,7 +10,7 @@
 
 typedef struct _PORT_CONTEXT
 {
-    PFLT_PORT               m_Connection;
+    PFLT_PORT           m_Connection;
 }PORT_CONTEXT, *PPORT_CONTEXT;
 
 // ----------------------------------------------------------------------------
@@ -208,6 +208,18 @@ PortMessageNotify (
                 {
                     *(PNC_IOPREPARE) OutputBuffer = prepare;
                 }
+            }
+            break;
+        
+        case  ntfcom_FiltersChain:
+            {
+                PFILTERS_CHAIN pChain = (PFILTERS_CHAIN) pCommand->m_Data;
+                ULONG size = InputBufferSize - FIELD_OFFSET (
+                    NOTIFY_COMMAND,
+                    m_Data
+                    );
+
+                status = FilterProceedChain( pChain, size );
             }
             break;
         

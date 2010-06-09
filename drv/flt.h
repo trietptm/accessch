@@ -184,4 +184,11 @@ FilterEvent (
     __out PARAMS_MASK *ParamsMask
     );
 
+__checkReturn
+NTSTATUS
+FilterProceedChain (
+    __in PFILTERS_CHAIN Chain,
+    __in ULONG ChainSize
+    );
+
 #endif //__flt_h
