@@ -384,14 +384,11 @@ FiltersTree::GetOrCreateFiltersBy (
         
             if ( pItem->m_Filters )
             {
-                pFilters = pItem->m_Filters;
-                pFilters->Filters::Filters();
+                pItem->m_Filters->Filters::Filters();
             }
         }
-        else
-        {
-            pFilters = pItem->m_Filters;
-        }
+
+        pFilters = pItem->m_Filters;
     }
 
     if ( pFilters )
