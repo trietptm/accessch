@@ -33,6 +33,7 @@ Filters::Filters (
     
     RtlClearAllBits( &m_ActiveFilters );
 
+    m_FilterCount = 0;
     InitializeListHead( &m_FilterEntryList );
     InitializeListHead( &m_ParamsCheckList );
 }
@@ -58,6 +59,7 @@ Filters::~Filters (
             pItem = CONTAINING_RECORD( Flink, FilterEntry, m_List );
             Flink = Flink->Flink;
 
+            m_FilterCount--;
             RemoveEntryList( &pItem->m_List ); //is it neccessary?
 
             FREE_POOL( pItem );
@@ -123,37 +125,37 @@ Filters::AddFilter (
     __in PARAMS_MASK WishMask,
     __in ULONG ParamsCount,
     __in PPARAM_ENTRY Params,
-    __out FILTER_ID* FilterId
+    __out PULONG FilterId
     )
 {
-    ASSERT( ARGUMENT_PRESENT( WishMask ) );
     ASSERT( ARGUMENT_PRESENT( Params ) );
-    ASSERT( ARGUMENT_PRESENT( FilterId ) );
 
     FilterEntry* pEntry = (FilterEntry*) ExAllocatePoolWithTag (
         PagedPool,
         sizeof( FilterEntry ),
         _ALLOC_TAG
         );
-    
+
     if( !pEntry )
     {
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
     pEntry->m_FilterId = FiltersTree::GetNextFilterid();
+    *FilterId = pEntry->m_FilterId;
     pEntry->m_RequestTimeout = RequestTimeout;
     pEntry->m_WishMask = WishMask;
 
     FltAcquirePushLockExclusive( &m_AccessLock );
-    
+
+    m_FilterCount++;
+
     InsertTailList( &m_FilterEntryList, &pEntry->m_List );
 
     FltReleasePushLock( &m_AccessLock );
 
     return STATUS_SUCCESS;
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -267,7 +269,6 @@ FiltersTree::~FiltersTree (
     // \todo free tree items
 }
 
-static
 VOID
 FiltersTree::DeleteAllFilters (
     )

@@ -4,7 +4,13 @@
 #include "fltstore.h"
 #include "excludes.h"
 
-// ---
+VOID
+DeleteAllFilters (
+    )
+{
+    FiltersTree:DeleteAllFilters();
+}
+
 __checkReturn
 NTSTATUS
 FilterEvent (
@@ -85,7 +91,7 @@ FilterProceedChain (
 
                     if ( pFilters )
                     {
-                        FILTER_ID id;
+                        ULONG id;
                         status = pFilters->AddFilter (
                             pEntry->m_Filter->m_RequestTimeout,
                             pEntry->m_Filter->m_WishMask,

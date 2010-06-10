@@ -28,7 +28,7 @@ typedef struct _ParamCheckEntry
 typedef struct _FilterEntry
 {
     LIST_ENTRY          m_List;
-    FILTER_ID           m_FilterId;
+    ULONG               m_FilterId;
     PARAMS_MASK         m_WishMask;
     ULONG               m_RequestTimeout;
     //ULONG               m_AggregationId;
@@ -61,7 +61,7 @@ public:
         __in PARAMS_MASK WishMask,
         __in ULONG ParamsCount,
         __in PPARAM_ENTRY Params,
-        __out FILTER_ID* FilterId
+        __out PULONG FilterId
         );
 
 private:
@@ -70,6 +70,7 @@ private:
 
     RTL_BITMAP          m_ActiveFilters;
     ULONG               m_ActiveFiltersBuffer[ NumberOfBits / sizeof(ULONG) ];
+    ULONG               m_FilterCount;
     LIST_ENTRY          m_FilterEntryList;
     LIST_ENTRY          m_ParamsCheckList;
 };
