@@ -150,6 +150,7 @@ typedef struct _FILTER
     ULONG               m_FunctionMi;
     OperationPoint      m_OperationType;
     ULONG               m_RequestTimeout;       //msec
+    PARAMS_MASK         m_WishMask;
     ULONG               m_ParamsCount;
     PARAM_ENTRY         m_Params[1];
 } FILTER,*PFILTER;

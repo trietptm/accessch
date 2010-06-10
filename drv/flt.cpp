@@ -88,6 +88,7 @@ FilterProceedChain (
                         FILTER_ID id;
                         status = pFilters->AddFilter (
                             pEntry->m_Filter->m_RequestTimeout,
+                            pEntry->m_Filter->m_WishMask,
                             pEntry->m_Filter->m_ParamsCount,
                             pEntry->m_Filter->m_Params,
                             &id

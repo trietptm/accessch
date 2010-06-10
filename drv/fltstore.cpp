@@ -5,6 +5,7 @@
 
 RTL_AVL_TABLE FiltersTree::m_Tree;
 EX_PUSH_LOCK FiltersTree::m_AccessLock;
+LONG FiltersTree::m_FilterIdCounter;
 
 //////////////////////////////////////////////////////////////////////////
 typedef struct _ITEM_FILTERS
@@ -33,6 +34,7 @@ Filters::Filters (
     RtlClearAllBits( &m_ActiveFilters );
 
     InitializeListHead( &m_FilterEntryList );
+    InitializeListHead( &m_ParamsCheckList );
 }
 
 Filters::~Filters (
@@ -42,6 +44,25 @@ Filters::~Filters (
 
     ExRundownCompleted( &m_Ref );
     FltDeletePushLock( &m_AccessLock);
+
+    FilterEntry* pItem;
+
+    if ( !IsListEmpty( &m_FilterEntryList ) )
+    {
+        PLIST_ENTRY Flink;
+
+        Flink = m_FilterEntryList.Flink;
+
+        while ( Flink != &m_FilterEntryList )
+        {
+            pItem = CONTAINING_RECORD( Flink, FilterEntry, m_List );
+            Flink = Flink->Flink;
+
+            RemoveEntryList( &pItem->m_List ); //is it neccessary?
+
+            FREE_POOL( pItem );
+        }
+    }
 }
 
 NTSTATUS
@@ -70,14 +91,14 @@ Filters::GetVerdict (
     
     FltAcquirePushLockShared( &m_AccessLock );
 
-    if ( !IsListEmpty( &m_FilterEntryList ) )
+    if ( !IsListEmpty( &m_ParamsCheckList ) )
     {
-        PLIST_ENTRY Flink = m_FilterEntryList.Flink;
-        while ( Flink != &m_FilterEntryList )
+        PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+        while ( Flink != &m_ParamsCheckList )
         {
-            FilterEntry* pEntry = CONTAINING_RECORD (
+            ParamCheckEntry* pEntry = CONTAINING_RECORD (
                 Flink,
-                FilterEntry,
+                ParamCheckEntry,
                 m_List
                 );
 
@@ -99,15 +120,38 @@ __checkReturn
 NTSTATUS
 Filters::AddFilter (
     __in_opt ULONG RequestTimeout,
+    __in PARAMS_MASK WishMask,
     __in ULONG ParamsCount,
     __in PPARAM_ENTRY Params,
     __out FILTER_ID* FilterId
     )
 {
+    ASSERT( ARGUMENT_PRESENT( WishMask ) );
     ASSERT( ARGUMENT_PRESENT( Params ) );
     ASSERT( ARGUMENT_PRESENT( FilterId ) );
 
-    return STATUS_NOT_IMPLEMENTED;
+    FilterEntry* pEntry = (FilterEntry*) ExAllocatePoolWithTag (
+        PagedPool,
+        sizeof( FilterEntry ),
+        _ALLOC_TAG
+        );
+    
+    if( !pEntry )
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    pEntry->m_FilterId = FiltersTree::GetNextFilterid();
+    pEntry->m_RequestTimeout = RequestTimeout;
+    pEntry->m_WishMask = WishMask;
+
+    FltAcquirePushLockExclusive( &m_AccessLock );
+    
+    InsertTailList( &m_FilterEntryList, &pEntry->m_List );
+
+    FltReleasePushLock( &m_AccessLock );
+
+    return STATUS_SUCCESS;
 }
 
 
@@ -126,6 +170,8 @@ FiltersTree::Initialize (
         FiltersTree::Free,
         NULL
         );
+
+    m_FilterIdCounter = 0;
 }
 
 
@@ -133,7 +179,7 @@ VOID
 FiltersTree::Destroy (
     )
 {
-    FltDeletePushLock( &m_AccessLock);
+    FltDeletePushLock( &m_AccessLock );
 }
 
 RTL_GENERIC_COMPARE_RESULTS
@@ -219,6 +265,41 @@ FiltersTree::~FiltersTree (
     )
 {
     // \todo free tree items
+}
+
+static
+VOID
+FiltersTree::DeleteAllFilters (
+    )
+{
+    PITEM_FILTERS pItem;
+
+    do 
+    {
+        pItem = (PITEM_FILTERS) RtlEnumerateGenericTableAvl (
+            &m_Tree,
+            TRUE
+            );
+
+        if ( pItem )
+        {
+            ASSERT( pItem->m_Filters );
+            pItem->m_Filters->Filters::~Filters();
+            FREE_POOL( pItem->m_Filters );
+
+            RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
+        }
+
+    } while ( pItem );
+}
+
+LONG
+FiltersTree::GetNextFilterid (
+    )
+{
+    LONG result = InterlockedIncrement( &m_FilterIdCounter );
+
+    return result;
 }
 
 __checkReturn

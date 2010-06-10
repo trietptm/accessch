@@ -129,6 +129,8 @@ PortDisconnect (
 
     ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
+    FiltersTree::DeleteAllFilters();
+
     FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
     Globals.m_ClientPort = NULL;
     FltReleasePushLock( &Globals.m_ClientPortLock );
