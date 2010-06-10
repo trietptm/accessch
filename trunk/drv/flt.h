@@ -176,6 +176,10 @@ public:
     }
 };
 
+VOID
+DeleteAllFilters (
+    );
+
 __checkReturn
 NTSTATUS
 FilterEvent (

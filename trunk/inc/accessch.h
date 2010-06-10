@@ -155,8 +155,6 @@ typedef struct _FILTER
     PARAM_ENTRY         m_Params[1];
 } FILTER,*PFILTER;
 
-#define FILTER_ID ULONG
-
 typedef enum ChainOperation
 {
     _fltchain_add       = 0,
@@ -169,7 +167,7 @@ typedef struct _CHAIN_ENTRY
     union
     {
         FILTER          m_Filter[1];    // add filters
-        FILTER_ID       m_Id[1];        // delete filters
+        ULONG           m_Id[1];        // delete filters
     };
 
 } CHAIN_ENTRY,*PCHAIN_ENTRY;
