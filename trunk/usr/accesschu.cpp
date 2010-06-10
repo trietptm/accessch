@@ -60,6 +60,9 @@ CreateFilters (
     pFilter->m_OperationType = PostProcessing;
     pFilter->m_RequestTimeout = 0;
     pFilter->m_ParamsCount = 1;
+    pFilter->m_WishMask = Id2Bit( PARAMETER_FILE_NAME )
+        | Id2Bit( PARAMETER_VOLUME_NAME )
+        | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID );
 
     PPARAM_ENTRY pEntry = pFilter->m_Params;
 
