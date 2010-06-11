@@ -4,13 +4,6 @@
 #include "fltstore.h"
 #include "excludes.h"
 
-VOID
-DeleteAllFilters (
-    )
-{
-    FiltersTree:DeleteAllFilters();
-}
-
 __checkReturn
 NTSTATUS
 FilterEvent (
@@ -71,6 +64,8 @@ FilterProceedChain (
     ASSERT( ARGUMENT_PRESENT( Chain ) );
 
     Filters* pFilters = NULL;
+
+    __debugbreak();
 
    __try
    {
