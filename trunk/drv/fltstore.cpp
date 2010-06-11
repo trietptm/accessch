@@ -18,6 +18,12 @@ typedef struct _ITEM_FILTERS
     Filters*            m_Filters;
 } ITEM_FILTERS, *PITEM_FILTERS;
 //////////////////////////////////////////////////////////////////////////
+VOID
+RemoveAllFilters (
+    )
+{
+    FiltersTree::DeleteAllFilters();
+}
 
 Filters::Filters (
     )
@@ -34,7 +40,7 @@ Filters::Filters (
     RtlClearAllBits( &m_ActiveFilters );
 
     m_FilterCount = 0;
-    InitializeListHead( &m_FilterEntryList );
+    m_FiltersArray = NULL;
     InitializeListHead( &m_ParamsCheckList );
 }
 
@@ -45,26 +51,9 @@ Filters::~Filters (
 
     ExRundownCompleted( &m_Ref );
     FltDeletePushLock( &m_AccessLock);
-
-    FilterEntry* pItem;
-
-    if ( !IsListEmpty( &m_FilterEntryList ) )
-    {
-        PLIST_ENTRY Flink;
-
-        Flink = m_FilterEntryList.Flink;
-
-        while ( Flink != &m_FilterEntryList )
-        {
-            pItem = CONTAINING_RECORD( Flink, FilterEntry, m_List );
-            Flink = Flink->Flink;
-
-            m_FilterCount--;
-            RemoveEntryList( &pItem->m_List ); //is it neccessary?
-
-            FREE_POOL( pItem );
-        }
-    }
+    
+    FREE_POOL( m_FiltersArray );
+    m_FilterCount = 0;
 }
 
 NTSTATUS
@@ -72,6 +61,7 @@ Filters::AddRef (
     )
 {
     NTSTATUS status = ExAcquireRundownProtection( &m_Ref );
+    
     return status;
 }
 
@@ -108,7 +98,6 @@ Filters::GetVerdict (
 
             // \todo pEntry->m_NumbersCount
         }
-
     }
 
     // \todo enum in m_FilteringHead and gather filters matched event
@@ -118,43 +107,166 @@ Filters::GetVerdict (
     return VERDICT_NOT_FILTERED;
 }
 
+ParamCheckEntry*
+Filters::GetOrCreateParamsCheckEntry (
+    __in PPARAM_ENTRY  ParamEntry
+    )
+{
+    return NULL;
+}
+
+VOID
+Filters::DeleteCheckParamsByFilterPos (
+    __in_opt ULONG Posittion
+    )
+{
+
+}
+
+__checkReturn
+NTSTATUS
+Filters::ParseParamsUnsafe (
+    __in ULONG FilterPos,
+    __in ULONG ParamsCount,
+    __in PPARAM_ENTRY Params
+    )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+
+    PPARAM_ENTRY params = Params;
+
+    for ( ULONG cou = 0; cou < ParamsCount; cou++ )
+    {
+        ParamCheckEntry* pEntry = GetOrCreateParamsCheckEntry( params );
+        if ( !pEntry )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            DeleteCheckParamsByFilterPos( FilterPos );
+            break;
+        }
+
+        pEntry = (ParamCheckEntry*) Add2Ptr (
+            pEntry,
+            sizeof( PARAM_ENTRY ) + params->m_FltData.m_Size
+            );
+    }
+    
+    return status;
+}
+
+ULONG
+Filters::GetFilterPosUnsafe (
+    )
+{
+    for ( ULONG cou = 0; cou < m_FilterCount; cou++ )
+    {
+        if  ( !FlagOn( m_FiltersArray[cou].m_Flags, FLT_POSITION_BISY ) )
+        {
+            return cou;
+        }
+    }
+
+    FilterEntry* pFiltersArray = (FilterEntry*) ExAllocatePoolWithTag (
+        PagedPool,
+        sizeof( FilterEntry ) * ( m_FilterCount + 1 ),
+        _ALLOC_TAG
+        );
+
+    if ( !pFiltersArray )
+    {   
+        return NumberOfBits;
+    }
+    
+    if ( m_FilterCount )
+    {
+        RtlCopyMemory( 
+            pFiltersArray,
+            m_FiltersArray,
+            sizeof( FilterEntry ) * m_FilterCount
+            );
+
+        FREE_POOL( m_FiltersArray );
+    }
+
+    m_FiltersArray = pFiltersArray;
+
+    RtlZeroMemory( &m_FiltersArray[ m_FilterCount ], sizeof( FilterEntry ) );
+
+    return m_FilterCount;
+}
+
 __checkReturn
 NTSTATUS
 Filters::AddFilter (
     __in_opt ULONG RequestTimeout,
     __in PARAMS_MASK WishMask,
-    __in ULONG ParamsCount,
-    __in PPARAM_ENTRY Params,
+    __in_opt ULONG ParamsCount,
+    __in_opt PPARAM_ENTRY Params,
     __out PULONG FilterId
     )
 {
-    ASSERT( ARGUMENT_PRESENT( Params ) );
+    FilterEntry* pEntry = NULL;
 
-    FilterEntry* pEntry = (FilterEntry*) ExAllocatePoolWithTag (
+    pEntry = (FilterEntry*) ExAllocatePoolWithTag (
         PagedPool,
         sizeof( FilterEntry ),
         _ALLOC_TAG
         );
 
-    if( !pEntry )
+    if ( !pEntry )
     {
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    pEntry->m_FilterId = FiltersTree::GetNextFilterid();
-    *FilterId = pEntry->m_FilterId;
-    pEntry->m_RequestTimeout = RequestTimeout;
-    pEntry->m_WishMask = WishMask;
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
 
     FltAcquirePushLockExclusive( &m_AccessLock );
 
-    m_FilterCount++;
+    __try
+    {
+        pEntry->m_FilterPos = GetFilterPosUnsafe();
+        if ( NumberOfBits <= pEntry->m_FilterPos )
+        {
+            status = STATUS_MAX_REFERRALS_EXCEEDED;
+            __leave;
+        }
 
-    InsertTailList( &m_FilterEntryList, &pEntry->m_List );
+        status = ParseParamsUnsafe (
+            pEntry->m_FilterPos,
+            ParamsCount,
+            Params
+            );
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        pEntry->m_FilterId = FiltersTree::GetNextFilterid();
+        pEntry->m_RequestTimeout = RequestTimeout;
+        pEntry->m_WishMask = WishMask;
+
+        SetFlag (
+            m_FiltersArray[ pEntry->m_FilterPos ].m_Flags,
+            FLT_POSITION_BISY
+            );
+
+        m_FilterCount++;
+        *FilterId = pEntry->m_FilterId;
+
+        status = STATUS_SUCCESS;
+    }
+    __finally
+    {
+        if ( !NT_SUCCESS( status ) )
+        {
+            FREE_POOL( pEntry );
+        }
+    }
 
     FltReleasePushLock( &m_AccessLock );
 
-    return STATUS_SUCCESS;
+    return status;
 }
 
 //////////////////////////////////////////////////////////////////////////

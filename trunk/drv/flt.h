@@ -177,7 +177,7 @@ public:
 };
 
 VOID
-DeleteAllFilters (
+RemoveAllFilters (
     );
 
 __checkReturn

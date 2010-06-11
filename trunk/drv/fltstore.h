@@ -1,8 +1,6 @@
 #ifndef __fltstore_h
 #define __fltstore_h
 
-#define FilterId ULONG
-
 #define NumberOfBits 256
 
 typedef enum _OpertorId
@@ -25,10 +23,13 @@ typedef struct _ParamCheckEntry
     FltData             m_Data;
 } ParamCheckEntry;
 
+#define FLT_POSITION_BISY   0x0001
+
 typedef struct _FilterEntry
 {
-    LIST_ENTRY          m_List;
+    ULONG               m_Flags;
     ULONG               m_FilterId;
+    ULONG               m_FilterPos;
     PARAMS_MASK         m_WishMask;
     ULONG               m_RequestTimeout;
     //ULONG               m_AggregationId;
@@ -59,9 +60,33 @@ public:
     AddFilter (
         __in_opt ULONG RequestTimeout,
         __in PARAMS_MASK WishMask,
-        __in ULONG ParamsCount,
-        __in PPARAM_ENTRY Params,
+        __in_opt ULONG ParamsCount,
+        __in_opt PPARAM_ENTRY Params,
         __out PULONG FilterId
+        );
+
+private:
+
+    __checkReturn
+    NTSTATUS
+    ParseParamsUnsafe (
+        __in ULONG FilterPos,
+        __in ULONG ParamsCount,
+        __in PPARAM_ENTRY Params
+        );
+
+    ULONG
+    GetFilterPosUnsafe (
+        );
+
+    ParamCheckEntry*
+    GetOrCreateParamsCheckEntry (
+        __in PPARAM_ENTRY  ParamEntry
+        );
+
+    VOID
+    DeleteCheckParamsByFilterPos (
+        __in_opt ULONG Posittion
         );
 
 private:
@@ -71,7 +96,7 @@ private:
     RTL_BITMAP          m_ActiveFilters;
     ULONG               m_ActiveFiltersBuffer[ NumberOfBits / sizeof(ULONG) ];
     ULONG               m_FilterCount;
-    LIST_ENTRY          m_FilterEntryList;
+    FilterEntry*        m_FiltersArray;
     LIST_ENTRY          m_ParamsCheckList;
 };
 
