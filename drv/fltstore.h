@@ -3,11 +3,6 @@
 
 #define NumberOfBits 256
 
-typedef enum _OpertorId
-{
-    fltop_AND           = 0,
-} OpertorId;
-
 typedef struct _FltData
 {
     ULONG               m_DataSize;
@@ -17,7 +12,7 @@ typedef struct _FltData
 typedef struct _ParamCheckEntry
 {
     LIST_ENTRY          m_List;
-    OpertorId           m_Operation;
+    FltOperation        m_Operation;
     ULONG               m_NumbersCount;
     PULONG              m_FilterNumbers;
     FltData             m_Data;
@@ -75,17 +70,18 @@ private:
         __in PPARAM_ENTRY Params
         );
 
-    ULONG
+    FilterEntry*
     GetFilterPosUnsafe (
         );
 
     ParamCheckEntry*
-    GetOrCreateParamsCheckEntry (
-        __in PPARAM_ENTRY  ParamEntry
+    AddParameterWithFilterPos (
+        __in PPARAM_ENTRY ParamEntry,
+        __in ULONG FilterPos
         );
 
     VOID
-    DeleteCheckParamsByFilterPos (
+    DeleteCheckParamsByFilterPosUnsafe (
         __in_opt ULONG Posittion
         );
 
