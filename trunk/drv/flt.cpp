@@ -65,8 +65,6 @@ FilterProceedChain (
 
     Filters* pFilters = NULL;
 
-    __debugbreak();
-
    __try
    {
         PCHAIN_ENTRY pEntry = Chain->m_Entry;

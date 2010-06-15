@@ -51,8 +51,28 @@ Filters::~Filters (
 
     ExRundownCompleted( &m_Ref );
     FltDeletePushLock( &m_AccessLock);
+
+    ParamCheckEntry* pEntry = NULL;
+    if ( !IsListEmpty( &m_ParamsCheckList ) )
+    {
+        PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+        while ( Flink != &m_ParamsCheckList )
+        {
+            pEntry = CONTAINING_RECORD (
+                Flink,
+                ParamCheckEntry,
+                m_List
+                );
+            
+            Flink = Flink->Flink;
+
+            FREE_POOL( pEntry->m_FilterNumbers );
+            FREE_POOL( pEntry );
+        }
+    }
     
     FREE_POOL( m_FiltersArray );
+
     m_FilterCount = 0;
 }
 
@@ -108,19 +128,93 @@ Filters::GetVerdict (
 }
 
 ParamCheckEntry*
-Filters::GetOrCreateParamsCheckEntry (
-    __in PPARAM_ENTRY  ParamEntry
+Filters::AddParameterWithFilterPos (
+    __in PPARAM_ENTRY ParamEntry,
+    __in ULONG FilterPos
     )
 {
-    return NULL;
+    ParamCheckEntry* pEntry = NULL;
+
+    // find existing
+    if ( !IsListEmpty( &m_ParamsCheckList ) )
+    {
+        PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+        while ( Flink != &m_ParamsCheckList )
+        {
+            pEntry = CONTAINING_RECORD (
+                Flink,
+                ParamCheckEntry,
+                m_List
+                );
+
+            if (
+                pEntry->m_Operation == ParamEntry->m_Operation
+                &&
+                pEntry->m_Data.m_DataSize == ParamEntry->m_FltData.m_Size
+                &&
+                pEntry->m_Data.m_DataSize == RtlCompareMemory (
+                    pEntry->m_Data.m_Data,
+                    ParamEntry->m_FltData.m_Data,
+                    pEntry->m_Data.m_DataSize
+                    )
+                )
+            {
+                // the same flt data and operations
+                // expand pEntry->m_FilterNumbers
+                __debugbreak();
+                return pEntry;
+            }
+
+            Flink = Flink->Flink;
+        }
+    }
+
+    // create new
+    pEntry = (ParamCheckEntry*) ExAllocatePoolWithTag (
+        PagedPool,
+        sizeof( ParamCheckEntry ) + ParamEntry->m_FltData.m_Size, // byte m_Data
+        _ALLOC_TAG
+        );
+    
+    if ( !pEntry )
+    {
+        return NULL;
+    }
+
+    pEntry->m_Operation = ParamEntry->m_Operation;
+    pEntry->m_NumbersCount = 1;
+    pEntry->m_FilterNumbers = (PULONG) ExAllocatePoolWithTag (
+        PagedPool,
+        sizeof(ULONG),
+        _ALLOC_TAG
+        );
+
+    if ( !pEntry->m_FilterNumbers )
+    {
+        FREE_POOL( pEntry );
+        
+        return NULL;
+    }
+    
+    pEntry->m_FilterNumbers[0] = FilterPos;
+    pEntry->m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
+    RtlCopyMemory (
+        pEntry->m_Data.m_Data,
+        ParamEntry->m_FltData.m_Data,
+        ParamEntry->m_FltData.m_Size
+        );
+
+    InsertTailList( &m_ParamsCheckList, &pEntry->m_List );
+
+    return pEntry;
 }
 
 VOID
-Filters::DeleteCheckParamsByFilterPos (
+Filters::DeleteCheckParamsByFilterPosUnsafe (
     __in_opt ULONG Posittion
     )
 {
-
+    __debugbreak();
 }
 
 __checkReturn
@@ -137,16 +231,20 @@ Filters::ParseParamsUnsafe (
 
     for ( ULONG cou = 0; cou < ParamsCount; cou++ )
     {
-        ParamCheckEntry* pEntry = GetOrCreateParamsCheckEntry( params );
+        ParamCheckEntry* pEntry = AddParameterWithFilterPos (
+            params,
+            FilterPos
+            );
+
         if ( !pEntry )
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
-            DeleteCheckParamsByFilterPos( FilterPos );
+            DeleteCheckParamsByFilterPosUnsafe( FilterPos );
             break;
         }
 
-        pEntry = (ParamCheckEntry*) Add2Ptr (
-            pEntry,
+        params = (PARAM_ENTRY*) Add2Ptr (
+            params,
             sizeof( PARAM_ENTRY ) + params->m_FltData.m_Size
             );
     }
@@ -154,15 +252,16 @@ Filters::ParseParamsUnsafe (
     return status;
 }
 
-ULONG
+FilterEntry*
 Filters::GetFilterPosUnsafe (
     )
 {
     for ( ULONG cou = 0; cou < m_FilterCount; cou++ )
     {
-        if  ( !FlagOn( m_FiltersArray[cou].m_Flags, FLT_POSITION_BISY ) )
+        if  ( !FlagOn( m_FiltersArray[ cou ].m_Flags, FLT_POSITION_BISY ) )
         {
-            return cou;
+            m_FiltersArray[ cou ].m_FilterId = FiltersTree::GetNextFilterid();
+            return &m_FiltersArray[ cou ];
         }
     }
 
@@ -174,7 +273,7 @@ Filters::GetFilterPosUnsafe (
 
     if ( !pFiltersArray )
     {   
-        return NumberOfBits;
+        return NULL;
     }
     
     if ( m_FilterCount )
@@ -191,8 +290,10 @@ Filters::GetFilterPosUnsafe (
     m_FiltersArray = pFiltersArray;
 
     RtlZeroMemory( &m_FiltersArray[ m_FilterCount ], sizeof( FilterEntry ) );
+    m_FiltersArray[ m_FilterCount ].m_FilterPos = m_FilterCount;
+    m_FiltersArray[ m_FilterCount ].m_FilterId = FiltersTree::GetNextFilterid();
 
-    return m_FilterCount;
+    return &m_FiltersArray[ m_FilterCount ];
 }
 
 __checkReturn
@@ -205,27 +306,16 @@ Filters::AddFilter (
     __out PULONG FilterId
     )
 {
-    FilterEntry* pEntry = NULL;
-
-    pEntry = (FilterEntry*) ExAllocatePoolWithTag (
-        PagedPool,
-        sizeof( FilterEntry ),
-        _ALLOC_TAG
-        );
-
-    if ( !pEntry )
-    {
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
     FltAcquirePushLockExclusive( &m_AccessLock );
 
+    __debugbreak();
+
     __try
     {
-        pEntry->m_FilterPos = GetFilterPosUnsafe();
-        if ( NumberOfBits <= pEntry->m_FilterPos )
+        FilterEntry* pEntry = GetFilterPosUnsafe();
+        if ( !pEntry )
         {
             status = STATUS_MAX_REFERRALS_EXCEEDED;
             __leave;
@@ -242,7 +332,6 @@ Filters::AddFilter (
             __leave;
         }
 
-        pEntry->m_FilterId = FiltersTree::GetNextFilterid();
         pEntry->m_RequestTimeout = RequestTimeout;
         pEntry->m_WishMask = WishMask;
 
@@ -258,10 +347,6 @@ Filters::AddFilter (
     }
     __finally
     {
-        if ( !NT_SUCCESS( status ) )
-        {
-            FREE_POOL( pEntry );
-        }
     }
 
     FltReleasePushLock( &m_AccessLock );
@@ -473,7 +558,7 @@ FiltersTree::GetOrCreateFiltersBy (
     item.m_Minor = Minor;
     item.m_OperationType = OperationType;
     
-    BOOLEAN newElement;
+    BOOLEAN newElement = FALSE;
     
     FltAcquirePushLockExclusive( &m_AccessLock );
 
@@ -508,6 +593,13 @@ FiltersTree::GetOrCreateFiltersBy (
         NTSTATUS status = pFilters->AddRef();
         if ( !NT_SUCCESS( status ) )
         {
+            if ( newElement )
+            {
+                pFilters->Filters::~Filters();
+                FREE_POOL( pFilters );
+                pItem->m_Filters = NULL;
+            }
+            
             pFilters = NULL;
         }
     }

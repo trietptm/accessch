@@ -222,6 +222,10 @@ PortMessageNotify (
                     );
 
                 status = FilterProceedChain( pChain, size );
+                if ( NT_SUCCESS( status ) )
+                {
+                    // \todo prepare output data;
+                }
             }
             break;
         
