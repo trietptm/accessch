@@ -58,6 +58,7 @@ CreateFilters (
     pFilter->m_Interceptor = FILE_MINIFILTER;
     pFilter->m_FunctionMj = OP_FILE_CREATE;
     pFilter->m_OperationType = PostProcessing;
+    pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
     pFilter->m_ParamsCount = 1;
     pFilter->m_WishMask = Id2Bit( PARAMETER_FILE_NAME )
@@ -71,7 +72,7 @@ CreateFilters (
     pEntry->m_FltData.m_Size = sizeof( ACCESS_MASK );
     
     ACCESS_MASK *pMask = (ACCESS_MASK*) pEntry->m_FltData.m_Data;
-    *pMask = GENERIC_READ | GENERIC_EXECUTE;
+    *pMask = FILE_READ_DATA | FILE_EXECUTE;
 
     ULONG requestsize = (ULONG) ((char*)pMask - buffer) + sizeof( ACCESS_MASK );
 
