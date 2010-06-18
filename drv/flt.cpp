@@ -86,6 +86,7 @@ FilterProceedChain (
                     {
                         ULONG id;
                         status = pFilters->AddFilter (
+                            pEntry->m_Filter->m_Verdict,
                             pEntry->m_Filter->m_RequestTimeout,
                             pEntry->m_Filter->m_WishMask,
                             pEntry->m_Filter->m_ParamsCount,

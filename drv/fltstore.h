@@ -2,6 +2,7 @@
 #define __fltstore_h
 
 #define NumberOfBits 256
+#define BitMapBufferSizeInUlong (NumberOfBits / 32)
 
 typedef struct _FltData
 {
@@ -12,9 +13,10 @@ typedef struct _FltData
 typedef struct _ParamCheckEntry
 {
     LIST_ENTRY          m_List;
+    Parameters          m_Parameter;
     FltOperation        m_Operation;
-    ULONG               m_NumbersCount;
-    PULONG              m_FilterNumbers;
+    ULONG               m_PosCount;
+    PULONG              m_FilterPosList;
     FltData             m_Data;
 } ParamCheckEntry;
 
@@ -25,6 +27,7 @@ typedef struct _FilterEntry
     ULONG               m_Flags;
     ULONG               m_FilterId;
     ULONG               m_FilterPos;
+    VERDICT             m_Verdict;
     PARAMS_MASK         m_WishMask;
     ULONG               m_RequestTimeout;
     //ULONG               m_AggregationId;
@@ -53,6 +56,7 @@ public:
     
     NTSTATUS
     AddFilter (
+        __in VERDICT Verdict,
         __in_opt ULONG RequestTimeout,
         __in PARAMS_MASK WishMask,
         __in_opt ULONG ParamsCount,
@@ -85,12 +89,19 @@ private:
         __in_opt ULONG Posittion
         );
 
+    NTSTATUS
+    CheckSingleEntryUnsafe (
+        __in ParamCheckEntry* Entry,
+        __in EventData *Event,
+        __out PARAMS_MASK *ParamsMask
+        );
+
 private:
     EX_RUNDOWN_REF      m_Ref;
     EX_PUSH_LOCK        m_AccessLock;
 
     RTL_BITMAP          m_ActiveFilters;
-    ULONG               m_ActiveFiltersBuffer[ NumberOfBits / sizeof(ULONG) ];
+    ULONG               m_ActiveFiltersBuffer[ BitMapBufferSizeInUlong ];
     ULONG               m_FilterCount;
     FilterEntry*        m_FiltersArray;
     LIST_ENTRY          m_ParamsCheckList;

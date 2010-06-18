@@ -66,7 +66,7 @@ Filters::~Filters (
             
             Flink = Flink->Flink;
 
-            FREE_POOL( pEntry->m_FilterNumbers );
+            FREE_POOL( pEntry->m_FilterPosList );
             FREE_POOL( pEntry );
         }
     }
@@ -92,39 +92,173 @@ Filters::Release (
     ExReleaseRundownProtection( &m_Ref );
 }
 
+NTSTATUS
+Filters::CheckSingleEntryUnsafe (
+    __in ParamCheckEntry* Entry,
+    __in EventData *Event,
+    __out PARAMS_MASK *ParamsMask
+    )
+{
+    PVOID pData;
+    ULONG datasize;
+    NTSTATUS status = Event->QueryParameter (
+        Entry->m_Parameter,
+        &pData,
+        &datasize
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        ASSERT( FALSE );
+        return VERDICT_NOT_FILTERED;
+    }
+    
+    status = STATUS_UNSUCCESSFUL;    
+
+    switch( Entry->m_Operation )
+    {
+    case _fltop_equ:
+        if ( datasize == Entry->m_Data.m_DataSize )
+        {
+            if ( datasize == RtlCompareMemory (
+                Entry->m_Data.m_Data,
+                pData,
+                datasize
+                )
+                )
+            {
+                status = STATUS_SUCCESS;
+            }
+        }
+        break;
+
+    case _fltop_and:
+        if ( datasize == Entry->m_Data.m_DataSize )
+        {
+            if ( datasize == sizeof( ULONG ) )
+            {
+                PULONG pu1 = (PULONG) Entry->m_Data.m_Data;
+                PULONG pu2 = (PULONG) pData;
+                if ( *pu1 & *pu2 )
+                {
+                    status = STATUS_SUCCESS;
+                }
+            }
+            else
+            {
+                __debugbreak();
+            }
+        }
+        break;
+    }
+
+    return status;
+}
+
 VERDICT
 Filters::GetVerdict (
     __in EventData *Event,
     __out PARAMS_MASK *ParamsMask
     )
 {
-    ASSERT( ARGUMENT_PRESENT( Event ) );
-    ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
-    
+    VERDICT verdict = VERDICT_NOT_FILTERED;
+
+    RTL_BITMAP filtersbitmap;
+    ULONG mapbuffer[ BitMapBufferSizeInUlong ];
+
+    BOOLEAN bAllUnmatched = FALSE;
+
     FltAcquirePushLockShared( &m_AccessLock );
 
-    if ( !IsListEmpty( &m_ParamsCheckList ) )
+    if ( IsListEmpty( &m_ParamsCheckList ) )
     {
+        bAllUnmatched = TRUE;
+    }
+    else
+    {
+        ULONG unmatched = 0;
+
+        RtlInitializeBitMap (
+            &filtersbitmap,
+            mapbuffer,
+            NumberOfBits
+            );
+
+        RtlClearAllBits( &filtersbitmap );
+
         PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
-        while ( Flink != &m_ParamsCheckList )
+        while ( Flink != &m_ParamsCheckList && !bAllUnmatched )
         {
             ParamCheckEntry* pEntry = CONTAINING_RECORD (
                 Flink,
                 ParamCheckEntry,
                 m_List
                 );
-
+            
             Flink = Flink->Flink;
 
-            // \todo pEntry->m_NumbersCount
+            NTSTATUS status = CheckSingleEntryUnsafe (
+                pEntry,
+                Event,
+                ParamsMask
+                );
+
+            if ( NT_SUCCESS( status ) )
+            {
+
+            }
+            else
+            {
+                // set unmatched filters bit
+                for (
+                    ULONG cou = 0;
+                    cou < pEntry->m_PosCount && !bAllUnmatched;
+                    cou++
+                    )
+                {
+                    ULONG isset = RtlCheckBit (
+                        &filtersbitmap,
+                        pEntry->m_FilterPosList[cou]
+                    );
+
+                    if ( !isset )
+                    {
+                        RtlSetBit (
+                            &filtersbitmap,
+                            pEntry->m_FilterPosList[cou]
+                        );
+                        
+                        unmatched++;
+                        if ( unmatched == m_FilterCount )
+                        {
+                            bAllUnmatched = TRUE;
+                        }
+                    }
+                }
+            }
         }
     }
 
-    // \todo enum in m_FilteringHead and gather filters matched event
+    if ( !bAllUnmatched ) 
+    {
+        // at least 1 filter matched and bit not set
+        ULONG position = RtlFindClearBits( &filtersbitmap, 1, 0 );
+
+        ASSERT( FlagOn (
+            m_FiltersArray[ position ].m_Flags,
+            FLT_POSITION_BISY
+            ) );
+
+        if ( RtlCheckBit( &m_ActiveFilters, position ) )
+        {
+            verdict = m_FiltersArray[ position ].m_Verdict;
+            *ParamsMask = m_FiltersArray[ position ].m_WishMask;
+        }
+    }
 
     FltReleasePushLock( &m_AccessLock );
 
-    return VERDICT_NOT_FILTERED;
+    return verdict;
 }
 
 ParamCheckEntry*
@@ -182,21 +316,22 @@ Filters::AddParameterWithFilterPos (
     }
 
     pEntry->m_Operation = ParamEntry->m_Operation;
-    pEntry->m_NumbersCount = 1;
-    pEntry->m_FilterNumbers = (PULONG) ExAllocatePoolWithTag (
+    pEntry->m_Parameter = ParamEntry->m_Id;
+    pEntry->m_PosCount = 1;
+    pEntry->m_FilterPosList = (PULONG) ExAllocatePoolWithTag (
         PagedPool,
         sizeof(ULONG),
         _ALLOC_TAG
         );
 
-    if ( !pEntry->m_FilterNumbers )
+    if ( !pEntry->m_FilterPosList )
     {
         FREE_POOL( pEntry );
         
         return NULL;
     }
     
-    pEntry->m_FilterNumbers[0] = FilterPos;
+    pEntry->m_FilterPosList[0] = FilterPos;
     pEntry->m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
     RtlCopyMemory (
         pEntry->m_Data.m_Data,
@@ -261,6 +396,7 @@ Filters::GetFilterPosUnsafe (
         if  ( !FlagOn( m_FiltersArray[ cou ].m_Flags, FLT_POSITION_BISY ) )
         {
             m_FiltersArray[ cou ].m_FilterId = FiltersTree::GetNextFilterid();
+            
             return &m_FiltersArray[ cou ];
         }
     }
@@ -299,6 +435,7 @@ Filters::GetFilterPosUnsafe (
 __checkReturn
 NTSTATUS
 Filters::AddFilter (
+    __in VERDICT Verdict,
     __in_opt ULONG RequestTimeout,
     __in PARAMS_MASK WishMask,
     __in_opt ULONG ParamsCount,
@@ -308,9 +445,9 @@ Filters::AddFilter (
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-    FltAcquirePushLockExclusive( &m_AccessLock );
+    ASSERT( Verdict );
 
-    __debugbreak();
+    FltAcquirePushLockExclusive( &m_AccessLock );
 
     __try
     {
@@ -332,6 +469,7 @@ Filters::AddFilter (
             __leave;
         }
 
+        pEntry->m_Verdict = Verdict;
         pEntry->m_RequestTimeout = RequestTimeout;
         pEntry->m_WishMask = WishMask;
 
@@ -339,6 +477,8 @@ Filters::AddFilter (
             m_FiltersArray[ pEntry->m_FilterPos ].m_Flags,
             FLT_POSITION_BISY
             );
+
+        RtlSetBit( &m_ActiveFilters, pEntry->m_FilterPos );
 
         m_FilterCount++;
         *FilterId = pEntry->m_FilterId;
@@ -395,11 +535,12 @@ FiltersTree::Compare (
 
     PITEM_FILTERS Struct1 = (PITEM_FILTERS) FirstStruct;
     PITEM_FILTERS Struct2 = (PITEM_FILTERS) SecondStruct;
+    ULONG comparesize = FIELD_OFFSET( ITEM_FILTERS, m_Filters );
 
     int ires = memcmp (
         Struct1,
         Struct2,
-        sizeof( ITEM_FILTERS ) - FIELD_OFFSET( ITEM_FILTERS, m_Filters )
+        comparesize
         );
 
     switch ( ires )
