@@ -161,6 +161,7 @@ Filters::GetVerdict (
     __out PARAMS_MASK *ParamsMask
     )
 {
+    // \todo refactor
     VERDICT verdict = VERDICT_NOT_FILTERED;
 
     RTL_BITMAP filtersbitmap;
@@ -205,9 +206,11 @@ Filters::GetVerdict (
             }
         }
 
+        // check params in active filters
         PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
         while ( Flink != &m_ParamsCheckList && !bAllUnmatched )
         {
+            // \todo dont check entry with inactive filters only
             ParamCheckEntry* pEntry = CONTAINING_RECORD (
                 Flink,
                 ParamCheckEntry,
@@ -224,7 +227,7 @@ Filters::GetVerdict (
 
             if ( NT_SUCCESS( status ) )
             {
-                
+                // nothing
             }
             else
             {
@@ -267,6 +270,8 @@ Filters::GetVerdict (
             m_FiltersArray[ position ].m_Flags,
             FLT_POSITION_BISY
             ) );
+        
+        ASSERT( RtlCheckBit( &m_ActiveFilters, position ) );
 
         verdict = m_FiltersArray[ position ].m_Verdict;
         *ParamsMask = m_FiltersArray[ position ].m_WishMask;
@@ -633,6 +638,8 @@ FiltersTree::DeleteAllFilters (
 {
     PITEM_FILTERS pItem;
 
+    FltAcquirePushLockExclusive( &m_AccessLock );
+
     do 
     {
         pItem = (PITEM_FILTERS) RtlEnumerateGenericTableAvl (
@@ -650,6 +657,8 @@ FiltersTree::DeleteAllFilters (
         }
 
     } while ( pItem );
+
+    FltReleasePushLock( &m_AccessLock );
 }
 
 LONG
