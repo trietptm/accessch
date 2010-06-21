@@ -18,13 +18,6 @@ typedef struct _ITEM_FILTERS
     Filters*            m_Filters;
 } ITEM_FILTERS, *PITEM_FILTERS;
 //////////////////////////////////////////////////////////////////////////
-VOID
-RemoveAllFilters (
-    )
-{
-    FiltersTree::DeleteAllFilters();
-}
-
 Filters::Filters (
     )
 {

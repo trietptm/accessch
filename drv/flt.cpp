@@ -4,6 +4,13 @@
 #include "fltstore.h"
 #include "excludes.h"
 
+VOID
+RemoveAllFilters (
+    )
+{
+    FiltersTree::DeleteAllFilters();
+}
+
 __checkReturn
 NTSTATUS
 FilterEvent (
