@@ -186,6 +186,25 @@ Filters::GetVerdict (
 
         RtlClearAllBits( &filtersbitmap );
 
+        // set inactive filters
+        for ( ULONG cou = 0; cou < m_FilterCount; cou++ )
+        {
+            if (
+                !FlagOn( m_FiltersArray[ cou ].m_Flags, FLT_POSITION_BISY )
+                ||
+                !RtlCheckBit( &m_ActiveFilters, cou )
+                )
+            {
+                RtlSetBit( &filtersbitmap, cou );
+
+                unmatched++;
+                if ( unmatched == m_FilterCount )
+                {
+                    bAllUnmatched = TRUE;
+                }
+            }
+        }
+
         PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
         while ( Flink != &m_ParamsCheckList && !bAllUnmatched )
         {
@@ -205,7 +224,7 @@ Filters::GetVerdict (
 
             if ( NT_SUCCESS( status ) )
             {
-
+                
             }
             else
             {
@@ -249,11 +268,8 @@ Filters::GetVerdict (
             FLT_POSITION_BISY
             ) );
 
-        if ( RtlCheckBit( &m_ActiveFilters, position ) )
-        {
-            verdict = m_FiltersArray[ position ].m_Verdict;
-            *ParamsMask = m_FiltersArray[ position ].m_WishMask;
-        }
+        verdict = m_FiltersArray[ position ].m_Verdict;
+        *ParamsMask = m_FiltersArray[ position ].m_WishMask;
     }
 
     FltReleasePushLock( &m_AccessLock );
@@ -387,17 +403,19 @@ Filters::ParseParamsUnsafe (
     return status;
 }
 
-FilterEntry*
+__checkReturn
+NTSTATUS
 Filters::GetFilterPosUnsafe (
+    PULONG Position
     )
 {
     for ( ULONG cou = 0; cou < m_FilterCount; cou++ )
     {
         if  ( !FlagOn( m_FiltersArray[ cou ].m_Flags, FLT_POSITION_BISY ) )
         {
-            m_FiltersArray[ cou ].m_FilterId = FiltersTree::GetNextFilterid();
+            *Position = cou;
             
-            return &m_FiltersArray[ cou ];
+            return STATUS_SUCCESS;
         }
     }
 
@@ -409,7 +427,7 @@ Filters::GetFilterPosUnsafe (
 
     if ( !pFiltersArray )
     {   
-        return NULL;
+        return STATUS_INSUFFICIENT_RESOURCES;
     }
     
     if ( m_FilterCount )
@@ -426,10 +444,9 @@ Filters::GetFilterPosUnsafe (
     m_FiltersArray = pFiltersArray;
 
     RtlZeroMemory( &m_FiltersArray[ m_FilterCount ], sizeof( FilterEntry ) );
-    m_FiltersArray[ m_FilterCount ].m_FilterPos = m_FilterCount;
-    m_FiltersArray[ m_FilterCount ].m_FilterId = FiltersTree::GetNextFilterid();
+    *Position = m_FilterCount;
 
-    return &m_FiltersArray[ m_FilterCount ];
+    return STATUS_SUCCESS;
 }
 
 __checkReturn
@@ -451,15 +468,17 @@ Filters::AddFilter (
 
     __try
     {
-        FilterEntry* pEntry = GetFilterPosUnsafe();
-        if ( !pEntry )
+        ULONG position;
+        status = GetFilterPosUnsafe( &position );
+        if ( !NT_SUCCESS( status ) )
         {
-            status = STATUS_MAX_REFERRALS_EXCEEDED;
             __leave;
         }
 
+        FilterEntry* pEntry = &m_FiltersArray[ position ];
+
         status = ParseParamsUnsafe (
-            pEntry->m_FilterPos,
+            position,
             ParamsCount,
             Params
             );
@@ -472,13 +491,14 @@ Filters::AddFilter (
         pEntry->m_Verdict = Verdict;
         pEntry->m_RequestTimeout = RequestTimeout;
         pEntry->m_WishMask = WishMask;
+        pEntry->m_FilterId = FiltersTree::GetNextFilterid();
 
         SetFlag (
-            m_FiltersArray[ pEntry->m_FilterPos ].m_Flags,
+            m_FiltersArray[ position ].m_Flags,
             FLT_POSITION_BISY
             );
 
-        RtlSetBit( &m_ActiveFilters, pEntry->m_FilterPos );
+        RtlSetBit( &m_ActiveFilters, position );
 
         m_FilterCount++;
         *FilterId = pEntry->m_FilterId;

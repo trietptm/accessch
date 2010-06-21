@@ -26,7 +26,6 @@ typedef struct _FilterEntry
 {
     ULONG               m_Flags;
     ULONG               m_FilterId;
-    ULONG               m_FilterPos;
     VERDICT             m_Verdict;
     PARAMS_MASK         m_WishMask;
     ULONG               m_RequestTimeout;
@@ -74,8 +73,10 @@ private:
         __in PPARAM_ENTRY Params
         );
 
-    FilterEntry*
-    GetFilterPosUnsafe (
+    __checkReturn
+        NTSTATUS
+        GetFilterPosUnsafe (
+        PULONG Position
         );
 
     ParamCheckEntry*
