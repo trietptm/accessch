@@ -160,16 +160,15 @@ Filters::GetVerdict (
     RTL_BITMAP filtersbitmap;
     ULONG mapbuffer[ BitMapBufferSizeInUlong ];
 
-    BOOLEAN bAllUnmatched = FALSE;
-
     FltAcquirePushLockShared( &m_AccessLock );
 
-    if ( IsListEmpty( &m_ParamsCheckList ) )
+    __try
     {
-        bAllUnmatched = TRUE;
-    }
-    else
-    {
+        if ( IsListEmpty( &m_ParamsCheckList ) )
+        {
+            __leave;
+        }
+        
         ULONG unmatched = 0;
 
         RtlInitializeBitMap (
@@ -183,25 +182,26 @@ Filters::GetVerdict (
         // set inactive filters
         for ( ULONG cou = 0; cou < m_FilterCount; cou++ )
         {
-            if (
-                !FlagOn( m_FiltersArray[ cou ].m_Flags, FLT_POSITION_BISY )
-                ||
-                !RtlCheckBit( &m_ActiveFilters, cou )
-                )
+            if ( !RtlCheckBit( &m_ActiveFilters, cou ) )
             {
+                ASSERT( FlagOn (
+                    m_FiltersArray[ cou ].m_Flags,
+                    FLT_POSITION_BISY )
+                    );
+
                 RtlSetBit( &filtersbitmap, cou );
 
                 unmatched++;
                 if ( unmatched == m_FilterCount )
                 {
-                    bAllUnmatched = TRUE;
+                    __leave;
                 }
             }
         }
 
         // check params in active filters
         PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
-        while ( Flink != &m_ParamsCheckList && !bAllUnmatched )
+        while ( Flink != &m_ParamsCheckList )
         {
             // \todo dont check entry with inactive filters only
             ParamCheckEntry* pEntry = CONTAINING_RECORD (
@@ -225,11 +225,7 @@ Filters::GetVerdict (
             else
             {
                 // set unmatched filters bit
-                for (
-                    ULONG cou = 0;
-                    cou < pEntry->m_PosCount && !bAllUnmatched;
-                    cou++
-                    )
+                for ( ULONG cou = 0; cou < pEntry->m_PosCount; cou++ )
                 {
                     ULONG isset = RtlCheckBit (
                         &filtersbitmap,
@@ -246,16 +242,13 @@ Filters::GetVerdict (
                         unmatched++;
                         if ( unmatched == m_FilterCount )
                         {
-                            bAllUnmatched = TRUE;
+                            __leave;
                         }
                     }
                 }
             }
         }
-    }
 
-    if ( !bAllUnmatched ) 
-    {
         // at least 1 filter matched and bit not set
         ULONG position = RtlFindClearBits( &filtersbitmap, 1, 0 );
 
@@ -263,11 +256,15 @@ Filters::GetVerdict (
             m_FiltersArray[ position ].m_Flags,
             FLT_POSITION_BISY
             ) );
-        
+
         ASSERT( RtlCheckBit( &m_ActiveFilters, position ) );
 
         verdict = m_FiltersArray[ position ].m_Verdict;
         *ParamsMask = m_FiltersArray[ position ].m_WishMask;
+    }
+    __finally
+    {
+        // nothing todo
     }
 
     FltReleasePushLock( &m_AccessLock );
