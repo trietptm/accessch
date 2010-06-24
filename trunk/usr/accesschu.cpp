@@ -226,7 +226,7 @@ PrepareIo (
         return S_OK;
     }
 
-    //! \todo: prepare real error code
+    /// \todo: prepare real error code
 
     return E_FAIL;
 };

@@ -5,7 +5,7 @@
 #include "filehlp.h"
 #include "security.h"
 
-// \todo FILE_OPEN_NO_RECALL
+/// \todo FILE_OPEN_NO_RECALL
 
 DriverOperationId
 FileOperationSystemToInternal (
