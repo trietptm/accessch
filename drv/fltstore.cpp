@@ -154,7 +154,7 @@ Filters::GetVerdict (
     __out PARAMS_MASK *ParamsMask
     )
 {
-    // \todo refactor
+    /// \todo refactor
     VERDICT verdict = VERDICT_NOT_FILTERED;
 
     RTL_BITMAP filtersbitmap;
@@ -198,7 +198,7 @@ Filters::GetVerdict (
         PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
         while ( Flink != &m_ParamsCheckList )
         {
-            // \todo dont check entry with inactive filters only
+            /// \todo dont check entry with inactive filters only
             ParamCheckEntry* pEntry = CONTAINING_RECORD (
                 Flink,
                 ParamCheckEntry,
@@ -614,7 +614,7 @@ FiltersTree::FiltersTree (
 FiltersTree::~FiltersTree (
     )
 {
-    // \todo free tree items
+    /// \todo free tree items
 }
 
 VOID

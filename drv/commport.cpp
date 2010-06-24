@@ -106,7 +106,7 @@ PortConnect (
 
         pPortContext->m_Connection = ClientPort;
 
-        // \todo  revise single port connection
+        /// \todo  revise single port connection
         Globals.m_ClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
 
@@ -224,7 +224,7 @@ PortMessageNotify (
                 status = FilterProceedChain( pChain, size );
                 if ( NT_SUCCESS( status ) )
                 {
-                    // \todo prepare output data;
+                    /// \todo prepare output data;
                 }
             }
             break;

@@ -4,7 +4,7 @@
 //    \description - sample driver
 //!
 
-// \todo check necessary headers
+/// \todo check necessary headers
 #include "main.h"
 #include "../inc/accessch.h"
 #include "flt.h"
@@ -268,7 +268,7 @@ Unload (
 {
     if ( !FlagOn(Flags, FLTFL_FILTER_UNLOAD_MANDATORY) )
     {
-        // \todo checks during Unload
+        /// \todo checks during Unload
         //return STATUS_FLT_DO_NOT_DETACH;
     }
 
