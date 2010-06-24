@@ -63,7 +63,7 @@ SecurityAllocateCopySid (
     *Sid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
     if ( !*Sid )
     {
-        return STATUS_NO_MEMORY;
+        return STATUS_INSUFFICIENT_RESOURCES;
     }
 
     status = RtlCopySid( SidLength, *Sid, SidSrc );

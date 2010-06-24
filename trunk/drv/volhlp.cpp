@@ -36,7 +36,7 @@ QueryDeviceProperty (
         pBuffer = ExAllocatePoolWithTag( PagedPool, BufferSize, _ALLOC_TAG );
         if ( !pBuffer )
         {
-            return STATUS_NO_MEMORY;
+            return STATUS_INSUFFICIENT_RESOURCES;
         }
 
         status = IoGetDeviceProperty (
