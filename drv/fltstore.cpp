@@ -184,11 +184,6 @@ Filters::GetVerdict (
         {
             if ( !RtlCheckBit( &m_ActiveFilters, cou ) )
             {
-                ASSERT( FlagOn (
-                    m_FiltersArray[ cou ].m_Flags,
-                    FLT_POSITION_BISY )
-                    );
-
                 RtlSetBit( &filtersbitmap, cou );
 
                 unmatched++;
