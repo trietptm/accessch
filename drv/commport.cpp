@@ -98,7 +98,7 @@ PortConnect (
 
         if ( !pPortContext )
         {
-            status = STATUS_NO_MEMORY;
+            status = STATUS_INSUFFICIENT_RESOURCES;
             __leave;
         }
 
@@ -336,7 +336,7 @@ PortAllocateMessage (
 
     if ( !pMsg )
     {
-        return STATUS_NO_MEMORY;
+        return STATUS_INSUFFICIENT_RESOURCES;
     }
 
     pMsg->m_EventId = QueuedItem->GetId();

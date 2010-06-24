@@ -39,7 +39,7 @@ QueuedItem::Add (
 
     if ( !pItem )
     {
-        return STATUS_NO_MEMORY;
+        return STATUS_INSUFFICIENT_RESOURCES;
     }
 
     pItem->QueuedItem::QueuedItem( Event );
