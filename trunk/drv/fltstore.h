@@ -158,7 +158,7 @@ private:
     static RTL_AVL_TABLE    m_Tree;
     static EX_PUSH_LOCK     m_AccessLock;
     
-    /// \todo обунлять счетчик при отключении соединения
+    /// \todo clear counter when disconnected
     static LONG             m_FilterIdCounter;
 
 public:

@@ -122,7 +122,6 @@ IsDirectoryImp (
     return status;
 }
 
-
 __checkReturn
 NTSTATUS
 GenerateStreamContext (
