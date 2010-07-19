@@ -314,7 +314,8 @@ PortAllocateMessage (
             
             if ( !NT_SUCCESS( status ) )
             {
-                return status;
+                ClearFlag( ParamsMask, (PARAMS_MASK) 1 << cou );
+                continue;
             }
 
             params2user++;
