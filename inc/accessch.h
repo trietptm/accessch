@@ -69,7 +69,7 @@ typedef ULONG VERDICT, *PVERDICT;
 // send message communication  
 typedef struct _REPLY_RESULT
 {
-    ULONG               m_Flags;
+    VERDICT             m_Flags;
 } REPLY_RESULT, *PREPLY_RESULT;
 
 typedef struct _EVENT_PARAMETER

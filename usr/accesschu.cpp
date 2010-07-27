@@ -5,6 +5,8 @@
 
 #include "../inc/accessch.h"
 
+#define Add2Ptr(P,I) ((PVOID)((PUCHAR)(P) + (I)))
+
 #define THREAD_MAXCOUNT_WAITERS     8
 #define DRV_EVENT_CONTENT_SIZE      0x1000 
 
@@ -31,6 +33,112 @@ typedef struct _REPLY_MESSAGE {
 } REPLY_MESSAGE, *PREPLY_MESSAGE;
 
 #include <poppack.h>
+
+//////////////////////////////////////////////////////////////////////////
+typedef HRESULT (__cdecl * pfn_io_read) (
+    HANDLE Context,
+    LARGE_INTEGER Offset,
+    PVOID Buffer,
+    ULONG Size,
+    PULONG Read
+    );
+
+typedef HRESULT (__cdecl * pfn_io_getsize) (
+    HANDLE Context,
+    PLARGE_INTEGER Size
+    );
+
+typedef HRESULT (__cdecl * pfn_InitEngineProvider) (
+    PHANDLE Session,
+    pfn_io_read IORead,
+    pfn_io_getsize IOGetSize
+    );
+
+typedef HRESULT (__cdecl * pfn_DoneEngineProvider ) (
+    HANDLE Handle
+    );
+
+typedef HRESULT (__cdecl * pfn_ScanIO ) (
+    HANDLE Session,
+    HANDLE ObjectToScan
+    );
+
+HANDLE gEngine = NULL;
+pfn_InitEngineProvider InitEngineProvider = NULL;
+pfn_DoneEngineProvider DoneEngineProvider = NULL;
+pfn_ScanIO ScanIO = NULL;
+
+typedef struct _IOScanContext
+{
+    PCOMMUNICATIONS CommPort;
+    PMESSAGE_DATA   Data;
+
+    PVOID           MemBasePtr;
+    SIZE_T          IOSize;
+} IOScanContext, *PIOScanContext;
+
+HRESULT
+__cdecl
+CustomRead (
+    HANDLE Context,
+    LARGE_INTEGER Offset,
+    PVOID Buffer,
+    ULONG Size,
+    PULONG Read
+    )
+{
+    UNREFERENCED_PARAMETER( Context );
+    UNREFERENCED_PARAMETER( Offset );
+    UNREFERENCED_PARAMETER( Buffer );
+    UNREFERENCED_PARAMETER( Size );
+    UNREFERENCED_PARAMETER( Read );
+
+    PIOScanContext pScanContext = (PIOScanContext) Context;
+    
+    HRESULT hResult = E_FAIL;
+    __try
+    {
+        if ( Offset.QuadPart > pScanContext->IOSize )
+        {
+            __leave;
+        }
+
+        if ( Offset.QuadPart + Size > pScanContext->IOSize )
+        {
+            Size = (ULONG) (pScanContext->IOSize - Offset.QuadPart);
+        }
+        
+        RtlCopyMemory (
+            Buffer,
+            Add2Ptr( pScanContext->MemBasePtr, Offset.QuadPart ),
+            Size
+            );
+
+        *Read = Size;
+        hResult = S_OK;
+    }
+    __finally
+    {
+    	
+    }
+    
+    return hResult;
+}
+
+HRESULT
+__cdecl
+CustomGetSize (
+    HANDLE Context,
+    PLARGE_INTEGER Size
+    )
+{
+    PIOScanContext pScanContext = (PIOScanContext) Context;
+    Size->QuadPart = pScanContext->IOSize;
+
+    return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 HRESULT
 CreateFilters (
@@ -231,31 +339,51 @@ PrepareIo (
     return E_FAIL;
 };
 
-void
+bool
 ScanObject (
     __in PCOMMUNICATIONS CommPort,
-    __in PMESSAGE_DATA pData
+    __in PMESSAGE_DATA Data
     )
 {
-    assert( pData );
+    bool bBlock = FALSE;
+    assert( Data );
 
-    PVOID pMemPtr = NULL;
-    SIZE_T iosize;
-    
-    HRESULT hResult = PrepareIo( CommPort, pData, &pMemPtr, &iosize );
+    IOScanContext scancontext;
+    scancontext.CommPort = CommPort;
+    scancontext.Data = Data;
+
+    HRESULT hResult = PrepareIo (
+        CommPort,
+        Data,
+        &scancontext.MemBasePtr,
+        &scancontext.IOSize
+        );
+
     if ( !SUCCEEDED( hResult ) )
     {
-        return;
+        return false;
     }
     
     __try
     {
-        for (SIZE_T cou = 0; cou < iosize % 0x1000; cou++ )
+        if ( gEngine )
         {
-            char buf = ((char*) pMemPtr + cou * 0x1000 )[0];
-            if ( buf )
+            HRESULT hResult = ScanIO( gEngine, &scancontext );
+            if ( FAILED( hResult ) )
             {
-                // simulate
+                printf( "detect\n" );
+                bBlock = true;
+            }
+        }
+        else
+        {
+            for (SIZE_T cou = 0; cou < scancontext.IOSize % 0x1000; cou++ )
+            {
+                char buf = ((char*) scancontext.MemBasePtr + cou * 0x1000 )[0];
+                if ( buf )
+                {
+                    // simulate
+                }
             }
         }
     }
@@ -264,7 +392,9 @@ ScanObject (
 
     }
 
-    UnmapViewOfFile( pMemPtr ); 
+    UnmapViewOfFile( scancontext.MemBasePtr ); 
+
+    return bBlock;
 }
 
 DWORD
@@ -293,16 +423,17 @@ WaiterThread (
 
         //check data
         PMESSAGE_DATA pData = (PMESSAGE_DATA) pEvent->m_Data.m_Content;
-        printf( "event: params count %d\n",
-            pData->m_ParametersCount
-            );
 
-        ScanObject( pCommPort, pData );
+        bool bBlock = ScanObject( pCommPort, pData );
 
         // release
         
         REPLY_MESSAGE Reply;
         memset( &Reply, 0, sizeof( Reply) );
+        if ( bBlock )
+        {
+            Reply.m_Verdict.m_Flags = VERDICT_DENY;
+        }
 
         Reply.m_ReplyHeader.Status = 0;
         Reply.m_ReplyHeader.MessageId = pEvent->m_Header.MessageId;
@@ -336,6 +467,8 @@ main (
     HANDLE hThreads[ THREAD_MAXCOUNT_WAITERS ] = { NULL };
     DWORD ThreadsId[ THREAD_MAXCOUNT_WAITERS ] = { 0 };
 
+    HMODULE hEngine = NULL;
+
     __try
     {
         HRESULT hResult = FilterConnectCommunicationPort (
@@ -367,6 +500,44 @@ main (
             __leave;
         }
 
+        hEngine = LoadLibrary( L"scanengine.dll" );
+        if ( hEngine )
+        {
+            InitEngineProvider = (pfn_InitEngineProvider) GetProcAddress (
+                hEngine,
+                "InitEngineProvider"
+                );
+
+            DoneEngineProvider = (pfn_DoneEngineProvider) GetProcAddress (
+                hEngine,
+                "DoneEngineProvider"
+                );
+
+            ScanIO = (pfn_ScanIO) GetProcAddress (
+                hEngine,
+                "ScanIO"
+                );
+            
+            if ( InitEngineProvider && DoneEngineProvider && ScanIO )
+            {
+                printf( "Engine loading...\n", GetLastError() );
+                hResult = InitEngineProvider (
+                    &gEngine,
+                    CustomRead,
+                    CustomGetSize
+                    );
+                
+                if ( SUCCEEDED( hResult ) )
+                {
+                    printf( "Engine loaded\n" );
+                }
+                else
+                {
+                    gEngine = NULL;
+                }
+            }
+        }
+  
         COMMUNICATIONS Comm;
         Comm.m_hPort = hPort;
         Comm.m_hCompletion = hCompletion;
@@ -390,7 +561,7 @@ main (
         }
 
         // just wait
-        Sleep( 1000 * 30 );
+        MessageBox( NULL, L"stop?", L"RTP prototype", NULL );
     }
     __finally
     {
@@ -414,6 +585,16 @@ main (
         if ( INVALID_HANDLE_VALUE != hPort )
         {
             CloseHandle( hPort );
+        }
+        
+        if ( gEngine )
+        {
+            DoneEngineProvider( gEngine );
+        }
+
+        if ( hEngine )
+        {
+            FreeLibrary( hEngine );
         }
     }
 }
