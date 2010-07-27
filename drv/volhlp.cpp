@@ -104,7 +104,7 @@ GetMediaSerialNumber (
 
     __try
     {
-        PSTORAGE_MEDIA_SERIAL_NUMBER_DATA pSerialNumber = NULL;
+        PDEVCTRL_DEVICEINFO pDeviceInfo = NULL;
 
         QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
         if ( !QueryBuffer )
@@ -160,7 +160,7 @@ GetMediaSerialNumber (
             __leave;
         }
 
-        pSerialNumber = (PSTORAGE_MEDIA_SERIAL_NUMBER_DATA) QueryBuffer;
+        pDeviceInfo = (PDEVCTRL_DEVICEINFO) QueryBuffer;
         __debugbreak();
 
     }
