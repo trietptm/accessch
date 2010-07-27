@@ -161,8 +161,6 @@ GetMediaSerialNumber (
         }
 
         pDeviceInfo = (PDEVCTRL_DEVICEINFO) QueryBuffer;
-        __debugbreak();
-
     }
     __finally
     {

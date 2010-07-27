@@ -458,6 +458,10 @@ PortAskUser (
         {
             RtlZeroMemory( &ReplyResult, sizeof( ReplyResult) );
         }
+        else
+        {
+            *Verdict = ReplyResult.m_Flags;
+        }
     }
     __finally
     {
