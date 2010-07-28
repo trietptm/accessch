@@ -168,21 +168,33 @@ CreateFilters (
     pFilter->m_OperationType = PostProcessing;
     pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
-    pFilter->m_ParamsCount = 1;
+    pFilter->m_ParamsCount = 2;
     pFilter->m_WishMask = Id2Bit( PARAMETER_FILE_NAME )
         | Id2Bit( PARAMETER_VOLUME_NAME )
         | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID );
 
+    //first param
     PPARAM_ENTRY pEntry = pFilter->m_Params;
-
     pEntry->m_Id = PARAMETER_DESIRED_ACCESS;
     pEntry->m_Operation = _fltop_and;
     pEntry->m_FltData.m_Size = sizeof( ACCESS_MASK );
-    
     ACCESS_MASK *pMask = (ACCESS_MASK*) pEntry->m_FltData.m_Data;
     *pMask = FILE_READ_DATA | FILE_EXECUTE;
 
-    ULONG requestsize = (ULONG) ((char*)pMask - buffer) + sizeof( ACCESS_MASK );
+    // second param
+    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+        pEntry,
+        sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+        );
+    pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
+    pEntry->m_Operation = _fltop_and;
+    pEntry->m_FltData.m_Size = sizeof( ULONG );
+    pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
+    PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
+    *pFlags = _STREAM_FLAGS_DIRECTORY;
+
+    // result size
+    ULONG requestsize = (ULONG) ((char*)pFlags - buffer) + sizeof( ULONG );
 
     DWORD retsize;
     hResult = FilterSendMessage (

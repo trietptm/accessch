@@ -15,6 +15,7 @@ typedef struct _ParamCheckEntry
     LIST_ENTRY          m_List;
     Parameters          m_Parameter;
     FltOperation        m_Operation;
+    ULONG               m_Flags;
     ULONG               m_PosCount;
     PULONG              m_FilterPosList;
     FltData             m_Data;

@@ -172,7 +172,8 @@ GenerateStreamContext (
         (PFLT_CONTEXT *) &InstanceContext
         );
 
-    ASSERT( NT_SUCCESS( status ) );
+    // \todo on shadow volumes will be NOT_FOUND
+    // ASSERT( NT_SUCCESS( status ) );
 
     (*StreamContext)->m_InstanceContext = InstanceContext;
 

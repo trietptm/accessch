@@ -55,8 +55,8 @@ FileInterceptorContext::~FileInterceptorContext (
 };
 
 __checkReturn
-    NTSTATUS
-    FileInterceptorContext::CheckAccessToStreamContext (
+NTSTATUS
+FileInterceptorContext::CheckAccessToStreamContext (
     )
 {
     if ( m_StreamContext )
@@ -79,8 +79,8 @@ __checkReturn
 }
 
 __checkReturn
-    NTSTATUS
-    FileInterceptorContext::CreateSectionForData (
+NTSTATUS
+FileInterceptorContext::CreateSectionForData (
     __deref_out PHANDLE Section,
     __out PLARGE_INTEGER Size
     )
@@ -172,8 +172,8 @@ __checkReturn
 }
 
 __checkReturn
-    NTSTATUS
-    FileInterceptorContext::QueryParameter (
+NTSTATUS
+FileInterceptorContext::QueryParameter (
     __in_opt Parameters ParameterId,
     __deref_out_opt PVOID* Data,
     __deref_out_opt PULONG DataSize
@@ -322,6 +322,20 @@ __checkReturn
         status = STATUS_SUCCESS;
 
         break;
+    
+    case PARAMETER_OBJECT_STREAM_FLAGS:
+        status = CheckAccessToStreamContext(); 
+        if ( !NT_SUCCESS( status ) )
+        {
+            status = STATUS_NOT_SUPPORTED;
+            break;
+        }
+
+        *Data = &m_StreamContext->m_Flags;
+        *DataSize = sizeof( m_StreamContext->m_Flags );
+        status = STATUS_SUCCESS;
+
+        break;
 
     case PARAMETER_CREATE_MODE:
         if ( IRP_MJ_CREATE == m_Data->Iopb->MajorFunction )
@@ -377,8 +391,8 @@ __checkReturn
 }
 
 __checkReturn
-    NTSTATUS
-    FileInterceptorContext::ObjectRequest (
+NTSTATUS
+FileInterceptorContext::ObjectRequest (
     __in NOTIFY_ID Command,
     __in_opt PVOID OutputBuffer,
     __inout_opt PULONG OutputBufferSize

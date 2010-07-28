@@ -41,13 +41,14 @@ typedef enum Parameters
     PARAMETER_SID                   = 7,
     PARAMETER_DESIRED_ACCESS        = 8,
     PARAMETER_CREATE_OPTIONS        = 9,
-    PARAMETER_CREATE_MODE           = 10,
-    PARAMETER_RESULT_STATUS         = 11,
-    PARAMETER_RESULT_INFORMATION    = 12,
-    PARAMETER_DEVICE_TYPE           = 13,
-    PARAMETER_FILESYSTEM_TYPE       = 14,
-    PARAMETER_BUS_TYPE              = 15,
-    PARAMETER_DEVICE_ID             = 16,
+    PARAMETER_OBJECT_STREAM_FLAGS   = 10,
+    PARAMETER_CREATE_MODE           = 11,
+    PARAMETER_RESULT_STATUS         = 20,
+    PARAMETER_RESULT_INFORMATION    = 21,
+    PARAMETER_DEVICE_TYPE           = 30,
+    PARAMETER_FILESYSTEM_TYPE       = 31,
+    PARAMETER_BUS_TYPE              = 32,
+    PARAMETER_DEVICE_ID             = 33,
 
     //
     PARAMETER_MAXIMUM               = 63
@@ -135,11 +136,14 @@ typedef struct _FILTER_PARAMETER
     UCHAR               m_Data[1];
 } FILTER_PARAMETER, *PFILTER_PARAMETER;
 
+#define _PARAM_ENTRY_FLAG_NEGATION  0x0001
+
 typedef struct _PARAM_ENTRY
 {
     Parameters          m_Id;
     ULONG               m_Count;
     FltOperation        m_Operation;
+    ULONG               m_Flags;
     FILTER_PARAMETER    m_FltData;
 }PARAM_ENTRY, *PPARAM_ENTRY;
 
