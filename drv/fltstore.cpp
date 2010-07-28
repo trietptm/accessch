@@ -145,6 +145,18 @@ Filters::CheckSingleEntryUnsafe (
         break;
     }
 
+    if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_NEGATION ) )
+    {
+        if ( NT_SUCCESS( status ) )
+        {
+            status = STATUS_UNSUCCESSFUL;
+        }
+        else
+        {
+            status = STATUS_SUCCESS;
+        }
+    }
+
     return status;
 }
 
@@ -322,6 +334,7 @@ Filters::AddParameterWithFilterPos (
     }
 
     pEntry->m_Operation = ParamEntry->m_Operation;
+    pEntry->m_Flags = ParamEntry->m_Flags;
     pEntry->m_Parameter = ParamEntry->m_Id;
     pEntry->m_PosCount = 1;
     pEntry->m_FilterPosList = (PULONG) ExAllocatePoolWithTag (
