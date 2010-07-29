@@ -16,6 +16,7 @@ FileInterceptorContext::FileInterceptorContext (
     m_OperationType( OperationType )
 {
     m_StreamContext = NULL;
+    m_CacheSyncronizer = 0;
 
     m_Section = NULL;
     m_SectionObject = NULL;
@@ -73,6 +74,13 @@ FileInterceptorContext::CheckAccessToStreamContext (
     if ( !NT_SUCCESS( status ) )
     {
         m_StreamContext = NULL;
+    }
+    else
+    {
+        if ( !m_CacheSyncronizer )
+        {
+            m_CacheSyncronizer = m_StreamContext->m_WriteCount;
+        };
     }
 
     return status;
@@ -429,4 +437,21 @@ FileInterceptorContext::ObjectRequest (
     }
 
     return status;
+}
+
+void
+FileInterceptorContext::SetCache1 (
+    )
+{
+    NTSTATUS status = CheckAccessToStreamContext(); 
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return;
+    }
+
+    if ( m_CacheSyncronizer == m_StreamContext->m_WriteCount )
+    {
+        InterlockedOr( &m_StreamContext->m_Flags, _STREAM_FLAGS_CASHE1 );
+    }
 }

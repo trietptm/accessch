@@ -11,6 +11,7 @@ private:
 
     // service field
     PSTREAM_CONTEXT             m_StreamContext;
+    LONG                        m_CacheSyncronizer;
 
     // data access
     HANDLE                      m_Section;
@@ -31,13 +32,13 @@ private:
 
 private:
     __checkReturn
-        NTSTATUS
-        CheckAccessToStreamContext (
+    NTSTATUS
+    CheckAccessToStreamContext (
         );
 
     __checkReturn
-        NTSTATUS
-        CreateSectionForData (
+     NTSTATUS
+     CreateSectionForData (
         __deref_out PHANDLE Section,
         __out PLARGE_INTEGER Size
         );
@@ -53,20 +54,23 @@ public:
         );
 
     __checkReturn
-        NTSTATUS
-        QueryParameter (
+    NTSTATUS
+    QueryParameter (
         __in_opt Parameters ParameterId,
         __deref_out_opt PVOID* Data,
         __deref_out_opt PULONG DataSize
         );
 
     __checkReturn
-        NTSTATUS
-        ObjectRequest (
+    NTSTATUS
+    ObjectRequest (
         __in NOTIFY_ID Command,
         __in_opt PVOID OutputBuffer,
         __inout_opt PULONG OutputBufferSize
         );
+
+    void
+    SetCache1();
 };
 
 #endif // __fileflt_h

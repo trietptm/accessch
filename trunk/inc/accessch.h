@@ -7,6 +7,7 @@
 #define DRV_EVENT_CONTENT_SIZE      0x1000
 
 #define _STREAM_FLAGS_DIRECTORY     0x00000001
+#define _STREAM_FLAGS_CASHE1        0x00000002
 
 typedef enum Interceptors
 {
@@ -64,6 +65,7 @@ typedef ULONG VERDICT, *PVERDICT;
 #define VERDICT_ALLOW               0x0001
 #define VERDICT_DENY                0x0002
 #define VERDICT_ASK                 0x0004
+#define VERDICT_CACHE1              0x0100
 
 #include <pshpack8.h>
 
