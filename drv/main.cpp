@@ -582,6 +582,13 @@ PostCreate (
                         );
                 }
             }
+            else
+            {
+                if ( FlagOn( Verdict, VERDICT_CACHE1 ) )
+                {
+                    Context.SetCache1();
+                }
+            }
 
         }
     }
@@ -627,7 +634,10 @@ PreCleanup (
             status = PortAskUser( &event, params2user, &Verdict );
             if ( NT_SUCCESS( status ) )
             {
-                // nothing todo
+                if ( FlagOn( Verdict, VERDICT_ALLOW | VERDICT_CACHE1 ) )
+                {
+                    Context.SetCache1();
+                }
             }
         }
     }
@@ -636,6 +646,36 @@ PreCleanup (
     }
 
     return fltStatus;
+}
+
+__checkReturn
+BOOLEAN
+IsSkipPostWrite (
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in FLT_POST_OPERATION_FLAGS Flags
+    )
+{
+    if ( FlagOn( Flags, FLTFL_POST_OPERATION_DRAINING ) )
+    {
+        return TRUE;
+    }
+
+    if ( !FltObjects->Instance )
+    {
+        return TRUE;
+    }
+
+    if ( !FltObjects->FileObject )
+    {
+        return TRUE;
+    }
+
+    if ( FlagOn( FltObjects->FileObject->Flags, FO_NAMED_PIPE ) )
+    {
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 __checkReturn
@@ -658,6 +698,24 @@ PostWrite (
     {
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
+    
+    if ( IsSkipPostWrite( FltObjects, Flags ) )
+    {
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
 
+    PSTREAM_CONTEXT pStreamContext;
+    NTSTATUS status = GenerateStreamContext (
+        Globals.m_Filter,
+        FltObjects,
+        &pStreamContext
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        InterlockedIncrement( &pStreamContext->m_WriteCount );
+        InterlockedAnd( &pStreamContext->m_Flags, ~_STREAM_FLAGS_CASHE1 );
+    }
+    
     return fltStatus;
 }

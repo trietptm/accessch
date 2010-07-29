@@ -108,14 +108,22 @@ CustomRead (
             Size = (ULONG) (pScanContext->IOSize - Offset.QuadPart);
         }
         
-        RtlCopyMemory (
-            Buffer,
-            Add2Ptr( pScanContext->MemBasePtr, Offset.QuadPart ),
-            Size
-            );
+        __try
+        {
+            RtlCopyMemory (
+                Buffer,
+                Add2Ptr( pScanContext->MemBasePtr, Offset.QuadPart ),
+                Size
+                );
 
-        *Read = Size;
-        hResult = S_OK;
+            *Read = Size;
+            hResult = S_OK;
+        }
+        __except( EXCEPTION_EXECUTE_HANDLER )
+        {
+            hResult = E_FAIL;
+            OutputDebugString( L"read exception\n" );
+        }
     }
     __finally
     {
@@ -141,7 +149,7 @@ CustomGetSize (
 //////////////////////////////////////////////////////////////////////////
 
 HRESULT
-CreateFilters (
+CreateFilter_PostCreate (
     __in PCOMMUNICATIONS CommPort
     )
 {
@@ -191,7 +199,7 @@ CreateFilters (
     pEntry->m_FltData.m_Size = sizeof( ULONG );
     pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
     PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
-    *pFlags = _STREAM_FLAGS_DIRECTORY;
+    *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1;
 
     // result size
     ULONG requestsize = (ULONG) ((char*)pFlags - buffer) + sizeof( ULONG );
@@ -206,6 +214,78 @@ CreateFilters (
         &retsize
         );
 
+    return hResult;
+}
+
+HRESULT
+    CreateFilter_PreCleanup (
+    __in PCOMMUNICATIONS CommPort
+    )
+{
+    assert( CommPort );
+
+    HRESULT hResult = E_FAIL;
+
+    // create filters manually
+    char buffer[0x1000];
+
+    memset( buffer, 0, sizeof( buffer) );
+
+    PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) buffer;
+    pCommand->m_Command = ntfcom_FiltersChain;
+
+    PFILTERS_CHAIN pChain = (PFILTERS_CHAIN) pCommand->m_Data;
+
+    pChain->m_Count = 1;
+    pChain->m_Entry[0].m_Operation = _fltchain_add;
+
+    PFILTER pFilter = pChain->m_Entry[0].m_Filter;
+    pFilter->m_Interceptor = FILE_MINIFILTER;
+    pFilter->m_FunctionMj = OP_FILE_CLEANUP;
+    pFilter->m_OperationType = PreProcessing;
+    pFilter->m_Verdict = VERDICT_ASK;
+    pFilter->m_RequestTimeout = 0;
+    pFilter->m_ParamsCount = 1;
+    pFilter->m_WishMask = Id2Bit( PARAMETER_FILE_NAME )
+        | Id2Bit( PARAMETER_VOLUME_NAME )
+        | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID );
+
+    // first param
+    PPARAM_ENTRY pEntry = pFilter->m_Params;
+    pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
+    pEntry->m_Operation = _fltop_and;
+    pEntry->m_FltData.m_Size = sizeof( ULONG );
+    pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
+    PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
+    *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1;
+
+    // result size
+    ULONG requestsize = (ULONG) ((char*)pFlags - buffer) + sizeof( ULONG );
+
+    DWORD retsize;
+    hResult = FilterSendMessage (
+        CommPort->m_hPort,
+        pCommand,
+        requestsize,
+        NULL,
+        0,
+        &retsize
+        );
+
+    return hResult;
+}
+
+HRESULT
+CreateFilters (
+    __in PCOMMUNICATIONS CommPort
+    )
+{
+    HRESULT hResult = CreateFilter_PostCreate( CommPort );
+    if ( SUCCEEDED( hResult ) )
+    {
+        hResult = CreateFilter_PreCleanup( CommPort );
+    }
+    
     return hResult;
 }
 
@@ -409,6 +489,30 @@ ScanObject (
     return bBlock;
 }
 
+__checkReturn
+PEVENT_PARAMETER
+GetEventParam (
+    __in PMESSAGE_DATA Data,
+    __in Parameters ParameterId
+    )
+{
+    assert( Data );
+
+    PEVENT_PARAMETER pParam = &Data->m_Parameters[0];
+    for ( ULONG cou = 0; cou < Data->m_ParametersCount; cou++ )
+    {
+        if ( ParameterId == pParam->m_Id )
+        {
+            return pParam;
+        }
+
+        pParam = (PEVENT_PARAMETER) Add2Ptr (
+            pParam,
+            pParam->m_Size + sizeof( EVENT_PARAMETER)
+            );
+    }
+    return NULL;
+}
 DWORD
 WINAPI
 WaiterThread (
@@ -435,16 +539,51 @@ WaiterThread (
 
         //check data
         PMESSAGE_DATA pData = (PMESSAGE_DATA) pEvent->m_Data.m_Content;
+        PEVENT_PARAMETER pParam = GetEventParam( pData, PARAMETER_FILE_NAME );
+
+        if ( pParam )
+        {
+            WCHAR wchOut[MAX_PATH * 2 ];
+            StringCbPrintf (
+                wchOut,
+                sizeof(wchOut),
+                L"-> %s> %.*s\n",
+                pData->m_OperationType == OP_FILE_CREATE ?
+                L"create(post)" : L"cleanup(pre)",
+                pParam->m_Size / sizeof( WCHAR ),
+                pParam->m_Data
+                );
+
+            OutputDebugString( wchOut );
+        }
 
         bool bBlock = ScanObject( pCommPort, pData );
+        
+        if ( pParam )
+        {
+            WCHAR wchOut[MAX_PATH * 2 ];
+            StringCbPrintf (
+                wchOut,
+                sizeof(wchOut),
+                L"<- %s> %.*s\n",
+                pData->m_OperationType == OP_FILE_CREATE ?
+                L"create(post)" : L"cleanup(pre)",
+                pParam->m_Size / sizeof( WCHAR ),
+                pParam->m_Data
+                );
+            
+            OutputDebugString( wchOut );
+        }
 
         // release
         
         REPLY_MESSAGE Reply;
         memset( &Reply, 0, sizeof( Reply) );
+
+        Reply.m_Verdict.m_Flags = VERDICT_CACHE1;
         if ( bBlock )
         {
-            Reply.m_Verdict.m_Flags = VERDICT_DENY;
+            Reply.m_Verdict.m_Flags |= VERDICT_DENY;
         }
 
         Reply.m_ReplyHeader.Status = 0;
