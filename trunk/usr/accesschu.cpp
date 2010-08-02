@@ -453,35 +453,44 @@ ScanObject (
 
     if ( !SUCCEEDED( hResult ) )
     {
+        //OutputDebugString( L"create io failed\n" );
+
         return false;
     }
     
-    __try
+    //if ( scancontext.IOSize  > 1024 * 1024 * 10 ) //10 mb
+    //{
+    //    printf( "skip huge file %d\n", scancontext.IOSize / ( 1024 * 1024 ) );
+    //}
+    //else
     {
-        if ( gEngine )
+        __try
         {
-            HRESULT hResult = ScanIO( gEngine, &scancontext );
-            if ( FAILED( hResult ) )
+            if ( gEngine )
             {
-                printf( "detect\n" );
-                bBlock = true;
-            }
-        }
-        else
-        {
-            for (SIZE_T cou = 0; cou < scancontext.IOSize % 0x1000; cou++ )
-            {
-                char buf = ((char*) scancontext.MemBasePtr + cou * 0x1000 )[0];
-                if ( buf )
+                HRESULT hResult = ScanIO( gEngine, &scancontext );
+                if ( FAILED( hResult ) )
                 {
-                    // simulate
+                    printf( "detect\n" );
+                    bBlock = true;
+                }
+            }
+            else
+            {
+                for (SIZE_T cou = 0; cou < scancontext.IOSize % 0x1000; cou++ )
+                {
+                    char buf = ((char*) scancontext.MemBasePtr + cou * 0x1000 )[0];
+                    if ( buf )
+                    {
+                        // simulate
+                    }
                 }
             }
         }
-    }
-    __except(EXCEPTION_EXECUTE_HANDLER)
-    {
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
 
+        }
     }
 
     UnmapViewOfFile( scancontext.MemBasePtr ); 
