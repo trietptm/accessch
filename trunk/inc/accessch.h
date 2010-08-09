@@ -143,7 +143,7 @@ typedef struct _FILTER_PARAMETER
 typedef struct _PARAM_ENTRY
 {
     Parameters          m_Id;
-    ULONG               m_Count;
+    //ULONG               m_Count;
     FltOperation        m_Operation;
     ULONG               m_Flags;
     FILTER_PARAMETER    m_FltData;

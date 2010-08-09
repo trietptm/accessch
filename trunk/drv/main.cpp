@@ -715,7 +715,10 @@ PostWrite (
     {
         InterlockedIncrement( &pStreamContext->m_WriteCount );
         InterlockedAnd( &pStreamContext->m_Flags, ~_STREAM_FLAGS_CASHE1 );
+
     }
-    
+
+    ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+
     return fltStatus;
 }

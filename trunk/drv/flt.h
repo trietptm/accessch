@@ -104,10 +104,10 @@ public:
         return status;
     }
 
-    NTSTATUS
+ /*   NTSTATUS
     QueryParameterAsUnicodeString (
         __in Parameters PrarameterId,
-        __in PUNICODE_STRING String
+        __out PUNICODE_STRING String
         )
     {
         ULONG lenght;
@@ -125,7 +125,7 @@ public:
         }
 
         return status;
-    }
+    }*/
 
     __checkReturn
     NTSTATUS
