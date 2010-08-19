@@ -8,6 +8,7 @@
 
 #define _STREAM_FLAGS_DIRECTORY     0x00000001
 #define _STREAM_FLAGS_CASHE1        0x00000002
+#define _STREAM_FLAGS_DELONCLOSE    0x00000004
 
 typedef enum Interceptors
 {
