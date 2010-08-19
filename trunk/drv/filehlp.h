@@ -31,6 +31,14 @@ SecurityFreeSid (
     );
 
 __checkReturn
+ NTSTATUS
+FileIsMarkedForDelete (
+    __in PFLT_INSTANCE Instance,
+    __in PFILE_OBJECT FileObject,
+    __out PBOOLEAN IsMarked
+    );
+
+__checkReturn
 NTSTATUS
 FileQueryParameter (
     __in PVOID Opaque,

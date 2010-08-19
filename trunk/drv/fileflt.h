@@ -11,6 +11,7 @@ private:
 
     // service field
     PSTREAM_CONTEXT             m_StreamContext;
+    LONG                        m_StreamFlagsTemp;
     LONG                        m_CacheSyncronizer;
 
     // data access

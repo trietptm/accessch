@@ -135,6 +135,7 @@ PortDisconnect (
     Globals.m_ClientPort = NULL;
     FltReleasePushLock( &Globals.m_ClientPortLock );
 
+    //! \todo wait for release reference!
     FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
 
     UnregisterInvisibleProcess( PsGetCurrentProcessId() );

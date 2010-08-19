@@ -84,6 +84,7 @@ ReleaseContextImp (
     *Context = NULL;
 }
 
+__checkReturn
 NTSTATUS
 IsDirectoryImp (
     __in PFLT_INSTANCE Instance,
@@ -117,6 +118,34 @@ IsDirectoryImp (
         {
             *IsDirectory = fsi.Directory;
         }
+    }
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+FileIsMarkedForDelete  (
+    __in PFLT_INSTANCE Instance,
+    __in PFILE_OBJECT FileObject,
+    __out PBOOLEAN IsMarked
+    )
+{
+    ASSERT( IsMarked );
+
+    FILE_STANDARD_INFORMATION fsi = {};
+    NTSTATUS status = FltQueryInformationFile (
+        Instance,
+        FileObject,
+        &fsi,
+        sizeof( fsi ),
+        FileStandardInformation,
+        0
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        *IsMarked = fsi.DeletePending;
     }
 
     return status;
