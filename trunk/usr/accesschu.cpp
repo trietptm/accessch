@@ -218,7 +218,7 @@ CreateFilter_PostCreate (
 }
 
 HRESULT
-    CreateFilter_PreCleanup (
+CreateFilter_PreCleanup (
     __in PCOMMUNICATIONS CommPort
     )
 {
