@@ -12,6 +12,19 @@ RemoveAllFilters (
 }
 
 __checkReturn
+    BOOLEAN
+    FilterIsExistAny (
+    )
+{
+    if ( FiltersTree::GetCount() )
+    {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+__checkReturn
 NTSTATUS
 FilterEvent (
     __in EventData *Event,
@@ -103,6 +116,11 @@ FilterProceedChain (
 
                         pFilters->Release();
                         pFilters = NULL;
+
+                        if ( NT_SUCCESS( status ) )
+                        {
+                            InterlockedIncrement( &FiltersTree::m_Count );
+                        }
                     }
                     else
                     {

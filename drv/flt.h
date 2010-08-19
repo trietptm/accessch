@@ -181,6 +181,11 @@ RemoveAllFilters (
     );
 
 __checkReturn
+ BOOLEAN
+ FilterIsExistAny (
+    );
+
+__checkReturn
 NTSTATUS
 FilterEvent (
     __in EventData *Event,

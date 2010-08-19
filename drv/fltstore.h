@@ -10,6 +10,8 @@ typedef struct _FltData
     UCHAR               m_Data[1];
 } FltData;
 
+#define PosListItemType  ULONG
+
 typedef struct _ParamCheckEntry
 {
     LIST_ENTRY          m_List;
@@ -17,7 +19,7 @@ typedef struct _ParamCheckEntry
     FltOperation        m_Operation;
     ULONG               m_Flags;
     ULONG               m_PosCount;
-    PULONG              m_FilterPosList;
+    PosListItemType*    m_FilterPosList;
     FltData             m_Data;
 } ParamCheckEntry;
 
@@ -130,6 +132,7 @@ public:
         );
 
     static LONG GetNextFilterid();
+    static LONG GetCount();
 
     static RTL_AVL_COMPARE_ROUTINE Compare;
     static RTL_AVL_ALLOCATE_ROUTINE Allocate;
@@ -165,6 +168,8 @@ private:
 public:
     FiltersTree();
     ~FiltersTree();
+
+    static LONG             m_Count;
 };
 
 

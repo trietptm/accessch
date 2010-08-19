@@ -105,9 +105,9 @@ const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
 #define _NO_PAGING  FLTFL_OPERATION_REGISTRATION_SKIP_PAGING_IO
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
-    { IRP_MJ_CREATE,    0,          NULL,           PostCreate },
-    { IRP_MJ_CLEANUP,   0,          PreCleanup,     NULL },
-    { IRP_MJ_WRITE,     _NO_PAGING, NULL,           PostWrite },
+    { IRP_MJ_CREATE,            0,          NULL,           PostCreate },
+    { IRP_MJ_CLEANUP,           0,          PreCleanup,     NULL },
+    { IRP_MJ_WRITE,             _NO_PAGING, NULL,           PostWrite },
     { IRP_MJ_OPERATION_END}
 };
 
@@ -447,15 +447,12 @@ InstanceSetup (
         PARAMS_MASK params2user;
         status = FilterEvent( &event, &Verdict, &params2user );
 
-        if ( NT_SUCCESS( status ) )
+        if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
         {
-            if ( FlagOn( Verdict, VERDICT_ASK ) )
+            status = PortAskUser( &event, params2user, &Verdict );
+            if ( NT_SUCCESS( status ) )
             {
-                status = PortAskUser( &event, params2user, &Verdict );
-                if ( NT_SUCCESS( status ) )
-                {
-                    // nothing todo
-                }
+                // nothing todo
             }
         }
 
@@ -538,8 +535,15 @@ PostCreate (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
+    PSTREAM_CONTEXT pStreamContext = NULL;
+
     __try
     {
+        if ( !FilterIsExistAny() )
+        {
+            __leave;
+        }
+
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext Context( Data, FltObjects, PostProcessing );
 
@@ -589,11 +593,11 @@ PostCreate (
                     Context.SetCache1();
                 }
             }
-
         }
     }
     __finally
     {
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
     }
 
     return fltStatus;
@@ -615,6 +619,11 @@ PreCleanup (
 
     __try
     {
+        if ( !FilterIsExistAny() )
+        {
+            __leave;
+        }
+
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext Context( Data, FltObjects, PreProcessing );
         EventData event (
@@ -627,9 +636,7 @@ PreCleanup (
         PARAMS_MASK params2user;
         status = FilterEvent( &event, &Verdict, &params2user );
 
-        if ( NT_SUCCESS( status )
-            &&
-            FlagOn( Verdict, VERDICT_ASK ) )
+        if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
         {
             status = PortAskUser( &event, params2user, &Verdict );
             if ( NT_SUCCESS( status ) )
@@ -688,11 +695,7 @@ PostWrite (
     __in FLT_POST_OPERATION_FLAGS Flags
     )
 {
-    UNREFERENCED_PARAMETER( FltObjects );
     UNREFERENCED_PARAMETER( CompletionContext );
-    UNREFERENCED_PARAMETER( Flags );
-
-    FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
 
     if ( !NT_SUCCESS( Data->IoStatus.Status ) )
     {
@@ -704,21 +707,32 @@ PostWrite (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
-    PSTREAM_CONTEXT pStreamContext;
-    NTSTATUS status = GenerateStreamContext (
-        Globals.m_Filter,
-        FltObjects,
-        &pStreamContext
-        );
+    PSTREAM_CONTEXT pStreamContext = NULL;
 
-    if ( NT_SUCCESS( status ) )
+    __try
     {
-        InterlockedIncrement( &pStreamContext->m_WriteCount );
-        InterlockedAnd( &pStreamContext->m_Flags, ~_STREAM_FLAGS_CASHE1 );
+        if ( !FilterIsExistAny() )
+        {
+            __leave;
+        }
 
+        NTSTATUS status = GenerateStreamContext (
+            Globals.m_Filter,
+            FltObjects,
+            &pStreamContext
+            );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            InterlockedIncrement( &pStreamContext->m_WriteCount );
+            InterlockedAnd( &pStreamContext->m_Flags, ~_STREAM_FLAGS_CASHE1 );
+        }
+    }
+    __finally
+    {
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
     }
 
-    ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
-
-    return fltStatus;
+    return FLT_POSTOP_FINISHED_PROCESSING;
 }
+

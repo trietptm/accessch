@@ -16,6 +16,7 @@ FileInterceptorContext::FileInterceptorContext (
     m_OperationType( OperationType )
 {
     m_StreamContext = NULL;
+    m_StreamFlagsTemp = 0;
     m_CacheSyncronizer = 0;
 
     m_Section = NULL;
@@ -77,6 +78,24 @@ FileInterceptorContext::CheckAccessToStreamContext (
     }
     else
     {
+        m_StreamFlagsTemp = m_StreamContext->m_Flags;
+
+        if ( !FlagOn( m_StreamFlagsTemp, _STREAM_FLAGS_DIRECTORY ) )
+        {
+            BOOLEAN isMarkedForDelete;
+            if ( NT_SUCCESS ( FileIsMarkedForDelete  (
+                m_FltObjects->Instance,
+                m_FltObjects->FileObject,
+                &isMarkedForDelete
+                ) ) )
+            {
+                if ( isMarkedForDelete )
+                {
+                    m_StreamFlagsTemp |= _STREAM_FLAGS_DELONCLOSE;
+                }
+            }
+        }
+
         if ( !m_CacheSyncronizer )
         {
             m_CacheSyncronizer = m_StreamContext->m_WriteCount;
@@ -332,15 +351,18 @@ FileInterceptorContext::QueryParameter (
         break;
     
     case PARAMETER_OBJECT_STREAM_FLAGS:
-        status = CheckAccessToStreamContext(); 
-        if ( !NT_SUCCESS( status ) )
+        if ( !m_StreamFlagsTemp )
         {
-            status = STATUS_NOT_SUPPORTED;
-            break;
+            status = CheckAccessToStreamContext();
+            if ( !NT_SUCCESS( status ) )
+            {
+                status = STATUS_NOT_SUPPORTED;
+                break;
+            }
         }
 
-        *Data = &m_StreamContext->m_Flags;
-        *DataSize = sizeof( m_StreamContext->m_Flags );
+        *Data = &m_StreamFlagsTemp;
+        *DataSize = sizeof( m_StreamFlagsTemp );
         status = STATUS_SUCCESS;
 
         break;

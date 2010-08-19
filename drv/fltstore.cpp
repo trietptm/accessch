@@ -5,6 +5,7 @@
 
 RTL_AVL_TABLE FiltersTree::m_Tree;
 EX_PUSH_LOCK FiltersTree::m_AccessLock;
+LONG FiltersTree::m_Count;
 LONG FiltersTree::m_FilterIdCounter;
 
 //////////////////////////////////////////////////////////////////////////
@@ -302,6 +303,8 @@ Filters::AddParameterWithFilterPos (
             if (
                 pEntry->m_Operation == ParamEntry->m_Operation
                 &&
+                pEntry->m_Flags == ParamEntry->m_Flags
+                &&
                 pEntry->m_Data.m_DataSize == ParamEntry->m_FltData.m_Size
                 &&
                 pEntry->m_Data.m_DataSize == RtlCompareMemory (
@@ -311,9 +314,34 @@ Filters::AddParameterWithFilterPos (
                     )
                 )
             {
-                // the same flt data and operations
-                // expand pEntry->m_FilterNumbers
+                // the same ParamEntry, attach to existing
                 __debugbreak();
+
+                PULONG pPostListTmp = pEntry->m_FilterPosList;
+                pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
+                    PagedPool,
+                    sizeof( PosListItemType ) * ( pEntry->m_PosCount + 1 ),
+                    _ALLOC_TAG
+                    );
+
+                if ( !pEntry->m_FilterPosList )
+                {
+                    pEntry->m_FilterPosList = pPostListTmp;
+
+                    return NULL;
+                }
+
+                RtlCopyMemory (
+                    pEntry->m_FilterPosList,
+                    pPostListTmp,
+                    pEntry->m_PosCount * sizeof( PosListItemType )
+                    );
+
+                pEntry->m_FilterPosList[ pEntry->m_PosCount ] = FilterPos;
+                pEntry->m_PosCount++;
+
+                ExFreePool( pPostListTmp );
+
                 return pEntry;
             }
 
@@ -337,9 +365,9 @@ Filters::AddParameterWithFilterPos (
     pEntry->m_Flags = ParamEntry->m_Flags;
     pEntry->m_Parameter = ParamEntry->m_Id;
     pEntry->m_PosCount = 1;
-    pEntry->m_FilterPosList = (PULONG) ExAllocatePoolWithTag (
+    pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
         PagedPool,
-        sizeof(ULONG),
+        sizeof( PosListItemType ),
         _ALLOC_TAG
         );
 
@@ -533,6 +561,7 @@ FiltersTree::Initialize (
         NULL
         );
 
+    m_Count = 0;
     m_FilterIdCounter = 0;
 }
 
@@ -656,6 +685,8 @@ FiltersTree::DeleteAllFilters (
 
     } while ( pItem );
 
+    m_Count = 0;
+
     FltReleasePushLock( &m_AccessLock );
 }
 
@@ -666,6 +697,13 @@ FiltersTree::GetNextFilterid (
     LONG result = InterlockedIncrement( &m_FilterIdCounter );
 
     return result;
+}
+
+LONG
+FiltersTree::GetCount (
+    )
+{
+    return m_Count;
 }
 
 __checkReturn
