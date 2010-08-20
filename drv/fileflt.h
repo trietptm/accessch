@@ -30,7 +30,7 @@ private:
     ACCESS_MASK                 m_DesiredAccess;
     ULONG                       m_CreateOptions;
     ULONG                       m_CreateMode;
-
+    
 private:
     __checkReturn
     NTSTATUS

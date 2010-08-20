@@ -535,6 +535,8 @@ PostCreate (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
+    PFLT_PARAMETERS fltParams = &Data->Iopb->Parameters;
+
     PSTREAM_CONTEXT pStreamContext = NULL;
 
     __try
