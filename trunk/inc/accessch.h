@@ -43,8 +43,8 @@ typedef enum Parameters
     PARAMETER_SID                   = 7,
     PARAMETER_DESIRED_ACCESS        = 8,
     PARAMETER_CREATE_OPTIONS        = 9,
-    PARAMETER_OBJECT_STREAM_FLAGS   = 10,
-    PARAMETER_CREATE_MODE           = 11,
+    PARAMETER_CREATE_MODE           = 10,
+    PARAMETER_OBJECT_STREAM_FLAGS   = 14,
     PARAMETER_RESULT_STATUS         = 20,
     PARAMETER_RESULT_INFORMATION    = 21,
     PARAMETER_DEVICE_TYPE           = 30,
@@ -136,6 +136,7 @@ typedef enum FltOperation
 typedef struct _FILTER_PARAMETER
 {
     ULONG               m_Size;
+    ULONG               m_Count;
     UCHAR               m_Data[1];
 } FILTER_PARAMETER, *PFILTER_PARAMETER;
 
@@ -144,7 +145,6 @@ typedef struct _FILTER_PARAMETER
 typedef struct _PARAM_ENTRY
 {
     Parameters          m_Id;
-    //ULONG               m_Count;
     FltOperation        m_Operation;
     ULONG               m_Flags;
     FILTER_PARAMETER    m_FltData;

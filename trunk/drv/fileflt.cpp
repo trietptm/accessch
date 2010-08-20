@@ -349,7 +349,7 @@ FileInterceptorContext::QueryParameter (
         status = STATUS_SUCCESS;
 
         break;
-    
+
     case PARAMETER_OBJECT_STREAM_FLAGS:
         if ( !m_StreamFlagsTemp )
         {

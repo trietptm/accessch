@@ -7,6 +7,7 @@
 typedef struct _FltData
 {
     ULONG               m_DataSize;
+    ULONG               m_Count;
     UCHAR               m_Data[1];
 } FltData;
 

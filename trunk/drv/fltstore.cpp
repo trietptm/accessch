@@ -104,45 +104,66 @@ Filters::CheckSingleEntryUnsafe (
     if ( !NT_SUCCESS( status ) )
     {
         ASSERT( FALSE );
+
         return VERDICT_NOT_FILTERED;
     }
     
-    status = STATUS_UNSUCCESSFUL;    
+    status = STATUS_UNSUCCESSFUL;
 
+    PVOID ptr = Entry->m_Data.m_Data;
+
+    ULONG item;
     switch( Entry->m_Operation )
     {
     case _fltop_equ:
-        if ( datasize == Entry->m_Data.m_DataSize )
+        if ( datasize != Entry->m_Data.m_DataSize / Entry->m_Data.m_Count )
+        {
+            break;
+        }
+        
+        for ( item = 0; item < Entry->m_Data.m_Count; item++ )
         {
             if ( datasize == RtlCompareMemory (
-                Entry->m_Data.m_Data,
+                ptr,
                 pData,
                 datasize
-                )
-                )
+                ) )
             {
-                status = STATUS_SUCCESS;
+                status = STATUS_SUCCESS;    
+                break;
             }
+
+            ptr = Add2Ptr( ptr, datasize );
         }
+
         break;
 
     case _fltop_and:
-        if ( datasize == Entry->m_Data.m_DataSize )
+        ASSERT( Entry->m_Data.m_Count == 1 );
+
+        if ( datasize != Entry->m_Data.m_DataSize / Entry->m_Data.m_Count )
         {
-            if ( datasize == sizeof( ULONG ) )
+            break;
+        }
+
+        if ( datasize == sizeof( ULONG ) )
+        {
+            PULONG pu1 = (PULONG) ptr;
+            PULONG pu2 = (PULONG) pData;
+            if ( *pu1 & *pu2 )
             {
-                PULONG pu1 = (PULONG) Entry->m_Data.m_Data;
-                PULONG pu2 = (PULONG) pData;
-                if ( *pu1 & *pu2 )
-                {
-                    status = STATUS_SUCCESS;
-                }
-            }
-            else
-            {
-                __debugbreak();
+                status = STATUS_SUCCESS;
+                break;
             }
         }
+        else
+        {
+            __debugbreak();
+        }
+
+        break;
+    
+    default:
         break;
     }
 
@@ -380,6 +401,8 @@ Filters::AddParameterWithFilterPos (
     
     pEntry->m_FilterPosList[0] = FilterPos;
     pEntry->m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
+    pEntry->m_Data.m_Count = ParamEntry->m_FltData.m_Count;
+
     RtlCopyMemory (
         pEntry->m_Data.m_Data,
         ParamEntry->m_FltData.m_Data,
@@ -413,6 +436,8 @@ Filters::ParseParamsUnsafe (
 
     for ( ULONG cou = 0; cou < ParamsCount; cou++ )
     {
+        ASSERT( params->m_FltData.m_Count );
+
         ParamCheckEntry* pEntry = AddParameterWithFilterPos (
             params,
             FilterPos

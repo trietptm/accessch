@@ -7,6 +7,23 @@
 
 #define Add2Ptr(P,I) ((PVOID)((PUCHAR)(P) + (I)))
 
+//////////////////////////////////////////////////////////////////////////
+#define FILE_SUPERSEDE                  0x00000000
+#define FILE_OPEN                       0x00000001
+#define FILE_CREATE                     0x00000002
+#define FILE_OPEN_IF                    0x00000003
+#define FILE_OVERWRITE                  0x00000004
+#define FILE_OVERWRITE_IF               0x00000005
+#define FILE_MAXIMUM_DISPOSITION        0x00000005
+
+#define FILE_SUPERSEDED                 0x00000000
+#define FILE_OPENED                     0x00000001
+#define FILE_CREATED                    0x00000002
+#define FILE_OVERWRITTEN                0x00000003
+#define FILE_EXISTS                     0x00000004
+#define FILE_DOES_NOT_EXIST             0x00000005
+//////////////////////////////////////////////////////////////////////////
+
 #define THREAD_MAXCOUNT_WAITERS     8
 #define DRV_EVENT_CONTENT_SIZE      0x1000 
 
@@ -176,16 +193,19 @@ CreateFilter_PostCreate (
     pFilter->m_OperationType = PostProcessing;
     pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
-    pFilter->m_ParamsCount = 2;
+    pFilter->m_ParamsCount = 3;
     pFilter->m_WishMask = Id2Bit( PARAMETER_FILE_NAME )
         | Id2Bit( PARAMETER_VOLUME_NAME )
-        | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID );
+        | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID )
+        | Id2Bit( PARAMETER_CREATE_MODE )
+        | Id2Bit( PARAMETER_RESULT_INFORMATION );
 
     //first param
     PPARAM_ENTRY pEntry = pFilter->m_Params;
     pEntry->m_Id = PARAMETER_DESIRED_ACCESS;
     pEntry->m_Operation = _fltop_and;
     pEntry->m_FltData.m_Size = sizeof( ACCESS_MASK );
+    pEntry->m_FltData.m_Count = 1;
     ACCESS_MASK *pMask = (ACCESS_MASK*) pEntry->m_FltData.m_Data;
     *pMask = FILE_READ_DATA | FILE_EXECUTE;
 
@@ -197,10 +217,48 @@ CreateFilter_PostCreate (
     pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
     pEntry->m_Operation = _fltop_and;
     pEntry->m_FltData.m_Size = sizeof( ULONG );
+    pEntry->m_FltData.m_Count = 1;
     pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
     PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
     *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1;
 
+    /*
+    FILE_SUPERSEDE If the file already exists, replace it with the given file. If it does not, create the given file.  
+    FILE_CREATE  If the file already exists, fail the request and do not create or open the given file. If it does not, create the given file. 
+    -FILE_OPEN  If the file already exists, open it instead of creating a new file. If it does not, fail the request and do not create a new file. 
+    ? FILE_OPEN_IF If the file already exists, open it. If it does not, create the given file. 
+    FILE_OVERWRITE If the file already exists, open it and overwrite it. If it does not, fail the request. 
+    FILE_OVERWRITE_IF If the file already exists, open it and overwrite it. If it does not, create the given file. 
+    */
+    
+    //// forth param
+    //pEntry = (PPARAM_ENTRY) Add2Ptr( 
+    //    pEntry,
+    //    sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+    //    );
+    //pEntry->m_Id = PARAMETER_CREATE_MODE;
+    //pEntry->m_Operation = _fltop_equ;
+    //pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
+    //pEntry->m_FltData.m_Count = 4;
+    //pEntry->m_FltData.m_Size = sizeof( ULONG ) * pEntry->m_FltData.m_Count;
+    //PULONG pMode = (PULONG) pEntry->m_FltData.m_Data;
+    //*pMode = FILE_SUPERSEDE;
+    //*(pMode + 1) = FILE_CREATE;
+    //*(pMode + 2) = FILE_OVERWRITE;
+    //*(pMode + 3) = FILE_OVERWRITE_IF;
+
+    // third
+    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+        pEntry,
+        sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+        );
+    pEntry->m_Id = PARAMETER_RESULT_INFORMATION;
+    pEntry->m_Operation = _fltop_equ;
+    pEntry->m_FltData.m_Size = sizeof( ULONG );
+    pEntry->m_FltData.m_Count = 1;
+    PULONG pInformation = (PULONG) pEntry->m_FltData.m_Data;
+    *pInformation = FILE_OPENED;
+     
     // result size
     ULONG requestsize = (ULONG) ((char*)pFlags - buffer) + sizeof( ULONG );
 
@@ -255,6 +313,7 @@ CreateFilter_PreCleanup (
     pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
     pEntry->m_Operation = _fltop_and;
     pEntry->m_FltData.m_Size = sizeof( ULONG );
+    pEntry->m_FltData.m_Count = 1;
     pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
     PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
     *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1;
@@ -507,19 +566,27 @@ GetEventParam (
 {
     assert( Data );
 
-    PEVENT_PARAMETER pParam = &Data->m_Parameters[0];
-    for ( ULONG cou = 0; cou < Data->m_ParametersCount; cou++ )
+    __try
     {
-        if ( ParameterId == pParam->m_Id )
+        PEVENT_PARAMETER pParam = &Data->m_Parameters[0];
+        for ( ULONG cou = 0; cou < Data->m_ParametersCount; cou++ )
         {
-            return pParam;
-        }
+            if ( ParameterId == pParam->m_Id )
+            {
+                return pParam;
+            }
 
-        pParam = (PEVENT_PARAMETER) Add2Ptr (
-            pParam,
-            pParam->m_Size + sizeof( EVENT_PARAMETER)
-            );
+            pParam = (PEVENT_PARAMETER) Add2Ptr (
+                pParam,
+                FIELD_OFFSET( EVENT_PARAMETER, m_Data ) + pParam->m_Size
+                );
+        }
     }
+    __except( EXCEPTION_EXECUTE_HANDLER )
+    {
+        __debugbreak();
+    }
+
     return NULL;
 }
 DWORD
@@ -530,6 +597,8 @@ WaiterThread (
 {
     PCOMMUNICATIONS pCommPort = (PCOMMUNICATIONS) lpParameter;
     assert( pCommPort );
+
+    WCHAR wchOut[MAX_PATH * 2 ];
 
     HRESULT hResult;
     do
@@ -552,7 +621,6 @@ WaiterThread (
 
         if ( pParam )
         {
-            WCHAR wchOut[MAX_PATH * 2 ];
             StringCbPrintf (
                 wchOut,
                 sizeof(wchOut),
@@ -564,6 +632,38 @@ WaiterThread (
                 );
 
             OutputDebugString( wchOut );
+        }
+
+        if ( OP_FILE_CREATE == pData->m_OperationType )
+        {
+            PEVENT_PARAMETER pParamInformation = GetEventParam (
+                pData, PARAMETER_RESULT_INFORMATION );
+
+            PEVENT_PARAMETER pParamCreateMode = GetEventParam (
+                pData, PARAMETER_CREATE_MODE );
+
+            if ( pParamInformation && pParamCreateMode )
+            {
+                ULONG Mode = *(PULONG) pParamCreateMode->m_Data;
+                ULONG Information = *(PULONG) pParamInformation->m_Data;
+
+                if ( FILE_OPENED == Information )
+                {
+                   
+                }
+                else
+                {
+                    StringCbPrintf (
+                        wchOut,
+                        sizeof(wchOut),
+                        L"\t\tcreated, mode 0x%x\n",
+                        Mode
+                        );
+
+                    OutputDebugString( wchOut );
+                    __debugbreak();
+                }
+            }
         }
 
         bool bBlock = ScanObject( pCommPort, pData );
