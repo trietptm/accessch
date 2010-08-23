@@ -452,7 +452,6 @@ InstanceSetup (
             status = PortAskUser( &event, params2user, &Verdict );
             if ( NT_SUCCESS( status ) )
             {
-                // nothing todo
             }
         }
 
@@ -566,7 +565,6 @@ PostCreate (
                status = PortAskUser( &event, params2user, &Verdict );
                 if ( NT_SUCCESS( status ) )
                 {
-                    // nothing todo
                 }
             }
 
@@ -660,6 +658,7 @@ PreCleanup (
 __checkReturn
 BOOLEAN
 IsSkipPostWrite (
+    __in PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __in FLT_POST_OPERATION_FLAGS Flags
     )
@@ -684,6 +683,11 @@ IsSkipPostWrite (
         return TRUE;
     }
 
+    if ( !Data->IoStatus.Information )
+    {
+        return TRUE;
+    }
+
     return FALSE;
 }
 
@@ -704,8 +708,14 @@ PostWrite (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
     
-    if ( IsSkipPostWrite( FltObjects, Flags ) )
+    if ( IsSkipPostWrite( Data, FltObjects, Flags ) )
     {
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    if ( FlagOn( Data->Iopb->IrpFlags, IRP_PAGING_IO ) )
+    {
+        //! \todo обработка MM файлов
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 

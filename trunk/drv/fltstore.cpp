@@ -293,7 +293,6 @@ Filters::GetVerdict (
     }
     __finally
     {
-        // nothing todo
     }
 
     FltReleasePushLock( &m_AccessLock );
