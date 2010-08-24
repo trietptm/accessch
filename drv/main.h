@@ -30,8 +30,9 @@ typedef struct _STREAM_CONTEXT
     LONG                    m_WriteCount;
 } STREAM_CONTEXT, *PSTREAM_CONTEXT;
 
-typedef struct _STREAM_HANDLE_CONTEXT
+typedef struct _STREAMHANDLE_CONTEXT
 {
     PSTREAM_CONTEXT         m_StreamContext;
     LUID                    m_Luid;
-} STREAM_HANDLE_CONTEXT, *PSTREAM_HANDLE_CONTEXT;
+    LONG                    m_Flags;
+} STREAMHANDLE_CONTEXT, *PSTREAMHANDLE_CONTEXT;

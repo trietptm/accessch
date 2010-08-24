@@ -10,6 +10,8 @@
 #define _STREAM_FLAGS_CASHE1        0x00000002
 #define _STREAM_FLAGS_DELONCLOSE    0x00000004
 
+#define _STREAM_H_FLAGS_ECPPREF     0x00000001
+
 typedef enum Interceptors
 {
     FILE_MINIFILTER                 = 1,
