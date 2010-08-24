@@ -198,7 +198,8 @@ CreateFilter_PostCreate (
         | Id2Bit( PARAMETER_VOLUME_NAME )
         | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID )
         | Id2Bit( PARAMETER_CREATE_MODE )
-        | Id2Bit( PARAMETER_RESULT_INFORMATION );
+        | Id2Bit( PARAMETER_RESULT_INFORMATION )
+        | Id2Bit( PARAMETER_DESIRED_ACCESS );
 
     //first param
     PPARAM_ENTRY pEntry = pFilter->m_Params;
@@ -636,6 +637,15 @@ WaiterThread (
 
         if ( OP_FILE_CREATE == pData->m_OperationType )
         {
+            PEVENT_PARAMETER pParamDesiredAccess = GetEventParam (
+                pData, PARAMETER_DESIRED_ACCESS );
+            
+            if ( pParamDesiredAccess )
+            {
+                ULONG desired_access = *(PULONG) pParamDesiredAccess->m_Data;
+                assert( desired_access | FILE_READ_DATA );
+            }
+
             PEVENT_PARAMETER pParamInformation = GetEventParam (
                 pData, PARAMETER_RESULT_INFORMATION );
 
