@@ -365,7 +365,7 @@ WaitForSingleMessage (
     PDRVEVENT_OVLP pEvent = (PDRVEVENT_OVLP) HeapAlloc (
         GetProcessHeap(),
         0,
-        sizeof(DRVEVENT_OVLP)
+        sizeof( DRVEVENT_OVLP )
         );
 
     if ( !pEvent )
@@ -398,7 +398,11 @@ WaitForSingleMessage (
             INFINITE
             );
 
-        PDRVEVENT_OVLP pEventTmp = CONTAINING_RECORD( pOvlp, DRVEVENT_OVLP, m_Ovlp );
+        PDRVEVENT_OVLP pEventTmp = CONTAINING_RECORD (
+            pOvlp,
+            DRVEVENT_OVLP,
+            m_Ovlp
+            );
 
         if ( Queued )
         {
@@ -624,7 +628,7 @@ WaiterThread (
         {
             StringCbPrintf (
                 wchOut,
-                sizeof(wchOut),
+                sizeof( wchOut ),
                 L"-> %s> %.*s\n",
                 pData->m_OperationType == OP_FILE_CREATE ?
                 L"create(post)" : L"cleanup(pre)",
@@ -665,7 +669,7 @@ WaiterThread (
                 {
                     StringCbPrintf (
                         wchOut,
-                        sizeof(wchOut),
+                        sizeof( wchOut ),
                         L"\t\tcreated, mode 0x%x\n",
                         Mode
                         );
@@ -683,7 +687,7 @@ WaiterThread (
             WCHAR wchOut[MAX_PATH * 2 ];
             StringCbPrintf (
                 wchOut,
-                sizeof(wchOut),
+                sizeof( wchOut ),
                 L"<- %s> %.*s\n",
                 pData->m_OperationType == OP_FILE_CREATE ?
                 L"create(post)" : L"cleanup(pre)",
@@ -711,7 +715,7 @@ WaiterThread (
         hResult = FilterReplyMessage (
             pCommPort->m_hPort,
             (PFILTER_REPLY_HEADER) &Reply,
-            sizeof(Reply)
+            sizeof( Reply )
             );
 
         HeapFree( GetProcessHeap(), 0, pEvent );
@@ -731,8 +735,8 @@ main (
     UNREFERENCED_PARAMETER( Argc );
     UNREFERENCED_PARAMETER( Argv );
 
-    HANDLE hPort = INVALID_HANDLE_VALUE;
-    HANDLE hCompletion = INVALID_HANDLE_VALUE;
+    HANDLE hPort = 0;
+    HANDLE hCompletion = 0;
 
     HANDLE hThreads[ THREAD_MAXCOUNT_WAITERS ] = { NULL };
     DWORD ThreadsId[ THREAD_MAXCOUNT_WAITERS ] = { 0 };
@@ -753,7 +757,7 @@ main (
         if ( IS_ERROR( hResult ) )
         {
             printf( "Connect failed. Error 0x%x\n", hResult );
-            hPort = INVALID_HANDLE_VALUE;
+            hPort = 0;
             __leave;
         }
 
@@ -847,12 +851,12 @@ main (
             }
         }
 
-        if ( INVALID_HANDLE_VALUE != hCompletion )
+        if ( hCompletion )
         {
             CloseHandle( hCompletion );
         }
 
-        if ( INVALID_HANDLE_VALUE != hPort )
+        if ( hPort )
         {
             CloseHandle( hPort );
         }
