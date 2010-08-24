@@ -5,7 +5,14 @@
 #include "filehlp.h"
 #include "security.h"
 
-/// \todo FILE_OPEN_NO_RECALL
+//! \todo FILE_OPEN_NO_RECALL
+
+#ifndef GUID_ECP_PREFETCH_OPEN
+#define GUID_ECP_PREFETCH_OPEN_notdefined
+DEFINE_GUID( GUID_ECP_PREFETCH_OPEN, 0xe1777b21, 0x847e, 0x4837, 0xaa, 
+    0x45, 0x64, 0x16, 0x1d, 0x28, 0x6, 0x55 );
+#endif // GUID_ECP_PREFETCH_OPEN
+
 
 DriverOperationId
 FileOperationSystemToInternal (
@@ -28,6 +35,50 @@ FileOperationSystemToInternal (
 }
 
 //////////////////////////////////////////////////////////////////////////
+__checkReturn
+BOOLEAN
+IsPrefetchEcpPresent (
+    __in PFLT_FILTER Filter,
+    __in PFLT_CALLBACK_DATA Data
+    )
+{
+#if FLT_MGR_LONGHORN
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+    PECP_LIST EcpList = NULL;
+    PPREFETCH_OPEN_ECP_CONTEXT PrefetchEcp = NULL;
+
+    // Get the ECP List from the callback data, if present.
+
+    status = FltGetEcpListFromCallbackData( Filter, Data, &EcpList );
+
+    if ( NT_SUCCESS( status ) && EcpList )
+    {
+        // Check if the prefetch ECP is specified.
+        status = FltFindExtraCreateParameter (
+            Filter,
+            EcpList,
+            &GUID_ECP_PREFETCH_OPEN,
+            (PVOID*) &PrefetchEcp,
+            NULL
+            );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            if ( !FltIsEcpFromUserMode( Filter, PrefetchEcp ) )
+            {
+                return TRUE;
+            }
+        }
+    }
+#else
+    UNREFERENCED_PARAMETER( Filter );
+    UNREFERENCED_PARAMETER( Data );
+#endif // FLT_MGR_LONGHORN
+
+    return FALSE;
+}
+
 __checkReturn
 NTSTATUS
 QueryFileNameInfo (
@@ -71,10 +122,12 @@ ReleaseFileNameInfo (
 }
 
 void
-ReleaseContextImp (
+ReleaseContext (
     __in_opt PFLT_CONTEXT* Context
     )
 {
+    ASSERT( Context );
+
     if ( !*Context )
     {
         return;
@@ -177,6 +230,7 @@ GenerateStreamContext (
     if ( NT_SUCCESS( status ) )
     {
         ASSERT( *StreamContext );
+
         return status;
     }
 
@@ -190,10 +244,9 @@ GenerateStreamContext (
 
     if ( !NT_SUCCESS( status ) )
     {
-        *StreamContext = NULL;
-
         return status;
     }
+
     RtlZeroMemory( *StreamContext, sizeof( STREAM_CONTEXT ) );
 
     status = FltGetInstanceContext (
@@ -245,4 +298,75 @@ GenerateStreamContext (
     return status;
 }
 
+__checkReturn
+ NTSTATUS
+ GetStreamHandleContext (
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
+    )
+{
+    NTSTATUS status = FltGetStreamHandleContext (
+        FltObjects->Instance,
+        FltObjects->FileObject,
+        (PFLT_CONTEXT*) StreamHandleContext
+        );
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+GenerateStreamHandleContext (
+    __in PFLT_FILTER Filter,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
+    )
+{
+    NTSTATUS status = GetStreamHandleContext (
+        FltObjects,
+        StreamHandleContext
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        ASSERT( *StreamHandleContext );
+
+        return status;
+    }
+
+    status = FltAllocateContext (
+        Filter,
+        FLT_STREAMHANDLE_CONTEXT,
+        sizeof( STREAMHANDLE_CONTEXT ),
+        NonPagedPool,
+        (PFLT_CONTEXT*) StreamHandleContext
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    RtlZeroMemory( *StreamHandleContext, sizeof( STREAMHANDLE_CONTEXT ) );
+
+    FltSetStreamHandleContext (
+        FltObjects->Instance,
+        FltObjects->FileObject,
+        FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
+        *StreamHandleContext,
+        NULL
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        ReleaseContext( (PFLT_CONTEXT*) StreamHandleContext );
+    }
+    else
+    {
+        ASSERT( *StreamHandleContext );
+    }
+
+    
+    return STATUS_SUCCESS;
+}
 

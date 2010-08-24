@@ -94,7 +94,7 @@ const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
         sizeof(STREAM_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
     
     { FLT_STREAMHANDLE_CONTEXT,  0, ContextCleanup,
-        sizeof(STREAM_HANDLE_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
+        sizeof(STREAMHANDLE_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
     
     { FLT_VOLUME_CONTEXT, 0, NULL, sizeof(VOLUME_CONTEXT),
         _ALLOC_TAG, NULL, NULL, NULL} ,
@@ -302,7 +302,7 @@ ContextCleanup (
     case FLT_STREAM_CONTEXT:
         {
             PSTREAM_CONTEXT pStreamContext = (PSTREAM_CONTEXT) Pool;
-            ReleaseContext( &pStreamContext->m_InstanceContext );
+            ReleaseContext( (PFLT_CONTEXT*) &pStreamContext->m_InstanceContext );
             ASSERT ( pStreamContext );
         }
         break;
@@ -472,8 +472,8 @@ InstanceSetup (
     }
     __finally
     {
-        ReleaseContext( &pInstanceContext );
-        ReleaseContext( &pVolumeContext );
+        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
+        ReleaseContext( (PFLT_CONTEXT*) &pVolumeContext );
     }
 
     return STATUS_SUCCESS;
@@ -537,11 +537,30 @@ PostCreate (
     PFLT_PARAMETERS fltParams = &Data->Iopb->Parameters;
 
     PSTREAM_CONTEXT pStreamContext = NULL;
+    PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
 
     __try
     {
         if ( !FilterIsExistAny() )
         {
+            __leave;
+        }
+
+        if ( IsPrefetchEcpPresent( Globals.m_Filter, Data ) )
+        {
+            status = GenerateStreamHandleContext (
+                Globals.m_Filter,
+                FltObjects,
+                &pStreamHandleContext
+                );
+
+            if ( NT_SUCCESS( status ) )
+            {
+                SetFlag (
+                    pStreamHandleContext->m_Flags,
+                    _STREAM_H_FLAGS_ECPPREF
+                    );
+            }
             __leave;
         }
 
@@ -598,6 +617,7 @@ PostCreate (
     __finally
     {
         ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamHandleContext );
     }
 
     return fltStatus;
@@ -616,12 +636,25 @@ PreCleanup (
     UNREFERENCED_PARAMETER( CompletionContext );
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
-
+    PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
     __try
     {
         if ( !FilterIsExistAny() )
         {
             __leave;
+        }
+
+        status = GetStreamHandleContext (
+            FltObjects,
+            &pStreamHandleContext
+            );
+        
+        if ( NT_SUCCESS( status ) )
+        {
+            if ( FlagOn( pStreamHandleContext->m_Flags, _STREAM_H_FLAGS_ECPPREF ) )
+            {
+                __leave;
+            }
         }
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
@@ -650,6 +683,7 @@ PreCleanup (
     }
     __finally
     {
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamHandleContext );
     }
 
     return fltStatus;

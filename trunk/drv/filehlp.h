@@ -7,6 +7,13 @@ FileOperationSystemToInternal (
     );
 
 __checkReturn
+BOOLEAN
+IsPrefetchEcpPresent (
+    __in PFLT_FILTER Filter,
+    __in PFLT_CALLBACK_DATA Data
+    );
+
+__checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
@@ -18,10 +25,8 @@ ReleaseFileNameInfo (
     __in_opt PFLT_FILE_NAME_INFORMATION* FileNameInfo
     );
 
-#define ReleaseContext( _context ) ReleaseContextImp( (PFLT_CONTEXT*) _context )
-
 void
-ReleaseContextImp (
+ReleaseContext (
     __in_opt PFLT_CONTEXT* Context
     );
 
@@ -53,6 +58,21 @@ GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __deref_out_opt PSTREAM_CONTEXT* StreamContext
+    );
+
+__checkReturn
+NTSTATUS
+GetStreamHandleContext (
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
+    );
+
+__checkReturn
+NTSTATUS
+GenerateStreamHandleContext (
+    __in PFLT_FILTER Filter,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
     );
 
 #endif // __filehlp_h
