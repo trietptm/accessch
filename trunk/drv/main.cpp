@@ -435,13 +435,13 @@ InstanceSetup (
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        VolumeInterceptorContext Context( FltObjects, pInstanceContext, PostProcessing );
-
-        EventData event (
-            &Context,
+        VolumeInterceptorContext event (
+            FltObjects,
+            pInstanceContext,
             VOLUME_MINIFILTER,
             OP_VOLUME_ATTACH,
-            0
+            0,
+            PostProcessing
             );
 
         PARAMS_MASK params2user;
@@ -565,13 +565,13 @@ PostCreate (
         }
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects, PostProcessing );
-
-        EventData event (
-            &Context,
+        FileInterceptorContext event (
+            Data,
+            FltObjects,
             FILE_MINIFILTER,
             OP_FILE_CREATE,
-            0
+            0,
+            PostProcessing
             );
 
         PARAMS_MASK params2user;
@@ -609,7 +609,7 @@ PostCreate (
             {
                 if ( FlagOn( Verdict, VERDICT_CACHE1 ) )
                 {
-                    Context.SetCache1();
+                    event.SetCache1();
                 }
             }
         }
@@ -658,12 +658,13 @@ PreCleanup (
         }
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext Context( Data, FltObjects, PreProcessing );
-        EventData event (
-            &Context,
+        FileInterceptorContext event (
+            Data,
+            FltObjects,
             FILE_MINIFILTER,
             OP_FILE_CLEANUP,
-            0
+            0,
+            PreProcessing
             );
 
         PARAMS_MASK params2user;
@@ -676,7 +677,7 @@ PreCleanup (
             {
                 if ( FlagOn( Verdict, VERDICT_ALLOW | VERDICT_CACHE1 ) )
                 {
-                    Context.SetCache1();
+                    event.SetCache1();
                 }
             }
         }

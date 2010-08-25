@@ -8,8 +8,11 @@
 VolumeInterceptorContext::VolumeInterceptorContext (
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __in PINSTANCE_CONTEXT InstanceContext,
+    __in Interceptors InterceptorId,
+    __in DriverOperationId Major,
+    __in ULONG Minor,
     __in OperationPoint OperationType
-    ) : InterceptorContext( OperationType ),
+    ) : EventData( InterceptorId, Major, Minor, OperationType ),
     m_FltObjects( FltObjects ),
     m_InstanceContext( InstanceContext )
 {

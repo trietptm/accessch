@@ -9,11 +9,14 @@
 FileInterceptorContext::FileInterceptorContext (
     __in PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in Interceptors InterceptorId,
+    __in DriverOperationId Major,
+    __in ULONG Minor,
     __in OperationPoint OperationType
-    ) : InterceptorContext( OperationType ),
+    ) :
+    EventData( InterceptorId, Major, Minor, OperationType ),
     m_Data( Data ),
-    m_FltObjects( FltObjects ),
-    m_OperationType( OperationType )
+    m_FltObjects( FltObjects )
 {
     m_StreamContext = NULL;
     m_StreamFlagsTemp = 0;

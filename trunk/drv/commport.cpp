@@ -201,7 +201,7 @@ PortMessageNotify (
                 NC_IOPREPARE prepare;
                 ULONG preparesize = sizeof( prepare );
 
-                status = pEvent->ObjectRequst (
+                status = pEvent->ObjectRequest (
                     ntfcom_PrepareIO,
                     &prepare,
                     &preparesize
