@@ -1,5 +1,10 @@
 #include "pch.h"
 
+/*
+\todo __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) vs 
+ __drv_when(return==0, __deref_opt_out __drv_valueIs(!=0))
+*/
+
 // ----------------------------------------------------------------------------
 //
 

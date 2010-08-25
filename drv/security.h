@@ -28,7 +28,7 @@ __checkReturn
 NTSTATUS
 SecurityGetSid (
     __in_opt PFLT_CALLBACK_DATA Data,
-    __deref_out_opt PSID *Sid
+    __drv_when(return==0, __out_opt __drv_valueIs(!=0)) PSID *Sid
     );
 
 void

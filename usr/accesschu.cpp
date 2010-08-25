@@ -421,6 +421,7 @@ WaitForSingleMessage (
     return hResult;
 }
 
+__checkReturn
 HRESULT
 Nc_ExecuteObjectRequest (
     __in PCOMMUNICATIONS CommPort,

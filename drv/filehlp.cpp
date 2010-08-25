@@ -83,7 +83,8 @@ __checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
-    __deref_out_opt PFLT_FILE_NAME_INFORMATION* FileNameInfo
+    __drv_when(return==0, __out_opt __drv_valueIs(!=0))
+    PFLT_FILE_NAME_INFORMATION* FileNameInfo
     )
 {
     ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED
@@ -209,7 +210,8 @@ NTSTATUS
 GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __deref_out_opt PSTREAM_CONTEXT* StreamContext
+    __drv_when(return==0, __out_opt __drv_valueIs(!=0))
+    PSTREAM_CONTEXT* StreamContext
     )
 {
     ASSERT( ARGUMENT_PRESENT( Filter ) );

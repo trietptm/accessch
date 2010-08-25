@@ -15,17 +15,19 @@ public:
             );
 
         static
+        __checkReturn
         NTSTATUS
         Add (
             __in PVOID Event,
-            __deref_out_opt QueuedItem **Item
+            __drv_when(return==0, __out_opt __drv_valueIs(!=0)) QueuedItem **Item
             );
 
         static
+        __checkReturn
         NTSTATUS
-            Lookup (
+        Lookup (
             __in ULONG EventId,
-            __deref_out_opt QueuedItem **Item
+            __drv_when(return==0, __out_opt __drv_valueIs(!=0)) QueuedItem **Item
             );
 
 public:
