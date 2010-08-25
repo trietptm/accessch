@@ -22,10 +22,11 @@ QueuedItem::Destroy (
     ASSERT( IsListEmpty( &m_QueueItems ) );
 }
 
+__checkReturn
 NTSTATUS
 QueuedItem::Add (
     __in PVOID Event,
-    __deref_out_opt QueuedItem **Item
+    __drv_when(return==0, __out_opt __drv_valueIs(!=0)) QueuedItem **Item
     )
 {
     ASSERT( ARGUMENT_PRESENT( Event ) );
@@ -53,10 +54,11 @@ QueuedItem::Add (
     return STATUS_SUCCESS;
 }
 
+__checkReturn
 NTSTATUS
 QueuedItem::Lookup (
     __in ULONG EventId,
-    __deref_out_opt QueuedItem **Item
+    __drv_when(return==0, __out_opt __drv_valueIs(!=0)) QueuedItem **Item
     )
 {
     NTSTATUS status = STATUS_NOT_FOUND;
@@ -139,7 +141,12 @@ NTSTATUS
 QueuedItem::Acquire (
     )
 {
-    return ExAcquireRundownProtection( &m_Ref );
+    if ( ExAcquireRundownProtection( &m_Ref ) )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_UNSUCCESSFUL;
 }
 
 VOID

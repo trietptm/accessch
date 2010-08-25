@@ -41,13 +41,13 @@ PortMessageNotify (
 __checkReturn
 NTSTATUS
 PortQueryConnected (
-    __deref_out_opt PFLT_PORT* Port
+    __drv_when(return==0, __deref_opt_out __drv_valueIs(!=0)) PFLT_PORT* Port
     );
 
 // освобождение порта
 void
 PortRelease (
-    __deref_in PFLT_PORT* Port
+    __in_opt PFLT_PORT Port
     );
 
 // создание события
@@ -56,7 +56,7 @@ NTSTATUS
 PortAllocateMessage (
     __in EventData *Event,
     __in QueuedItem* QueuedItem,
-    __deref_out_opt PVOID* Message,
+    __drv_when(return==0, __out_opt __drv_valueIs(!=0)) PVOID* Message,
     __out_opt PULONG MessageSize,
     __in PARAMS_MASK ParamsMask
     );
@@ -64,7 +64,7 @@ PortAllocateMessage (
 // освобождение события
 void
 PortReleaseMessage (
-    __deref_in PVOID* Message
+    __in_opt PVOID Message
     );
 
 // посылка сообщения в юзер

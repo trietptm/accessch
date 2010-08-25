@@ -255,13 +255,13 @@ PortMessageNotify (
 __checkReturn
 NTSTATUS
 PortQueryConnected (
-    __deref_out_opt PFLT_PORT* Port
+    __drv_when(return==0, __deref_opt_out __drv_valueIs(!=0)) PFLT_PORT* Port
     )
 {
-    NTSTATUS status = STATUS_UNSUCCESSFUL;
+     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
     FltAcquirePushLockShared( &Globals.m_ClientPortLock );
-    if ( Globals.m_ClientPort)
+    if ( Globals.m_ClientPort )
     {
         *Port = Globals.m_ClientPort;
         status = STATUS_SUCCESS;
@@ -274,11 +274,13 @@ PortQueryConnected (
 
 void
 PortRelease (
-    __deref_in PFLT_PORT* Port
+    __in_opt PFLT_PORT Port
     )
 {
-    if ( *Port )
-        *Port = NULL;
+    if ( Port )
+    {
+        Port = 0;
+    }
 }
 
 __checkReturn
@@ -286,7 +288,7 @@ NTSTATUS
 PortAllocateMessage (
     __in EventData *Event,
     __in QueuedItem* QueuedItem,
-    __deref_out_opt PVOID* Message,
+    __drv_when(return==0, __out_opt __drv_valueIs(!=0)) PVOID* Message,
     __out_opt PULONG MessageSize,
     __in PARAMS_MASK ParamsMask
     )
@@ -381,15 +383,15 @@ PortAllocateMessage (
 
 void
 PortReleaseMessage (
-    __deref_in PVOID* Message
+    __in_opt PVOID Message
     )
 {
-    if ( !*Message )
+    if ( !Message )
     {
         return;
     }
 
-    FREE_POOL( *Message );
+    FREE_POOL( Message );
 }
 
 __checkReturn
@@ -471,7 +473,7 @@ PortAskUser (
             pQueuedItem->WaitAndDestroy();
         }
 
-        PortRelease( &pPort );
+        PortRelease( pPort );
         PortReleaseMessage( &pMessage );
     }
 
