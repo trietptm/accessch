@@ -101,6 +101,13 @@ QueryFileNameInfo (
         return status;
     }
 
+    ASSERT( FileNameInfo );
+
+    if ( !FileNameInfo )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
     status = FltParseFileNameInformation( *FileNameInfo );
 
     ASSERT( NT_SUCCESS( status ) ); //ignore unsuccessful parse
