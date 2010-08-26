@@ -17,7 +17,7 @@ __checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
-    __drv_when(return==0, __out_opt __drv_valueIs(!=0))
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
     PFLT_FILE_NAME_INFORMATION* FileNameInfo
     );
 
@@ -28,12 +28,7 @@ ReleaseFileNameInfo (
 
 void
 ReleaseContext (
-    __in_opt PFLT_CONTEXT* Context
-    );
-
-void
-SecurityFreeSid (
-    __in PSID* Sid
+    __deref_out_opt PFLT_CONTEXT* Context
     );
 
 __checkReturn
@@ -49,7 +44,7 @@ NTSTATUS
 FileQueryParameter (
     __in PVOID Opaque,
     __in_opt Parameters ParameterId,
-    __deref_out_opt PVOID* Data,
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PVOID* Data,
     __deref_out_opt PULONG DataSize
     );
 
@@ -58,7 +53,7 @@ NTSTATUS
 GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __drv_when(return==0, __out_opt __drv_valueIs(!=0))
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
     PSTREAM_CONTEXT* StreamContext
     );
 

@@ -63,7 +63,7 @@ public:
         __in_opt ULONG RequestTimeout,
         __in PARAMS_MASK WishMask,
         __in_opt ULONG ParamsCount,
-        __in_opt PPARAM_ENTRY Params,
+        __in PPARAM_ENTRY Params,
         __out PULONG FilterId
         );
 

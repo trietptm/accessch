@@ -74,9 +74,12 @@ NTSTATUS
 Filters::AddRef (
     )
 {
-    NTSTATUS status = ExAcquireRundownProtection( &m_Ref );
+    if ( ExAcquireRundownProtection( &m_Ref ) )
+    {
+        return STATUS_SUCCESS;
+    }
     
-    return status;
+    return STATUS_UNSUCCESSFUL;
 }
 
 void
@@ -511,7 +514,7 @@ Filters::AddFilter (
     __in_opt ULONG RequestTimeout,
     __in PARAMS_MASK WishMask,
     __in_opt ULONG ParamsCount,
-    __in_opt PPARAM_ENTRY Params,
+    __in PPARAM_ENTRY Params,
     __out PULONG FilterId
     )
 {

@@ -109,6 +109,7 @@ GetMediaSerialNumber (
         QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
         if ( !QueryBuffer )
         {
+            status = STATUS_INSUFFICIENT_RESOURCES;
             __leave;
         }
 
@@ -193,6 +194,7 @@ GetDeviceInfo (
         QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
         if ( !QueryBuffer )
         {
+            status= STATUS_INSUFFICIENT_RESOURCES;
             __leave;
         }
 

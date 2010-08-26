@@ -205,7 +205,7 @@ __checkReturn
 NTSTATUS
 FileInterceptorContext::QueryParameter (
     __in_opt Parameters ParameterId,
-    __deref_out_opt PVOID* Data,
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PVOID* Data,
     __deref_out_opt PULONG DataSize
     )
 {
