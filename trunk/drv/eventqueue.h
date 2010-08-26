@@ -19,7 +19,7 @@ public:
         NTSTATUS
         Add (
             __in PVOID Event,
-            __drv_when(return==0, __out_opt __drv_valueIs(!=0)) QueuedItem **Item
+            __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) QueuedItem **Item
             );
 
         static
@@ -27,7 +27,7 @@ public:
         NTSTATUS
         Lookup (
             __in ULONG EventId,
-            __drv_when(return==0, __out_opt __drv_valueIs(!=0)) QueuedItem **Item
+            __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) QueuedItem **Item
             );
 
 public:

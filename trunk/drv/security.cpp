@@ -79,7 +79,7 @@ __checkReturn
 NTSTATUS
 SecurityGetSid (
     __in_opt PFLT_CALLBACK_DATA Data,
-    __drv_when(return==0, __out_opt __drv_valueIs(!=0)) PSID *Sid
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PSID *Sid
     )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
@@ -95,20 +95,25 @@ SecurityGetSid (
     __try
     {
         if ( PsIsThreadTerminating( PsGetCurrentThread() ) )
-            __leave;
-
-        pAccessToken = PsReferenceImpersonationToken (
-            Data->Thread,
-            &CopyOnOpen,
-            &EffectiveOnly,
-            &ImpersonationLevel
-            );
-
-        if ( !pAccessToken )
         {
-            pAccessToken = PsReferencePrimaryToken (
-                FltGetRequestorProcess( Data )
+            __leave;
+        }
+
+        if ( Data )
+        {
+            pAccessToken = PsReferenceImpersonationToken (
+                Data->Thread,
+                &CopyOnOpen,
+                &EffectiveOnly,
+                &ImpersonationLevel
                 );
+
+            if ( !pAccessToken )
+            {
+                pAccessToken = PsReferencePrimaryToken (
+                    FltGetRequestorProcess( Data )
+                    );
+            }
         }
 
         if ( !pAccessToken )
@@ -164,7 +169,7 @@ SecurityGetSid (
 
 void
 SecurityFreeSid (
-    __in PSID* Sid
+    __deref_out_opt PSID* Sid
     )
 {
     if ( !*Sid )

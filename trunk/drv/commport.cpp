@@ -255,7 +255,7 @@ PortMessageNotify (
 __checkReturn
 NTSTATUS
 PortQueryConnected (
-    __drv_when(return==0, __deref_opt_out __drv_valueIs(!=0)) PFLT_PORT* Port
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PFLT_PORT* Port
     )
 {
      NTSTATUS status = STATUS_UNSUCCESSFUL;
@@ -288,7 +288,7 @@ NTSTATUS
 PortAllocateMessage (
     __in EventData *Event,
     __in QueuedItem* QueuedItem,
-    __drv_when(return==0, __out_opt __drv_valueIs(!=0)) PVOID* Message,
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PVOID* Message,
     __out_opt PULONG MessageSize,
     __in PARAMS_MASK ParamsMask
     )

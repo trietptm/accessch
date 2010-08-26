@@ -83,8 +83,6 @@ FilterProceedChain (
     
     ASSERT( ARGUMENT_PRESENT( Chain ) );
 
-    Filters* pFilters = NULL;
-
    __try
    {
         PCHAIN_ENTRY pEntry = Chain->m_Entry;
@@ -115,7 +113,6 @@ FilterProceedChain (
                             );
 
                         pFilters->Release();
-                        pFilters = NULL;
 
                         if ( NT_SUCCESS( status ) )
                         {
@@ -135,11 +132,6 @@ FilterProceedChain (
    }
    __finally
    {
-       if ( pFilters )
-       {
-           pFilters->Release();
-           pFilters = NULL;
-       }
    }
 
     return status;

@@ -83,7 +83,7 @@ __checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
-    __drv_when(return==0, __out_opt __drv_valueIs(!=0))
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
     PFLT_FILE_NAME_INFORMATION* FileNameInfo
     )
 {
@@ -124,7 +124,7 @@ ReleaseFileNameInfo (
 
 void
 ReleaseContext (
-    __in_opt PFLT_CONTEXT* Context
+    __deref_out_opt PFLT_CONTEXT* Context
     )
 {
     ASSERT( Context );
@@ -210,7 +210,7 @@ NTSTATUS
 GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __drv_when(return==0, __out_opt __drv_valueIs(!=0))
+    __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
     PSTREAM_CONTEXT* StreamContext
     )
 {
