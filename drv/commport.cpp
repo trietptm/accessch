@@ -474,7 +474,7 @@ PortAskUser (
         }
 
         PortRelease( pPort );
-        PortReleaseMessage( &pMessage );
+        PortReleaseMessage( pMessage );
     }
 
     return STATUS_SUCCESS;
