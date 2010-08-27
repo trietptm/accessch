@@ -627,7 +627,7 @@ WaiterThread (
 
         if ( pParam )
         {
-            StringCbPrintf (
+            /*StringCbPrintf (
                 wchOut,
                 sizeof( wchOut ),
                 L"-> %s> %.*s\n",
@@ -637,7 +637,7 @@ WaiterThread (
                 pParam->m_Data
                 );
 
-            OutputDebugString( wchOut );
+            OutputDebugString( wchOut );*/
         }
 
         if ( OP_FILE_CREATE == pData->m_OperationType )
@@ -649,6 +649,10 @@ WaiterThread (
             {
                 ULONG desired_access = *(PULONG) pParamDesiredAccess->m_Data;
                 assert( desired_access | FILE_READ_DATA );
+                if ( desired_access | FILE_READ_DATA )
+                {
+                    __debugbreak();
+                }
             }
 
             PEVENT_PARAMETER pParamInformation = GetEventParam (
@@ -685,7 +689,7 @@ WaiterThread (
         
         if ( pParam )
         {
-            WCHAR wchOut[MAX_PATH * 2 ];
+            /*WCHAR wchOut[MAX_PATH * 2 ];
             StringCbPrintf (
                 wchOut,
                 sizeof( wchOut ),
@@ -696,7 +700,7 @@ WaiterThread (
                 pParam->m_Data
                 );
             
-            OutputDebugString( wchOut );
+            OutputDebugString( wchOut );*/
         }
 
         // release
