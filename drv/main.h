@@ -13,7 +13,7 @@ typedef struct _GLOBALS
     PDRIVER_OBJECT          m_FilterDriverObject;
     PFLT_FILTER             m_Filter;
     PFLT_PORT               m_Port;
-    EX_PUSH_LOCK            m_ClientPortLock;
+    EX_RUNDOWN_REF          m_RefClientPort;
     PFLT_PORT               m_ClientPort;
 }GLOBALS, *PGLOBALS;
 

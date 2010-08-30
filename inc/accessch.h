@@ -101,6 +101,8 @@ typedef enum _NOTIFY_ID
 {
     // common commands
     ntfcom_Connect       = 0001,
+    ntfcom_Pause         = 00010,
+    ntfcom_Activate      = 00011,
     ntfcom_FiltersChain  = 0050,
     
     // object's commands

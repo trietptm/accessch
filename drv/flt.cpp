@@ -12,16 +12,19 @@ RemoveAllFilters (
 }
 
 __checkReturn
-    BOOLEAN
-    FilterIsExistAny (
+BOOLEAN
+FilterIsExistAny (
     )
 {
-    if ( FiltersTree::GetCount() )
+    if ( !FiltersTree::IsActive()
+        ||
+        !FiltersTree::GetCount()
+        )
     {
-        return TRUE;
+        return FALSE;
     }
-
-    return FALSE;
+    
+    return TRUE;
 }
 
 __checkReturn
@@ -135,4 +138,13 @@ FilterProceedChain (
    }
 
     return status;
+}
+
+__checkReturn
+NTSTATUS
+FilterChangeState (
+    BOOLEAN Activate
+    )
+{
+    return FiltersTree::ChangeState( Activate );
 }

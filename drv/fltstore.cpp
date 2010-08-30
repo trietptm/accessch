@@ -6,7 +6,11 @@
 RTL_AVL_TABLE FiltersTree::m_Tree;
 EX_PUSH_LOCK FiltersTree::m_AccessLock;
 LONG FiltersTree::m_Count;
+LONG FiltersTree::m_Flags;
 LONG FiltersTree::m_FilterIdCounter;
+
+#define _FT_FLAGS_PAUSED 0x000
+#define _FT_FLAGS_ACTIVE 0x001
 
 //////////////////////////////////////////////////////////////////////////
 typedef struct _ITEM_FILTERS
@@ -589,6 +593,7 @@ FiltersTree::Initialize (
         );
 
     m_Count = 0;
+    m_Flags = _FT_FLAGS_PAUSED;
     m_FilterIdCounter = 0;
 }
 
@@ -731,6 +736,36 @@ FiltersTree::GetCount (
     )
 {
     return m_Count;
+}
+
+BOOLEAN
+FiltersTree::IsActive (
+    )
+{
+    if ( FlagOn( FiltersTree::m_Flags, _FT_FLAGS_ACTIVE ) )
+    {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+NTSTATUS
+FiltersTree::ChangeState (
+    __in_opt BOOLEAN Activate
+    )
+{
+    //! \\todo - switch to interlocked operations. fix return code....
+    if ( Activate )
+    {
+        FiltersTree::m_Flags = _FT_FLAGS_ACTIVE;
+    }
+    else
+    {
+        FiltersTree::m_Flags = _FT_FLAGS_PAUSED;
+    }
+
+    return STATUS_SUCCESS;
 }
 
 __checkReturn
