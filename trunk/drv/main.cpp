@@ -198,7 +198,10 @@ DriverEntry (
     RtlZeroMemory( &Globals, sizeof( Globals) );
 
     Globals.m_FilterDriverObject = DriverObject;
-    FltInitializePushLock( &Globals.m_ClientPortLock );
+    
+    ExInitializeRundownProtection( &Globals.m_RefClientPort );
+    ExWaitForRundownProtectionRelease( &Globals.m_RefClientPort );
+    ExRundownCompleted( &Globals.m_RefClientPort );
 
     QueuedItem::Initialize();
     FiltersTree::Initialize();
@@ -277,8 +280,6 @@ Unload (
 
     QueuedItem::Destroy();
     FiltersTree::Destroy();
-
-    FltDeletePushLock( &Globals.m_ClientPortLock );
 
     return STATUS_SUCCESS;
 }

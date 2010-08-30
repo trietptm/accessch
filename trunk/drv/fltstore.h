@@ -134,6 +134,10 @@ public:
 
     static LONG GetNextFilterid();
     static LONG GetCount();
+    static BOOLEAN IsActive();
+    static NTSTATUS ChangeState (
+        __in_opt BOOLEAN Activate
+        );
 
     static RTL_AVL_COMPARE_ROUTINE Compare;
     static RTL_AVL_ALLOCATE_ROUTINE Allocate;
@@ -171,6 +175,7 @@ public:
     ~FiltersTree();
 
     static LONG             m_Count;
+    static LONG             m_Flags;
 };
 
 

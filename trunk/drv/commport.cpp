@@ -81,7 +81,6 @@ PortConnect (
     UNREFERENCED_PARAMETER( ConnectionContext );
     UNREFERENCED_PARAMETER( SizeOfContext );
 
-    FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
     __try
     {
         if ( Globals.m_ClientPort )
@@ -109,12 +108,12 @@ PortConnect (
         /// \todo  revise single port connection
         Globals.m_ClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
+        ExReInitializeRundownProtection( &Globals.m_RefClientPort );
 
         *ConnectionCookie = pPortContext;
     }
     __finally
-    {
-        FltReleasePushLock( &Globals.m_ClientPortLock );
+    {   
     }
 
     return status;
@@ -131,14 +130,14 @@ PortDisconnect (
 
     RemoveAllFilters();
 
-    FltAcquirePushLockExclusive( &Globals.m_ClientPortLock );
+    ExWaitForRundownProtectionRelease( &Globals.m_RefClientPort );
     Globals.m_ClientPort = NULL;
-    FltReleasePushLock( &Globals.m_ClientPortLock );
 
-    //! \todo wait for release reference!
     FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
 
     UnregisterInvisibleProcess( PsGetCurrentProcessId() );
+
+    ExRundownCompleted( &Globals.m_RefClientPort );
 
     FREE_POOL( pPortContext );
 }
@@ -185,6 +184,22 @@ PortMessageNotify (
         PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) InputBuffer;
         switch( pCommand->m_Command )
         {
+        case ntfcom_Activate:
+            status = STATUS_INVALID_PARAMETER;
+            if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
+            {
+                status = FilterChangeState( TRUE );
+            }
+            break;
+
+        case ntfcom_Pause:
+            status = STATUS_INVALID_PARAMETER;
+            if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
+            {
+                status = FilterChangeState( FALSE );
+            }
+            break;
+
         case ntfcom_PrepareIO:
             status = STATUS_INVALID_PARAMETER;
             if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
@@ -258,18 +273,15 @@ PortQueryConnected (
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PFLT_PORT* Port
     )
 {
-     NTSTATUS status = STATUS_UNSUCCESSFUL;
-
-    FltAcquirePushLockShared( &Globals.m_ClientPortLock );
-    if ( Globals.m_ClientPort )
+    if ( !ExAcquireRundownProtection( &Globals.m_RefClientPort ) )
     {
-        *Port = Globals.m_ClientPort;
-        status = STATUS_SUCCESS;
+        return STATUS_UNSUCCESSFUL;
     }
 
-    FltReleasePushLock( &Globals.m_ClientPortLock );
-
-    return status;
+    *Port = Globals.m_ClientPort;
+    ASSERT( *Port );
+   
+    return STATUS_SUCCESS;
 }
 
 void
@@ -277,10 +289,10 @@ PortRelease (
     __in_opt PFLT_PORT Port
     )
 {
-    if ( Port )
-    {
-        Port = 0;
-    }
+    UNREFERENCED_PARAMETER( Port );
+    ASSERT( Port );
+
+    ExReleaseRundownProtection( &Globals.m_RefClientPort );
 }
 
 __checkReturn

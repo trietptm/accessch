@@ -144,4 +144,10 @@ FilterProceedChain (
     __in ULONG ChainSize
     );
 
+__checkReturn
+NTSTATUS
+FilterChangeState (
+    BOOLEAN Activate
+    );
+
 #endif //__flt_h
