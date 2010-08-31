@@ -189,7 +189,7 @@ CreateFilter_PostCreate (
     
     PFILTER pFilter = pChain->m_Entry[0].m_Filter;
     pFilter->m_Interceptor = FILE_MINIFILTER;
-    pFilter->m_FunctionMj = OP_FILE_CREATE;
+    pFilter->m_OperationId = OP_FILE_CREATE;
     pFilter->m_OperationType = PostProcessing;
     pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
@@ -300,14 +300,15 @@ CreateFilter_PreCleanup (
 
     PFILTER pFilter = pChain->m_Entry[0].m_Filter;
     pFilter->m_Interceptor = FILE_MINIFILTER;
-    pFilter->m_FunctionMj = OP_FILE_CLEANUP;
+    pFilter->m_OperationId = OP_FILE_CLEANUP;
     pFilter->m_OperationType = PreProcessing;
     pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
-    pFilter->m_ParamsCount = 1;
+    pFilter->m_ParamsCount = 2;
     pFilter->m_WishMask = Id2Bit( PARAMETER_FILE_NAME )
         | Id2Bit( PARAMETER_VOLUME_NAME )
-        | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID );
+        | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID )
+        | Id2Bit( PARAMETER_OBJECT_STREAM_FLAGS );
 
     // first param
     PPARAM_ENTRY pEntry = pFilter->m_Params;
@@ -317,7 +318,20 @@ CreateFilter_PreCleanup (
     pEntry->m_FltData.m_Count = 1;
     pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
     PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
-    *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1;
+    *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1 | _STREAM_FLAGS_DELONCLOSE;
+
+    // second param
+    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+        pEntry,
+        sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+        );
+    pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
+    pEntry->m_Operation = _fltop_and;
+    pEntry->m_FltData.m_Size = sizeof( ULONG );
+    pEntry->m_FltData.m_Count = 1;
+    pEntry->m_Flags = 0;
+    pFlags = (PULONG) pEntry->m_FltData.m_Data;
+    *pFlags = _STREAM_FLAGS_MODIFIED;
 
     // result size
     ULONG requestsize = (ULONG) ((char*)pFlags - buffer) + sizeof( ULONG );
@@ -417,6 +431,29 @@ WaitForSingleMessage (
     }
 
     HeapFree( GetProcessHeap(), 0, pEvent );
+
+    return hResult;
+}
+
+HRESULT
+Nc_Command (
+    __in PCOMMUNICATIONS CommPort,
+    __in NOTIFY_ID CommandId
+    )
+{
+    NOTIFY_COMMAND command;
+    ZeroMemory( &command, sizeof( NOTIFY_COMMAND) );
+    command.m_Command = CommandId;
+
+    DWORD returned = 0;
+    HRESULT hResult = FilterSendMessage (
+        CommPort->m_hPort,
+        &command,
+        sizeof( NOTIFY_COMMAND),
+        NULL,
+        0,
+        &returned
+        );
 
     return hResult;
 }
@@ -631,7 +668,7 @@ WaiterThread (
                 wchOut,
                 sizeof( wchOut ),
                 L"-> %s> %.*s\n",
-                pData->m_OperationType == OP_FILE_CREATE ?
+                pData->m_OperationId == OP_FILE_CREATE ?
                 L"create(post)" : L"cleanup(pre)",
                 pParam->m_Size / sizeof( WCHAR ),
                 pParam->m_Data
@@ -639,8 +676,16 @@ WaiterThread (
 
             OutputDebugString( wchOut );*/
         }
+        PEVENT_PARAMETER pParamSFlags = GetEventParam (
+            pData, PARAMETER_OBJECT_STREAM_FLAGS );
 
-        if ( OP_FILE_CREATE == pData->m_OperationType )
+        ULONG sflags = 0;
+        if ( pParamSFlags )
+        {
+            sflags = *(PULONG) pParamSFlags->m_Data;
+        }
+        
+        if ( OP_FILE_CREATE == pData->m_OperationId )
         {
             PEVENT_PARAMETER pParamDesiredAccess = GetEventParam (
                 pData, PARAMETER_DESIRED_ACCESS );
@@ -649,10 +694,6 @@ WaiterThread (
             {
                 ULONG desired_access = *(PULONG) pParamDesiredAccess->m_Data;
                 assert( desired_access | FILE_READ_DATA );
-                if ( desired_access | FILE_READ_DATA )
-                {
-                    __debugbreak();
-                }
             }
 
             PEVENT_PARAMETER pParamInformation = GetEventParam (
@@ -685,22 +726,30 @@ WaiterThread (
             }
         }
 
+        if ( OP_FILE_CLEANUP == pData->m_OperationId )
+        {
+            assert( !( sflags & _STREAM_FLAGS_DELONCLOSE ) );
+            assert( sflags & _STREAM_FLAGS_MODIFIED );
+        }
+
         bool bBlock = ScanObject( pCommPort, pData );
         
-        if ( pParam )
+        if ( pParam && bBlock )
         {
-            /*WCHAR wchOut[MAX_PATH * 2 ];
+            WCHAR wchOut[MAX_PATH * 2 ];
             StringCbPrintf (
                 wchOut,
                 sizeof( wchOut ),
-                L"<- %s> %.*s\n",
-                pData->m_OperationType == OP_FILE_CREATE ?
+                L"<- %s (0x%x)> %.*s - sflags 0x%x\n",
+                pData->m_OperationId == OP_FILE_CREATE ?
                 L"create(post)" : L"cleanup(pre)",
+                pData->m_OperationId,
                 pParam->m_Size / sizeof( WCHAR ),
-                pParam->m_Data
+                pParam->m_Data,
+                sflags
                 );
             
-            OutputDebugString( wchOut );*/
+            OutputDebugString( wchOut );
         }
 
         // release
@@ -838,6 +887,8 @@ main (
                 __leave;
             }
         }
+
+        Nc_Command( &Comm, ntfcom_Activate );
 
         // just wait
         MessageBox( NULL, L"stop?", L"RTP prototype", NULL );

@@ -155,49 +155,43 @@ PortMessageNotify (
 {
     NTSTATUS status = STATUS_INVALID_PARAMETER;
 
-    UNREFERENCED_PARAMETER( InputBuffer );
-    UNREFERENCED_PARAMETER( InputBufferSize );
-    UNREFERENCED_PARAMETER( OutputBuffer );
-    UNREFERENCED_PARAMETER( OutputBufferSize );
+    *ReturnOutputBufferLength = 0;
 
     PPORT_CONTEXT pPortContext = (PPORT_CONTEXT) ConnectionCookie;
+
+    status = PortQueryConnected( 0 );
+    if ( !NT_SUCCESS( status ) )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
 
     QueuedItem *pItem = NULL;
     EventData *pEvent = NULL;
 
-    *ReturnOutputBufferLength = 0;
-
-    ASSERT( pPortContext != NULL );
-    if (
-        !pPortContext
-        ||
-        !InputBuffer
-        ||
-        InputBufferSize < sizeof( NOTIFY_COMMAND)
-        )
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-    
     __try
     {
+        ASSERT( pPortContext != NULL );
+        if (
+            !pPortContext
+            ||
+            !InputBuffer
+            ||
+            InputBufferSize < sizeof( NOTIFY_COMMAND)
+            )
+        {
+            status = STATUS_INVALID_PARAMETER;
+            __leave;
+        }
+
         PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) InputBuffer;
         switch( pCommand->m_Command )
         {
         case ntfcom_Activate:
-            status = STATUS_INVALID_PARAMETER;
-            if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
-            {
-                status = FilterChangeState( TRUE );
-            }
+            status = FilterChangeState( TRUE );
             break;
 
         case ntfcom_Pause:
-            status = STATUS_INVALID_PARAMETER;
-            if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
-            {
-                status = FilterChangeState( FALSE );
-            }
+            status = FilterChangeState( FALSE );
             break;
 
         case ntfcom_PrepareIO:
@@ -262,6 +256,8 @@ PortMessageNotify (
             pItem->Release();
             pItem = NULL;
         }
+
+        PortRelease( 0 );
     }
 
     return status;
@@ -278,8 +274,11 @@ PortQueryConnected (
         return STATUS_UNSUCCESSFUL;
     }
 
-    *Port = Globals.m_ClientPort;
-    ASSERT( *Port );
+    if ( Port )
+    {
+        *Port = Globals.m_ClientPort;
+        ASSERT( *Port );
+    }
    
     return STATUS_SUCCESS;
 }
@@ -290,7 +289,6 @@ PortRelease (
     )
 {
     UNREFERENCED_PARAMETER( Port );
-    ASSERT( Port );
 
     ExReleaseRundownProtection( &Globals.m_RefClientPort );
 }
