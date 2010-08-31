@@ -676,7 +676,11 @@ PreCleanup (
             status = PortAskUser( &event, params2user, &Verdict );
             if ( NT_SUCCESS( status ) )
             {
-                if ( FlagOn( Verdict, VERDICT_ALLOW | VERDICT_CACHE1 ) )
+                if (
+                    !FlagOn( Verdict, VERDICT_DENY)
+                    &&
+                    FlagOn( Verdict, VERDICT_CACHE1 )
+                    )
                 {
                     event.SetCache1();
                 }
@@ -774,6 +778,7 @@ PostWrite (
         {
             InterlockedIncrement( &pStreamContext->m_WriteCount );
             InterlockedAnd( &pStreamContext->m_Flags, ~_STREAM_FLAGS_CASHE1 );
+            InterlockedOr( &pStreamContext->m_Flags, _STREAM_FLAGS_MODIFIED );
         }
     }
     __finally

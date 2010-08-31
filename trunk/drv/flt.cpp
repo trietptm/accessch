@@ -98,7 +98,7 @@ FilterProceedChain (
                 {
                     Filters* pFilters = FiltersTree::GetOrCreateFiltersBy (
                         pEntry->m_Filter[0].m_Interceptor,
-                        pEntry->m_Filter[0].m_FunctionMj,
+                        pEntry->m_Filter[0].m_OperationId,
                         pEntry->m_Filter[0].m_FunctionMi,
                         pEntry->m_Filter[0].m_OperationType
                         );

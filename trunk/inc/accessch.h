@@ -7,8 +7,9 @@
 #define DRV_EVENT_CONTENT_SIZE      0x1000
 
 #define _STREAM_FLAGS_DIRECTORY     0x00000001
-#define _STREAM_FLAGS_CASHE1        0x00000002
+#define _STREAM_FLAGS_MODIFIED      0x00000002
 #define _STREAM_FLAGS_DELONCLOSE    0x00000004
+#define _STREAM_FLAGS_CASHE1        0x00000100
 
 #define _STREAM_H_FLAGS_ECPPREF     0x00000001
 
@@ -58,16 +59,16 @@ typedef enum Parameters
     PARAMETER_MAXIMUM               = 63
 } *PParameters;
 
-#define Id2Bit( _id ) ( 1 << _id )
-
 #define PARAMS_MASK __int64
+
+#define Id2Bit( _id ) ( (PARAMS_MASK) 1 << _id )
+
 #define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * 8 )
 
 typedef ULONG VERDICT, *PVERDICT;
 #define VERDICT_NOT_FILTERED        0x0000
-#define VERDICT_ALLOW               0x0001
-#define VERDICT_DENY                0x0002
-#define VERDICT_ASK                 0x0004
+#define VERDICT_DENY                0x0001
+#define VERDICT_ASK                 0x0002
 #define VERDICT_CACHE1              0x0100
 
 #include <pshpack8.h>
@@ -157,7 +158,7 @@ typedef struct _PARAM_ENTRY
 typedef struct _FILTER
 {
     Interceptors        m_Interceptor;
-    DriverOperationId   m_FunctionMj;
+    DriverOperationId   m_OperationId;
     ULONG               m_FunctionMi;
     OperationPoint      m_OperationType;
     VERDICT             m_Verdict;
