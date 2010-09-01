@@ -412,15 +412,23 @@ WaitForSingleMessage (
             INFINITE
             );
 
-        PDRVEVENT_OVLP pEventTmp = CONTAINING_RECORD (
-            pOvlp,
-            DRVEVENT_OVLP,
-            m_Ovlp
-            );
-
         if ( Queued )
         {
+            PDRVEVENT_OVLP pEventTmp = CONTAINING_RECORD (
+                pOvlp,
+                DRVEVENT_OVLP,
+                m_Ovlp
+                );
+
+            if ( NumbersOfByte == FIELD_OFFSET( DRVEVENT_OVLP, m_Data ) )
+            {
+                HeapFree( GetProcessHeap(), 0, pEventTmp );
+
+                return E_ABORT;
+            }
+
             *ppEvent = pEventTmp;
+
             return S_OK;
         }
         else
@@ -694,6 +702,9 @@ WaiterThread (
             {
                 ULONG desired_access = *(PULONG) pParamDesiredAccess->m_Data;
                 assert( desired_access | FILE_READ_DATA );
+                if ( desired_access )
+                {
+                }
             }
 
             PEVENT_PARAMETER pParamInformation = GetEventParam (
@@ -892,6 +903,8 @@ main (
 
         // just wait
         MessageBox( NULL, L"stop?", L"RTP prototype", NULL );
+        
+        Nc_Command( &Comm, ntfcom_Pause );
     }
     __finally
     {
@@ -900,10 +913,8 @@ main (
         {
             if ( hThreads[thc] )
             {
-                if (TerminateThread( hThreads[thc], 0 ) )
-                {
-                    CloseHandle( hThreads[thc] );
-                }
+                WaitForSingleObject( hThreads[thc], INFINITE );
+                CloseHandle( hThreads[thc] );
             }
         }
 

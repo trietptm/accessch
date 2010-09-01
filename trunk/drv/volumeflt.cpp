@@ -40,6 +40,7 @@ VolumeInterceptorContext::QueryParameter (
     case PARAMETER_REQUESTOR_PROCESS_ID:
         *Data = &m_RequestorPid;
         *DataSize = sizeof( m_RequestorPid );
+        status = STATUS_SUCCESS;
 
         break;
 
