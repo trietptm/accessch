@@ -96,8 +96,7 @@ Filters::Release (
 NTSTATUS
 Filters::CheckSingleEntryUnsafe (
     __in ParamCheckEntry* Entry,
-    __in EventData *Event,
-    __out PARAMS_MASK *ParamsMask
+    __in EventData *Event
     )
 {
     PVOID pData;
@@ -189,13 +188,78 @@ Filters::CheckSingleEntryUnsafe (
     return status;
 }
 
+NTSTATUS
+Filters::CheckParamsList (
+    __in EventData *Event,
+    __in PULONG Unmatched,
+    __in PRTL_BITMAP Filtersbitmap
+    )
+{
+    ASSERT( Event );
+    ASSERT( Unmatched );
+    ASSERT( Filtersbitmap );
+
+    // check params in active filters
+    if ( IsListEmpty( &m_ParamsCheckList ) )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+    while ( Flink != &m_ParamsCheckList )
+    {
+        /// \todo dont check entry with inactive filters only
+        ParamCheckEntry* pEntry = CONTAINING_RECORD (
+            Flink,
+            ParamCheckEntry,
+            m_List
+            );
+
+        Flink = Flink->Flink;
+
+        NTSTATUS status = CheckSingleEntryUnsafe (
+            pEntry,
+            Event
+            );
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            continue;
+        }
+
+        // set unmatched filters bit
+        for ( ULONG cou = 0; cou < pEntry->m_PosCount; cou++ )
+        {
+            ULONG isset = RtlCheckBit (
+                Filtersbitmap,
+                pEntry->m_FilterPosList[cou]
+            );
+
+            if ( !isset )
+            {
+                RtlSetBit (
+                    Filtersbitmap,
+                    pEntry->m_FilterPosList[cou]
+                );
+
+                (*Unmatched)++;
+                if ( *Unmatched == m_FilterCount )
+                {
+                    return STATUS_NOT_FOUND;
+                }
+            }
+        }
+    }
+
+    return STATUS_SUCCESS;
+}
+
 VERDICT
 Filters::GetVerdict (
     __in EventData *Event,
     __out PARAMS_MASK *ParamsMask
     )
 {
-    /// \todo refactor
     VERDICT verdict = VERDICT_NOT_FILTERED;
 
     RTL_BITMAP filtersbitmap;
@@ -205,11 +269,6 @@ Filters::GetVerdict (
 
     __try
     {
-        if ( IsListEmpty( &m_ParamsCheckList ) )
-        {
-            __leave;
-        }
-        
         ULONG unmatched = 0;
 
         RtlInitializeBitMap (
@@ -235,54 +294,10 @@ Filters::GetVerdict (
             }
         }
 
-        // check params in active filters
-        PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
-        while ( Flink != &m_ParamsCheckList )
+        NTSTATUS status = CheckParamsList( Event, &unmatched, &filtersbitmap );
+        if ( !NT_SUCCESS( status ) )
         {
-            /// \todo dont check entry with inactive filters only
-            ParamCheckEntry* pEntry = CONTAINING_RECORD (
-                Flink,
-                ParamCheckEntry,
-                m_List
-                );
-            
-            Flink = Flink->Flink;
-
-            NTSTATUS status = CheckSingleEntryUnsafe (
-                pEntry,
-                Event,
-                ParamsMask
-                );
-
-            if ( NT_SUCCESS( status ) )
-            {
-                // nothing
-            }
-            else
-            {
-                // set unmatched filters bit
-                for ( ULONG cou = 0; cou < pEntry->m_PosCount; cou++ )
-                {
-                    ULONG isset = RtlCheckBit (
-                        &filtersbitmap,
-                        pEntry->m_FilterPosList[cou]
-                    );
-
-                    if ( !isset )
-                    {
-                        RtlSetBit (
-                            &filtersbitmap,
-                            pEntry->m_FilterPosList[cou]
-                        );
-                        
-                        unmatched++;
-                        if ( unmatched == m_FilterCount )
-                        {
-                            __leave;
-                        }
-                    }
-                }
-            }
+            __leave;
         }
 
         // at least 1 filter matched and bit not set
@@ -297,6 +312,8 @@ Filters::GetVerdict (
 
         verdict = m_FiltersArray[ position ].m_Verdict;
         *ParamsMask = m_FiltersArray[ position ].m_WishMask;
+
+        ASSERT( *ParamsMask );
     }
     __finally
     {
@@ -525,6 +542,7 @@ Filters::AddFilter (
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
     ASSERT( Verdict );
+    ASSERT( WishMask );
 
     FltAcquirePushLockExclusive( &m_AccessLock );
 

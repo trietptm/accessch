@@ -142,6 +142,38 @@ PortDisconnect (
     FREE_POOL( pPortContext );
 }
 
+void
+PortPostEmptyMessages (
+    __in PPORT_CONTEXT PortContext
+    )
+{
+    ASSERT( PortContext );
+    UNREFERENCED_PARAMETER( PortContext );
+    
+    PFLT_PORT pPort;
+    NTSTATUS status = PortQueryConnected( &pPort );
+    if ( !NT_SUCCESS( status ) )
+    {
+        return;
+    }
+
+    for( ULONG cou = 0; cou < 256; cou++ )
+    {
+        LARGE_INTEGER timeout = { 1, 0 };
+        status = FltSendMessage (
+            Globals.m_Filter,
+            &pPort,
+            NULL,
+            0,
+            NULL,
+            NULL,
+            &timeout
+            );
+    }
+
+    PortRelease( pPort );
+}
+
 __checkReturn
 NTSTATUS
 PortMessageNotify (
@@ -192,6 +224,7 @@ PortMessageNotify (
 
         case ntfcom_Pause:
             status = FilterChangeState( FALSE );
+            PortPostEmptyMessages( pPortContext );
             break;
 
         case ntfcom_PrepareIO:

@@ -97,8 +97,14 @@ private:
     NTSTATUS
     CheckSingleEntryUnsafe (
         __in ParamCheckEntry* Entry,
+        __in EventData *Event
+        );
+
+    NTSTATUS
+    CheckParamsList (
         __in EventData *Event,
-        __out PARAMS_MASK *ParamsMask
+        __in PULONG Unmatched,
+        __in PRTL_BITMAP Filtersbitmap
         );
 
 private:
