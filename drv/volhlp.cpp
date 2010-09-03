@@ -186,8 +186,8 @@ GetMediaSerialNumber (
             Add2Ptr( pDeviceInfo, pDeviceInfo->IdOffset),
             pDeviceInfo->IdLenght
             );
-        DeviceId->Length = pDeviceInfo->IdLenght;
-        DeviceId->MaximumLength = pDeviceInfo->IdLenght;
+        DeviceId->Length = (USHORT) pDeviceInfo->IdLenght;
+        DeviceId->MaximumLength = (USHORT) pDeviceInfo->IdLenght;
     }
     __finally
     {
