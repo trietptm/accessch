@@ -92,7 +92,8 @@ GetRemovableProperty (
 
 NTSTATUS
 GetMediaSerialNumber (
-    __in PDEVICE_OBJECT Device
+    __in PDEVICE_OBJECT Device,
+    __deref_out_opt PUNICODE_STRING DeviceId
     )
 {
     PIRP Irp;
@@ -162,6 +163,31 @@ GetMediaSerialNumber (
         }
 
         pDeviceInfo = (PDEVCTRL_DEVICEINFO) QueryBuffer;
+        if ( !pDeviceInfo->IdLenght )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
+        DeviceId->Buffer = (PWCH) ExAllocatePoolWithTag (
+            PagedPool,
+            pDeviceInfo->IdLenght,
+            _ALLOC_TAG
+            );
+
+        if ( !DeviceId->Buffer )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
+
+        RtlCopyMemory (
+            DeviceId->Buffer,
+            Add2Ptr( pDeviceInfo, pDeviceInfo->IdOffset),
+            pDeviceInfo->IdLenght
+            );
+        DeviceId->Length = pDeviceInfo->IdLenght;
+        DeviceId->MaximumLength = pDeviceInfo->IdLenght;
     }
     __finally
     {
@@ -297,7 +323,12 @@ FillVolumeProperties (
         // status = GetRemovableProperty( pDevice, pVolumeContext );
         //ASSERT( NT_SUCCESS( status ) );
 
-        status = GetMediaSerialNumber( pDevice );
+        UNICODE_STRING deviceid;
+        status = GetMediaSerialNumber( pDevice, &deviceid );
+        if ( NT_SUCCESS( status ))
+        {
+            VolumeContext->m_DeviceId = deviceid;
+        }
 
         status = STATUS_SUCCESS;
     }

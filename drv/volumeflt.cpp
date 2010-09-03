@@ -8,14 +8,19 @@
 VolumeInterceptorContext::VolumeInterceptorContext (
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __in PINSTANCE_CONTEXT InstanceContext,
+    __in PVOLUME_CONTEXT VolumeContext,
     __in Interceptors InterceptorId,
     __in DriverOperationId Major,
     __in ULONG Minor,
     __in OperationPoint OperationType
     ) : EventData( InterceptorId, Major, Minor, OperationType ),
     m_FltObjects( FltObjects ),
-    m_InstanceContext( InstanceContext )
+    m_InstanceContext( InstanceContext ),
+    m_VolumeContext( VolumeContext )
 {
+    ASSERT( InstanceContext );
+    ASSERT( VolumeContext );
+
     m_RequestorPid = 0;
 }
 
@@ -59,9 +64,20 @@ VolumeInterceptorContext::QueryParameter (
         break;
 
     case PARAMETER_BUS_TYPE:
+        *Data = &m_VolumeContext->m_BusType;
+        *DataSize = sizeof( m_VolumeContext->m_BusType );
+        status = STATUS_SUCCESS;
+
         break;
 
     case PARAMETER_DEVICE_ID:
+        if ( m_VolumeContext->m_DeviceId.Length )
+        {
+            *Data = m_VolumeContext->m_DeviceId.Buffer;
+            *DataSize = m_VolumeContext->m_DeviceId.Length;
+            status = STATUS_SUCCESS;
+        }
+
         break;
     }
 

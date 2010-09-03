@@ -8,6 +8,7 @@ typedef struct _VOLUME_CONTEXT
     PFLT_INSTANCE           m_Instance;
     STORAGE_BUS_TYPE        m_BusType;
     DEVICE_REMOVAL_POLICY   m_RemovablePolicy;
+    UNICODE_STRING          m_DeviceId;
     UCHAR                   m_VendorId[_VOLUME_DESCRIPTION_LENGTH];
     UCHAR                   m_ProductId[_VOLUME_DESCRIPTION_LENGTH];
     UCHAR                   m_ProductRevisionLevel[_VOLUME_DESCRIPTION_LENGTH];
