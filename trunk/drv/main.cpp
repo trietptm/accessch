@@ -1,6 +1,6 @@
 //!
 //    \author - Andrey Sobko (andrey.sobko@gmail.com)
-//    \date - 06.07.2009
+//    \date - 06.07.2009 - 02.09.2010
 //    \description - sample driver
 //!
 
@@ -96,7 +96,7 @@ const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
     { FLT_STREAMHANDLE_CONTEXT,  0, ContextCleanup,
         sizeof(STREAMHANDLE_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
     
-    { FLT_VOLUME_CONTEXT, 0, NULL, sizeof(VOLUME_CONTEXT),
+    { FLT_VOLUME_CONTEXT, 0, ContextCleanup, sizeof(VOLUME_CONTEXT),
         _ALLOC_TAG, NULL, NULL, NULL} ,
     
     { FLT_CONTEXT_END }
@@ -313,6 +313,13 @@ ContextCleanup (
         }
         break;
 
+    case FLT_VOLUME_CONTEXT:
+        {
+            PVOLUME_CONTEXT pVolumeContext = (PVOLUME_CONTEXT) Pool;
+            FREE_POOL( pVolumeContext->m_DeviceId.Buffer );
+        }
+        break;
+
     default:
         {
             ASSERT( "cleanup for unknown context!" );
@@ -421,6 +428,7 @@ InstanceSetup (
             pVolumeContext = NULL;
             __leave;
         }
+        
         RtlZeroMemory( pVolumeContext, sizeof( VOLUME_CONTEXT ) );
 
         // just for fun
@@ -439,6 +447,7 @@ InstanceSetup (
         VolumeInterceptorContext event (
             FltObjects,
             pInstanceContext,
+            pVolumeContext,
             VOLUME_MINIFILTER,
             OP_VOLUME_ATTACH,
             0,

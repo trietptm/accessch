@@ -7,6 +7,7 @@ public:
     VolumeInterceptorContext (
         __in PCFLT_RELATED_OBJECTS FltObjects,
         __in PINSTANCE_CONTEXT InstanceContext,
+        __in PVOLUME_CONTEXT pVolumeContext,
         __in Interceptors InterceptorId,
         __in DriverOperationId Major,
         __in ULONG Minor,
@@ -36,6 +37,7 @@ private:
     HANDLE                  m_RequestorPid;
     PCFLT_RELATED_OBJECTS   m_FltObjects;
     PINSTANCE_CONTEXT       m_InstanceContext;
+    PVOLUME_CONTEXT         m_VolumeContext;
 };
 
 #endif // __volume_h
