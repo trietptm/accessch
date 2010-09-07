@@ -89,7 +89,7 @@ typedef struct _EVENT_PARAMETER
 typedef struct _MESSAGE_DATA
 {
     ULONG               m_EventId;
-    Interceptors        m_Interceptor;
+    Interceptors        m_InterceptorId;
     DriverOperationId   m_OperationId;
     ULONG               m_FuncionMi;
     OperationPoint      m_OperationType;

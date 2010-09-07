@@ -388,7 +388,7 @@ PortAllocateMessage (
 
     pMsg->m_EventId = QueuedItem->GetId();
     
-    pMsg->m_Interceptor = Event->GetInterceptorId();
+    pMsg->m_InterceptorId = Event->GetInterceptorId();
     pMsg->m_OperationId = Event->GetOperationId();
     pMsg->m_FuncionMi = Event->GetMinor();
     pMsg->m_OperationType = Event->GetOperationType();
