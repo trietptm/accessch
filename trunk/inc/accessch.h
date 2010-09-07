@@ -161,6 +161,10 @@ typedef struct _FILTER
     DriverOperationId   m_OperationId;
     ULONG               m_FunctionMi;
     OperationPoint      m_OperationType;
+    UCHAR               m_GroupId;
+    UCHAR               m_Reserverd1;
+    UCHAR               m_Reserverd2;
+    UCHAR               m_Reserverd3;
     VERDICT             m_Verdict;
     ULONG               m_RequestTimeout;       //msec
     PARAMS_MASK         m_WishMask;
