@@ -31,6 +31,7 @@ typedef struct _FilterEntry
 {
     ULONG               m_Flags;
     ULONG               m_FilterId;
+    UCHAR               m_GroupId;
     VERDICT             m_Verdict;
     PARAMS_MASK         m_WishMask;
     ULONG               m_RequestTimeout;
