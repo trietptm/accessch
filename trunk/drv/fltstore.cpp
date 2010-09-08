@@ -308,17 +308,45 @@ Filters::GetVerdict (
         }
 
         // at least 1 filter matched and bit not set
-        ULONG position = RtlFindClearBits( &filtersbitmap, 1, 0 );
+        *ParamsMask = 0;
 
-        ASSERT( FlagOn (
-            m_FiltersArray[ position ].m_Flags,
-            FLT_POSITION_BISY
-            ) );
+        ULONG groupcount = m_GroupCount;
 
-        ASSERT( RtlCheckBit( &m_ActiveFilters, position ) );
+        RTL_BITMAP groupsmap;
+        ULONG groupsmapbuffer[ BitMapBufferSizeInUlong ];
+        
+        RtlInitializeBitMap( &groupsmap, groupsmapbuffer, NumberOfBits );
+        RtlClearAllBits( &groupsmap );
 
-        verdict = m_FiltersArray[ position ].m_Verdict;
-        *ParamsMask = m_FiltersArray[ position ].m_WishMask;
+        ULONG position = -1;
+
+        while ( groupcount )
+        {
+            groupcount--;
+
+            FilterEntry* pFilter = &m_FiltersArray[ position ];
+            
+            position = RtlFindClearBits( &filtersbitmap, 1, position + 1 );
+
+            ASSERT( FlagOn (
+                pFilter->m_Flags,
+                FLT_POSITION_BISY
+                ) );
+
+            ASSERT( RtlCheckBit( &m_ActiveFilters, position ) );
+
+            if ( RtlCheckBit( &groupsmap, pFilter->m_GroupId ) )
+            {
+                // already exist filter from this group
+                continue;
+            }
+
+            RtlSetBit( &groupsmap, pFilter->m_GroupId );
+
+            // integrated verdict and wish mask
+            verdict |= pFilter->m_Verdict;
+            *ParamsMask |= pFilter->m_WishMask;
+        }
 
         ASSERT( *ParamsMask );
     }
@@ -581,6 +609,7 @@ Filters::AddFilter (
         pEntry->m_RequestTimeout = RequestTimeout;
         pEntry->m_WishMask = WishMask;
         pEntry->m_FilterId = FiltersTree::GetNextFilterid();
+        pEntry->m_GroupId = GroupId;
 
         SetFlag (
             m_FiltersArray[ position ].m_Flags,
