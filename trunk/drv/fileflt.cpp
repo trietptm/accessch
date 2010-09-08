@@ -209,7 +209,7 @@ FileInterceptorContext::QueryParameter (
     __deref_out_opt PULONG DataSize
     )
 {
-    NTSTATUS status = STATUS_NOT_FOUND;
+    NTSTATUS status = STATUS_SUCCESS;
 
     ASSERT( ARGUMENT_PRESENT( Data ) );
     ASSERT( ARGUMENT_PRESENT( DataSize ) );
@@ -234,7 +234,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = m_FileNameInfo->Name.Buffer;
         *DataSize = m_FileNameInfo->Name.Length;
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -254,7 +253,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = m_FileNameInfo->Volume.Buffer;
         *DataSize = m_FileNameInfo->Volume.Length;
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -268,7 +266,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_RequestorProcessId;
         *DataSize = sizeof( m_RequestorProcessId );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -280,7 +277,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_RequestorThreadId;
         *DataSize = sizeof( m_RequestorThreadId );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -294,9 +290,9 @@ FileInterceptorContext::QueryParameter (
                 break;
             }
         }
-        *Data = &m_Luid;
+
+		*Data = &m_Luid;
         *DataSize = sizeof( m_Luid );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -313,7 +309,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = m_Sid;
         *DataSize = RtlLengthSid( m_Sid );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -331,7 +326,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_DesiredAccess;
         *DataSize = sizeof( m_DesiredAccess );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -349,7 +343,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_CreateOptions;
         *DataSize = sizeof( m_CreateOptions );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -366,7 +359,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_StreamFlagsTemp;
         *DataSize = sizeof( m_StreamFlagsTemp );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -385,7 +377,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_CreateMode;
         *DataSize = sizeof( m_CreateMode );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -398,7 +389,6 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_Data->IoStatus.Status;
         *DataSize = sizeof( m_Data->IoStatus.Status );
-        status = STATUS_SUCCESS;
 
         break;
 
@@ -411,13 +401,14 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_Data->IoStatus.Information;
         *DataSize = sizeof( m_Data->IoStatus.Information );
-        status = STATUS_SUCCESS;
 
         break;
 
     default:
         __debugbreak();
-        break;
+		status = STATUS_NOT_FOUND;
+
+		break;
     }
 
     return status;
