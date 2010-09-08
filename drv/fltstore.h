@@ -1,6 +1,7 @@
 #ifndef __fltstore_h
 #define __fltstore_h
 
+// used for filterid and groupid
 #define NumberOfBits 256
 #define BitMapBufferSizeInUlong (NumberOfBits / 32)
 
@@ -59,6 +60,7 @@ public:
     
     NTSTATUS
     AddFilter (
+        __in UCHAR GroupId,
         __in VERDICT Verdict,
         __in_opt ULONG RequestTimeout,
         __in PARAMS_MASK WishMask,
@@ -111,9 +113,14 @@ private:
     EX_RUNDOWN_REF      m_Ref;
     EX_PUSH_LOCK        m_AccessLock;
 
+    RTL_BITMAP          m_GroupsMap;
+    ULONG               m_GroupsMapBuffer[ BitMapBufferSizeInUlong ];
+    ULONG               m_GroupCount;
+
     RTL_BITMAP          m_ActiveFilters;
     ULONG               m_ActiveFiltersBuffer[ BitMapBufferSizeInUlong ];
     ULONG               m_FilterCount;
+    
     FilterEntry*        m_FiltersArray;
     LIST_ENTRY          m_ParamsCheckList;
 };

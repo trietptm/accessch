@@ -35,17 +35,17 @@ typedef struct _COMMUNICATIONS {
 #include <pshpack1.h>
 
 typedef struct _DRVDATA {
-    UCHAR			        m_Content[DRV_EVENT_CONTENT_SIZE];
+    UCHAR                    m_Content[DRV_EVENT_CONTENT_SIZE];
 } DRVDATA, *PDRVDATA;
 
 typedef struct _DRVEVENT_OVLP {
-    FILTER_MESSAGE_HEADER	m_Header;
-    DRVDATA			    	m_Data;
-    OVERLAPPED				m_Ovlp;
+    FILTER_MESSAGE_HEADER   m_Header;
+    DRVDATA                 m_Data;
+    OVERLAPPED              m_Ovlp;
 } DRVEVENT_OVLP, *PDRVEVENT_OVLP;
 
 typedef struct _REPLY_MESSAGE {
-    FILTER_REPLY_HEADER		m_ReplyHeader;
+    FILTER_REPLY_HEADER        m_ReplyHeader;
     REPLY_RESULT            m_Verdict;
 } REPLY_MESSAGE, *PREPLY_MESSAGE;
 
@@ -144,7 +144,7 @@ CustomRead (
     }
     __finally
     {
-    	
+        
     }
     
     return hResult;
@@ -795,7 +795,7 @@ __cdecl
 main (
     int Argc,
     __in_ecount( Argc ) char** Argv
-	)
+    )
 {
     UNREFERENCED_PARAMETER( Argc );
     UNREFERENCED_PARAMETER( Argv );
