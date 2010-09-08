@@ -30,6 +30,15 @@ Filters::Filters (
     FltInitializePushLock( &m_AccessLock );
     
     RtlInitializeBitMap (
+        &m_GroupsMap,
+        m_GroupsMapBuffer,
+        NumberOfBits
+        );
+
+    RtlClearAllBits( &m_GroupsMap );
+    m_GroupCount = 0;
+
+    RtlInitializeBitMap (
         &m_ActiveFilters,
         m_ActiveFiltersBuffer,
         NumberOfBits
@@ -70,8 +79,6 @@ Filters::~Filters (
     }
     
     FREE_POOL( m_FiltersArray );
-
-    m_FilterCount = 0;
 }
 
 NTSTATUS
@@ -531,6 +538,7 @@ Filters::GetFilterPosUnsafe (
 __checkReturn
 NTSTATUS
 Filters::AddFilter (
+    __in UCHAR GroupId,
     __in VERDICT Verdict,
     __in_opt ULONG RequestTimeout,
     __in PARAMS_MASK WishMask,
@@ -541,6 +549,7 @@ Filters::AddFilter (
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
+    ASSERT( GroupId );
     ASSERT( Verdict );
     ASSERT( WishMask );
 
@@ -579,6 +588,12 @@ Filters::AddFilter (
             );
 
         RtlSetBit( &m_ActiveFilters, position );
+
+        if ( !RtlCheckBit( &m_GroupsMap, GroupId ) )
+        {
+            RtlSetBit( &m_GroupsMap, GroupId );
+            m_GroupCount++;        
+        }
 
         m_FilterCount++;
         *FilterId = pEntry->m_FilterId;

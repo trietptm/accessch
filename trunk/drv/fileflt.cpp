@@ -291,7 +291,7 @@ FileInterceptorContext::QueryParameter (
             }
         }
 
-		*Data = &m_Luid;
+        *Data = &m_Luid;
         *DataSize = sizeof( m_Luid );
 
         break;
@@ -406,9 +406,9 @@ FileInterceptorContext::QueryParameter (
 
     default:
         __debugbreak();
-		status = STATUS_NOT_FOUND;
+        status = STATUS_NOT_FOUND;
 
-		break;
+        break;
     }
 
     return status;
