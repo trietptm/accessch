@@ -17,6 +17,7 @@ public:
         );
 
     __checkReturn
+	virtual
     NTSTATUS
     QueryParameter (
         __in_opt Parameters ParameterId,
@@ -25,6 +26,7 @@ public:
         );
 
     __checkReturn
+	virtual
     NTSTATUS
     ObjectRequest (
         __in NOTIFY_ID Command,
