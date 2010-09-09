@@ -359,6 +359,99 @@ Filters::GetVerdict (
     return verdict;
 }
 
+__checkReturn
+NTSTATUS
+Filters::TryToFindExisting (
+    __in PPARAM_ENTRY ParamEntry,
+    __in ULONG FilterPos,
+    __deref_out_opt ParamCheckEntry** Entry
+    )
+{
+    if ( IsListEmpty( &m_ParamsCheckList ) )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
+    NTSTATUS status = STATUS_NOT_FOUND;
+    __try
+    {
+        PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+        while ( Flink != &m_ParamsCheckList )
+        {
+            ParamCheckEntry* pEntry = CONTAINING_RECORD (
+                Flink,
+                ParamCheckEntry,
+                m_List
+                );
+
+            Flink = Flink->Flink;
+
+            if ( pEntry->m_Operation != ParamEntry->m_Operation )
+            {
+                continue;
+            }
+            
+            if ( pEntry->m_Flags != ParamEntry->m_Flags )
+            {
+                continue;
+            }
+            
+            if ( pEntry->m_Data.m_DataSize != ParamEntry->m_FltData.m_Size )
+            {
+                continue;
+            }
+
+            if ( pEntry->m_Data.m_DataSize != RtlCompareMemory (
+                    pEntry->m_Data.m_Data,
+                    ParamEntry->m_FltData.m_Data,
+                    pEntry->m_Data.m_DataSize
+                    )
+                )
+            {
+                continue;
+            }
+            // the same ParamEntry, attach to existing
+            __debugbreak();
+
+            PULONG pPostListTmp = pEntry->m_FilterPosList;
+            pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
+                PagedPool,
+                sizeof( PosListItemType ) * ( pEntry->m_PosCount + 1 ),
+                _ALLOC_TAG
+                );
+
+            if ( !pEntry->m_FilterPosList )
+            {
+                pEntry->m_FilterPosList = pPostListTmp;
+
+                status = STATUS_INSUFFICIENT_RESOURCES;
+                __leave;
+            }
+
+            RtlCopyMemory (
+                pEntry->m_FilterPosList,
+                pPostListTmp,
+                pEntry->m_PosCount * sizeof( PosListItemType )
+                );
+
+            pEntry->m_FilterPosList[ pEntry->m_PosCount ] = FilterPos;
+            pEntry->m_PosCount++;
+
+            ExFreePool( pPostListTmp );
+
+            *Entry = pEntry;
+             
+            status = STATUS_SUCCESS;
+            __leave;
+        }
+    }
+    __finally
+    {
+    }
+    
+    return status;
+}
+
 ParamCheckEntry*
 Filters::AddParameterWithFilterPos (
     __in PPARAM_ENTRY ParamEntry,
@@ -368,64 +461,15 @@ Filters::AddParameterWithFilterPos (
     ParamCheckEntry* pEntry = NULL;
 
     // find existing
-    if ( !IsListEmpty( &m_ParamsCheckList ) )
+    NTSTATUS status = TryToFindExisting( ParamEntry, FilterPos, &pEntry );
+    if ( NT_SUCCESS( status ) )
     {
-        PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
-        while ( Flink != &m_ParamsCheckList )
-        {
-            pEntry = CONTAINING_RECORD (
-                Flink,
-                ParamCheckEntry,
-                m_List
-                );
-
-            if (
-                pEntry->m_Operation == ParamEntry->m_Operation
-                &&
-                pEntry->m_Flags == ParamEntry->m_Flags
-                &&
-                pEntry->m_Data.m_DataSize == ParamEntry->m_FltData.m_Size
-                &&
-                pEntry->m_Data.m_DataSize == RtlCompareMemory (
-                    pEntry->m_Data.m_Data,
-                    ParamEntry->m_FltData.m_Data,
-                    pEntry->m_Data.m_DataSize
-                    )
-                )
-            {
-                // the same ParamEntry, attach to existing
-                __debugbreak();
-
-                PULONG pPostListTmp = pEntry->m_FilterPosList;
-                pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
-                    PagedPool,
-                    sizeof( PosListItemType ) * ( pEntry->m_PosCount + 1 ),
-                    _ALLOC_TAG
-                    );
-
-                if ( !pEntry->m_FilterPosList )
-                {
-                    pEntry->m_FilterPosList = pPostListTmp;
-
-                    return NULL;
-                }
-
-                RtlCopyMemory (
-                    pEntry->m_FilterPosList,
-                    pPostListTmp,
-                    pEntry->m_PosCount * sizeof( PosListItemType )
-                    );
-
-                pEntry->m_FilterPosList[ pEntry->m_PosCount ] = FilterPos;
-                pEntry->m_PosCount++;
-
-                ExFreePool( pPostListTmp );
-
-                return pEntry;
-            }
-
-            Flink = Flink->Flink;
-        }
+        return pEntry;
+    }
+    
+    if ( STATUS_NOT_FOUND != status )
+    {
+        return NULL;
     }
 
     // create new

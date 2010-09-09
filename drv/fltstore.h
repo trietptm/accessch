@@ -81,9 +81,17 @@ private:
         );
 
     __checkReturn
-        NTSTATUS
-        GetFilterPosUnsafe (
-        PULONG Position
+    NTSTATUS
+    GetFilterPosUnsafe (
+    PULONG Position
+        );
+
+    __checkReturn
+    NTSTATUS
+    TryToFindExisting (
+        __in PPARAM_ENTRY ParamEntry,
+        __in ULONG FilterPos,
+        __deref_out_opt ParamCheckEntry** Entry
         );
 
     ParamCheckEntry*
