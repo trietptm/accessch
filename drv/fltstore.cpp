@@ -242,18 +242,21 @@ Filters::CheckParamsList (
                 pEntry->m_FilterPosList[cou]
             );
 
-            if ( !isset )
+            if ( isset )
             {
-                RtlSetBit (
-                    Filtersbitmap,
-                    pEntry->m_FilterPosList[cou]
-                );
+                continue;
+            }
 
-                (*Unmatched)++;
-                if ( *Unmatched == m_FilterCount )
-                {
-                    return STATUS_NOT_FOUND;
-                }
+            RtlSetBit (
+                Filtersbitmap,
+                pEntry->m_FilterPosList[cou]
+            );
+
+            (*Unmatched)++;
+            if ( *Unmatched == m_FilterCount )
+            {
+                // break circle - no filter left
+                return STATUS_NOT_FOUND;
             }
         }
     }
@@ -376,6 +379,7 @@ Filters::TryToFindExisting (
     __try
     {
         PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+        
         while ( Flink != &m_ParamsCheckList )
         {
             ParamCheckEntry* pEntry = CONTAINING_RECORD (
@@ -386,22 +390,14 @@ Filters::TryToFindExisting (
 
             Flink = Flink->Flink;
 
-            if ( pEntry->m_Operation != ParamEntry->m_Operation )
-            {
-                continue;
-            }
-            
-            if ( pEntry->m_Flags != ParamEntry->m_Flags )
-            {
-                continue;
-            }
-            
-            if ( pEntry->m_Data.m_DataSize != ParamEntry->m_FltData.m_Size )
-            {
-                continue;
-            }
-
-            if ( pEntry->m_Data.m_DataSize != RtlCompareMemory (
+            if (
+                pEntry->m_Operation != ParamEntry->m_Operation
+                ||
+                pEntry->m_Flags != ParamEntry->m_Flags
+                ||
+                pEntry->m_Data.m_DataSize != ParamEntry->m_FltData.m_Size
+                ||
+                pEntry->m_Data.m_DataSize != RtlCompareMemory (
                     pEntry->m_Data.m_Data,
                     ParamEntry->m_FltData.m_Data,
                     pEntry->m_Data.m_DataSize
@@ -410,6 +406,7 @@ Filters::TryToFindExisting (
             {
                 continue;
             }
+            
             // the same ParamEntry, attach to existing
             __debugbreak();
 
@@ -442,7 +439,7 @@ Filters::TryToFindExisting (
             *Entry = pEntry;
              
             status = STATUS_SUCCESS;
-            __leave;
+            break;
         }
     }
     __finally
@@ -469,6 +466,7 @@ Filters::AddParameterWithFilterPos (
     
     if ( STATUS_NOT_FOUND != status )
     {
+        // other error - couldnt attach to existing
         return NULL;
     }
 
