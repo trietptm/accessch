@@ -1,6 +1,8 @@
 #ifndef __accesscheck_h
 #define __accesscheck_h
 
+//! \todo проверяет если записать, закрыть, открыть на получение атрибутов, !закрыть!
+
 #define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define ACCESSCH_MAX_CONNECTIONS    1
 
