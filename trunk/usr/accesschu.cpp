@@ -191,6 +191,7 @@ CreateFilter_PostCreate (
     pFilter->m_Interceptor = FILE_MINIFILTER;
     pFilter->m_OperationId = OP_FILE_CREATE;
     pFilter->m_OperationType = PostProcessing;
+    pFilter->m_GroupId = 1;
     pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
     pFilter->m_ParamsCount = 3;
@@ -302,6 +303,7 @@ CreateFilter_PreCleanup (
     pFilter->m_Interceptor = FILE_MINIFILTER;
     pFilter->m_OperationId = OP_FILE_CLEANUP;
     pFilter->m_OperationType = PreProcessing;
+    pFilter->m_GroupId = 1;
     pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
     pFilter->m_ParamsCount = 2;

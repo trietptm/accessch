@@ -118,7 +118,7 @@ Filters::CheckSingleEntryUnsafe (
     {
         ASSERT( FALSE );
 
-        return VERDICT_NOT_FILTERED;
+        return status;
     }
     
     status = STATUS_UNSUCCESSFUL;
@@ -229,7 +229,7 @@ Filters::CheckParamsList (
             Event
             );
 
-        if ( !NT_SUCCESS( status ) )
+        if ( NT_SUCCESS( status ) )
         {
             continue;
         }
@@ -327,10 +327,10 @@ Filters::GetVerdict (
         {
             groupcount--;
 
-            FilterEntry* pFilter = &m_FiltersArray[ position ];
-            
             position = RtlFindClearBits( &filtersbitmap, 1, position + 1 );
 
+            FilterEntry* pFilter = &m_FiltersArray[ position ];
+            
             ASSERT( FlagOn (
                 pFilter->m_Flags,
                 FLT_POSITION_BISY
