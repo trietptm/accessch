@@ -18,6 +18,7 @@ FileInterceptorContext::FileInterceptorContext (
     m_Data( Data ),
     m_FltObjects( FltObjects )
 {
+    m_VolumeContext = 0;
     m_StreamContext = NULL;
     m_StreamFlagsTemp = 0;
     m_CacheSyncronizer = 0;
@@ -58,6 +59,30 @@ FileInterceptorContext::~FileInterceptorContext (
     ReleaseFileNameInfo( &m_FileNameInfo );
     SecurityFreeSid( &m_Sid );
 };
+
+__checkReturn
+NTSTATUS
+FileInterceptorContext::CheckAccessToVolumeContext (
+    )
+{
+    if ( m_VolumeContext )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    NTSTATUS status = FltGetVolumeContext (
+        Globals.m_Filter,
+        m_FltObjects->Volume, 
+        (PFLT_CONTEXT*) &m_VolumeContext
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        m_VolumeContext = 0;
+    }
+
+    return status;
+}
 
 __checkReturn
 NTSTATUS
@@ -401,6 +426,25 @@ FileInterceptorContext::QueryParameter (
 
         *Data = &m_Data->IoStatus.Information;
         *DataSize = sizeof( m_Data->IoStatus.Information );
+
+        break;
+
+    case PARAMETER_DEVICE_ID:
+        status = CheckAccessToVolumeContext();
+        if ( !NT_SUCCESS( status ) )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            break;
+        }
+
+        if ( !m_VolumeContext->m_DeviceId.Buffer )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            break;
+        }
+
+        *Data = m_VolumeContext->m_DeviceId.Buffer;
+        *DataSize = m_VolumeContext->m_DeviceId.Length;
 
         break;
 

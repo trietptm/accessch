@@ -116,9 +116,14 @@ Filters::CheckSingleEntryUnsafe (
 
     if ( !NT_SUCCESS( status ) )
     {
-        ASSERT( FALSE );
+        if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_BE_PRESENT ) )
+        {
+            __debugbreak();
 
-        return status;
+            return status;
+        }
+        
+        return STATUS_SUCCESS;
     }
     
     status = STATUS_UNSUCCESSFUL;
@@ -552,7 +557,7 @@ Filters::ParseParamsUnsafe (
 
         params = (PARAM_ENTRY*) Add2Ptr (
             params,
-            sizeof( PARAM_ENTRY ) + params->m_FltData.m_Size
+            _sizeof_param_entry + params->m_FltData.m_Size
             );
     }
     

@@ -1,4 +1,5 @@
 #ifndef __volhlp_h
+#define __volhlp_h
 
 #include "pch.h"
 
