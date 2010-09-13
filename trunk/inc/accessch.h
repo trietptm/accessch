@@ -147,15 +147,20 @@ typedef struct _FILTER_PARAMETER
     UCHAR               m_Data[1];
 } FILTER_PARAMETER, *PFILTER_PARAMETER;
 
-#define _PARAM_ENTRY_FLAG_NEGATION  0x0001
+#define ParamEntryFlags ULONG
+#define _PARAM_ENTRY_FLAG_NONE          0x0000
+#define _PARAM_ENTRY_FLAG_NEGATION      0x0001
+#define _PARAM_ENTRY_FLAG_BE_PRESENT    0x0002
 
 typedef struct _PARAM_ENTRY
 {
     Parameters          m_Id;
     FltOperation        m_Operation;
-    ULONG               m_Flags;
+    ParamEntryFlags     m_Flags;        // _PARAM_ENTRY_FLAG_???
     FILTER_PARAMETER    m_FltData;
 }PARAM_ENTRY, *PPARAM_ENTRY;
+
+#define _sizeof_param_entry ( sizeof( PARAM_ENTRY ) - sizeof( UCHAR ) )
 
 typedef struct _FILTER
 {

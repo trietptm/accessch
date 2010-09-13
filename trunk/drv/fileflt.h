@@ -1,6 +1,8 @@
 #ifndef __fileflt_h
 #define __fileflt_h
 
+#include "volhlp.h"
+
 class FileInterceptorContext : public EventData
 {
 public:
@@ -40,6 +42,11 @@ public:
 private:
     __checkReturn
     NTSTATUS
+    CheckAccessToVolumeContext (
+        );
+
+    __checkReturn
+    NTSTATUS
     CheckAccessToStreamContext (
         );
 
@@ -54,6 +61,7 @@ private:
     // intercepted data
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
+    PVOLUME_CONTEXT             m_VolumeContext;
 
     // service field
     PSTREAM_CONTEXT             m_StreamContext;

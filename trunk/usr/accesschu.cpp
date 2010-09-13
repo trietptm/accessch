@@ -214,7 +214,7 @@ CreateFilter_PostCreate (
     // second param
     pEntry = (PPARAM_ENTRY) Add2Ptr( 
         pEntry,
-        sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+        _sizeof_param_entry + pEntry->m_FltData.m_Size
         );
     pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
     pEntry->m_Operation = _fltop_and;
@@ -252,7 +252,7 @@ CreateFilter_PostCreate (
     // third
     pEntry = (PPARAM_ENTRY) Add2Ptr( 
         pEntry,
-        sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+        _sizeof_param_entry + pEntry->m_FltData.m_Size
         );
     pEntry->m_Id = PARAMETER_RESULT_INFORMATION;
     pEntry->m_Operation = _fltop_equ;
@@ -325,7 +325,7 @@ CreateFilter_PreCleanup (
     // second param
     pEntry = (PPARAM_ENTRY) Add2Ptr( 
         pEntry,
-        sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+        _sizeof_param_entry + pEntry->m_FltData.m_Size
         );
     pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
     pEntry->m_Operation = _fltop_and;
