@@ -54,6 +54,7 @@ FileInterceptorContext::~FileInterceptorContext (
         ObDereferenceObject( m_SectionObject );
     }
 
+    ReleaseContext( (PFLT_CONTEXT*) &m_VolumeContext );
     ReleaseContext( (PFLT_CONTEXT*) &m_InstanceContext );
     ReleaseContext( (PFLT_CONTEXT*) &m_StreamContext );
     ReleaseFileNameInfo( &m_FileNameInfo );

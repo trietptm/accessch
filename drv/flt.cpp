@@ -79,7 +79,8 @@ __checkReturn
 NTSTATUS
 FilterProceedChain (
     __in PFILTERS_CHAIN Chain,
-    __in ULONG ChainSize
+    __in ULONG ChainSize,
+    __out PULONG FilterId
     )
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -115,6 +116,11 @@ FilterProceedChain (
                             pEntry->m_Filter->m_Params,
                             &id
                             );
+
+                        if ( FilterId )
+                        {
+                            *FilterId = id;
+                        }
 
                         pFilters->Release();
 
