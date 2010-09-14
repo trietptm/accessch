@@ -141,7 +141,8 @@ __checkReturn
 NTSTATUS
 FilterProceedChain (
     __in PFILTERS_CHAIN Chain,
-    __in ULONG ChainSize
+    __in ULONG ChainSize,
+    __out PULONG FilterId
     );
 
 __checkReturn

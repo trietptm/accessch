@@ -252,6 +252,7 @@ PortMessageNotify (
                 if ( NT_SUCCESS( status ) )
                 {
                     *(PNC_IOPREPARE) OutputBuffer = prepare;
+                    *ReturnOutputBufferLength = sizeof( NC_IOPREPARE );
                 }
             }
             break;
@@ -264,10 +265,23 @@ PortMessageNotify (
                     m_Data
                     );
 
-                status = FilterProceedChain( pChain, size );
-                if ( NT_SUCCESS( status ) )
+                if ( pChain->m_Count != 1 )
                 {
                     /// \todo prepare output data;
+                    status = STATUS_NOT_SUPPORTED;
+                    __debugbreak();
+                    break;
+                }
+
+                ULONG FilterId;
+                status = FilterProceedChain( pChain, size, &FilterId );
+                if ( NT_SUCCESS( status ) )
+                {
+                    if ( OutputBuffer && OutputBufferSize == sizeof( ULONG ) )
+                    {
+                        *(PULONG) OutputBuffer = FilterId;
+                        *ReturnOutputBufferLength = sizeof( ULONG );
+                    }
                 }
             }
             break;
