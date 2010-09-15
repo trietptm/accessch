@@ -83,9 +83,19 @@ typedef struct _REPLY_RESULT
 
 typedef struct _EVENT_PARAMETER
 {
-    Parameters          m_Id;
-    ULONG               m_Size;
-    UCHAR               m_Data[1];
+    union
+    {
+        struct {
+            Parameters          m_Id;
+            ULONG               m_Size;
+            UCHAR               m_Data[1];
+        } Value;
+
+        struct {
+            ULONG       m_FilterId;
+            VERDICT     m_Verdict;
+        } Aggregator;
+    };
 } EVENT_PARAMETER, *PEVENT_PARAMETER;
 
 typedef struct _MESSAGE_DATA
@@ -95,6 +105,7 @@ typedef struct _MESSAGE_DATA
     DriverOperationId   m_OperationId;
     ULONG               m_FuncionMi;
     OperationPoint      m_OperationType;
+    ULONG               m_AggregationInfoCount;
     ULONG               m_ParametersCount;
     EVENT_PARAMETER     m_Parameters[1];
 } MESSAGE_DATA, *PMESSAGE_DATA;

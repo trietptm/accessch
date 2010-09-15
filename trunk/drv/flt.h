@@ -1,9 +1,120 @@
 #ifndef __flt_h
 #define __flt_h
 
+typedef struct _AggregationItem
+{
+    ULONG       m_FilterId;
+    VERDICT     m_Verdict;
+} AggregationItem, *PAggregationItem;
+
+class Aggregation
+{
+public:
+    Aggregation (
+        )
+    {
+        m_Count = 0;
+        m_Items = NULL;
+    }
+    
+    ~Aggregation (
+        )
+    {
+        if ( m_Items )
+        {
+            FREE_POOL( m_Items );
+        }
+    }
+
+    ULONG
+    GetCount (
+        )
+    {
+        return m_Count;
+    }
+
+    ULONG
+    GetFilterId (
+        __in_opt ULONG Position
+        )
+    {
+        ASSERT( Position < m_Count );
+
+        return m_Items[ Position ].m_FilterId;
+    }
+
+    VERDICT
+    GetVerdict (
+        __in_opt ULONG Position
+        )
+    {
+        ASSERT( Position < m_Count );
+        
+        return m_Items[ Position ].m_Verdict;
+    }
+
+    __checkReturn
+    NTSTATUS
+    Allocate (
+        __in ULONG ItemsCount
+        )
+    {
+        ASSERT( ItemsCount );
+        
+        if ( !ItemsCount )
+        {
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        ULONG size = sizeof( AggregationItem ) * ItemsCount;
+        m_Items = (PAggregationItem) ExAllocatePoolWithTag (
+            PagedPool,
+            size,
+            _ALLOC_TAG
+            );
+
+        if ( !m_Items )
+        {
+            return STATUS_INSUFF_SERVER_RESOURCES;
+        }
+
+        RtlZeroMemory( m_Items, size );
+        m_Count = ItemsCount;
+
+        return STATUS_SUCCESS;
+    }
+
+    __checkReturn
+    NTSTATUS
+    PlaceValue (
+        __in ULONG Position,
+        __in ULONG FilterId,
+        __in_opt VERDICT Verdict
+        )
+    {
+        ASSERT( Position < m_Count );
+
+        if ( Position >= m_Count )
+        {
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        m_Items[ Position].m_FilterId = FilterId;
+        m_Items[ Position].m_Verdict = Verdict;
+        
+        return STATUS_SUCCESS;
+    }
+
+private:
+    ULONG               m_Count;
+    PAggregationItem    m_Items;
+};
+
 class EventData
 {
 public:
+    Aggregation m_Aggregator;
+
     EventData (
         __in Interceptors InterceptorId,
         __in DriverOperationId Major,

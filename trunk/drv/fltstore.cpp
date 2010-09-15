@@ -277,6 +277,8 @@ Filters::GetVerdict (
 {
     VERDICT verdict = VERDICT_NOT_FILTERED;
 
+    NTSTATUS status;
+
     RTL_BITMAP filtersbitmap;
     ULONG mapbuffer[ BitMapBufferSizeInUlong ];
 
@@ -309,7 +311,7 @@ Filters::GetVerdict (
             }
         }
 
-        NTSTATUS status = CheckParamsList( Event, &unmatched, &filtersbitmap );
+        status = CheckParamsList( Event, &unmatched, &filtersbitmap );
         if ( !NT_SUCCESS( status ) )
         {
             __leave;
@@ -327,6 +329,12 @@ Filters::GetVerdict (
         RtlClearAllBits( &groupsmap );
 
         ULONG position = -1;
+
+        status = Event->m_Aggregator.Allocate( groupcount );
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
 
         while ( groupcount )
         {
@@ -347,6 +355,19 @@ Filters::GetVerdict (
             {
                 // already exist filter from this group
                 continue;
+            }
+
+            status = Event->m_Aggregator.PlaceValue (
+                groupcount,
+                pFilter->m_FilterId,
+                pFilter->m_Verdict
+                );
+            
+            if ( !NT_SUCCESS( status ) )
+            {
+                // override existing verdict
+                verdict = VERDICT_NOT_FILTERED;
+                __leave;
             }
 
             RtlSetBit( &groupsmap, pFilter->m_GroupId );
@@ -439,7 +460,7 @@ Filters::TryToFindExisting (
             pEntry->m_FilterPosList[ pEntry->m_PosCount ] = FilterPos;
             pEntry->m_PosCount++;
 
-            ExFreePool( pPostListTmp );
+            FREE_POOL( pPostListTmp );
 
             *Entry = pEntry;
              
