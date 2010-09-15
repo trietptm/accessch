@@ -827,6 +827,7 @@ FiltersTree::DeleteAllFilters (
     } while ( pItem );
 
     m_Count = 0;
+    m_FilterIdCounter = 0;
 
     FltReleasePushLock( &m_AccessLock );
 }
