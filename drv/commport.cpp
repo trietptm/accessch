@@ -359,6 +359,7 @@ PortAllocateMessage (
     PMESSAGE_DATA pMsg;
     ULONG messageSize = FIELD_OFFSET( MESSAGE_DATA, m_Parameters );
 
+    // calculate parameters size
     PVOID data;
     ULONG datasize;
     ULONG params2user = 0;
@@ -379,13 +380,22 @@ PortAllocateMessage (
             }
 
             params2user++;
-            messageSize += FIELD_OFFSET( EVENT_PARAMETER, m_Data ) + datasize;
+            messageSize += FIELD_OFFSET (
+                EVENT_PARAMETER, Value.m_Data
+                ) + datasize;
         }
     }
+
+    // calculate aggregation info size
+
+    messageSize += Event->m_Aggregator.GetCount() * sizeof( EVENT_PARAMETER );
+
+    // end calculating
 
     if ( DRV_EVENT_CONTENT_SIZE < messageSize )
     {
         ASSERT( !MessageSize );
+     
         return STATUS_NOT_SUPPORTED;
     }
 
@@ -409,6 +419,7 @@ PortAllocateMessage (
 
     pMsg->m_ParametersCount = params2user;
     
+    // place data
     PEVENT_PARAMETER parameter = pMsg->m_Parameters;
     for ( ULONG cou = 0; cou < _PARAMS_COUNT; cou++ )
     {
@@ -421,15 +432,29 @@ PortAllocateMessage (
                 );
 
             ASSERT( NT_SUCCESS ( status ) );
-            parameter->m_Id = (Parameters) cou;
-            parameter->m_Size = datasize;
-            RtlCopyMemory( parameter->m_Data, data, datasize );
+            parameter->Value.m_Id = (Parameters) cou;
+            parameter->Value.m_Size = datasize;
+            RtlCopyMemory( parameter->Value.m_Data, data, datasize );
 
             parameter = (PEVENT_PARAMETER) Add2Ptr (
                 parameter,
-                FIELD_OFFSET( EVENT_PARAMETER, m_Data ) + datasize
+                FIELD_OFFSET( EVENT_PARAMETER, Value.m_Data ) + datasize
                 );
         }
+    }
+
+    // place aggregation info
+    pMsg->m_AggregationInfoCount = Event->m_Aggregator.GetCount();
+
+    for ( ULONG cou = 0; cou < pMsg->m_AggregationInfoCount; cou++ )
+    {
+        parameter->Aggregator.m_FilterId = Event->m_Aggregator.GetFilterId( cou );
+        parameter->Aggregator.m_Verdict = Event->m_Aggregator.GetVerdict( cou );
+
+        parameter = (PEVENT_PARAMETER) Add2Ptr (
+            parameter,
+            sizeof( EVENT_PARAMETER)
+            );
     }
 
     *Message = pMsg;

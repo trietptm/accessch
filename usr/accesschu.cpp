@@ -624,14 +624,15 @@ GetEventParam (
         PEVENT_PARAMETER pParam = &Data->m_Parameters[0];
         for ( ULONG cou = 0; cou < Data->m_ParametersCount; cou++ )
         {
-            if ( ParameterId == pParam->m_Id )
+            if ( ParameterId == pParam->Value.m_Id )
             {
                 return pParam;
             }
 
             pParam = (PEVENT_PARAMETER) Add2Ptr (
                 pParam,
-                FIELD_OFFSET( EVENT_PARAMETER, m_Data ) + pParam->m_Size
+                FIELD_OFFSET( EVENT_PARAMETER, Value.m_Data )
+                + pParam->Value.m_Size
                 );
         }
     }
@@ -642,6 +643,54 @@ GetEventParam (
 
     return NULL;
 }
+
+void
+PrintAggregationInfo (
+    __in PMESSAGE_DATA Data
+    )
+{
+    assert( Data );
+
+    __try
+    {
+        PEVENT_PARAMETER pParam = &Data->m_Parameters[0];
+        for ( ULONG cou = 0; cou < Data->m_ParametersCount; cou++ )
+        {
+            pParam = (PEVENT_PARAMETER) Add2Ptr (
+                pParam,
+                FIELD_OFFSET( EVENT_PARAMETER, Value.m_Data )
+                + pParam->Value.m_Size
+                );
+        }
+
+        for ( ULONG cou = 0; cou < Data->m_AggregationInfoCount; cou++ )
+        {
+            //
+            /* WCHAR wchOut[0x100];
+
+            StringCbPrintf (
+            wchOut,
+            sizeof( wchOut ),
+            L"Filter %d -> Verdict 0x%x\n",
+            pParam->Aggregator.m_FilterId,
+            pParam->Aggregator.m_Verdict
+            );
+
+            OutputDebugString( wchOut );*/
+
+            //
+            pParam = (PEVENT_PARAMETER) Add2Ptr (
+                pParam,
+                sizeof( EVENT_PARAMETER )
+                );
+        }
+    }
+    __except( EXCEPTION_EXECUTE_HANDLER )
+    {
+        __debugbreak();
+    }
+}
+
 DWORD
 WINAPI
 WaiterThread (
@@ -672,6 +721,8 @@ WaiterThread (
         PMESSAGE_DATA pData = (PMESSAGE_DATA) pEvent->m_Data.m_Content;
         PEVENT_PARAMETER pParam = GetEventParam( pData, PARAMETER_FILE_NAME );
 
+        PrintAggregationInfo( pData );
+
         if ( pParam )
         {
             /*StringCbPrintf (
@@ -692,7 +743,7 @@ WaiterThread (
         ULONG sflags = 0;
         if ( pParamSFlags )
         {
-            sflags = *(PULONG) pParamSFlags->m_Data;
+            sflags = *(PULONG) pParamSFlags->Value.m_Data;
         }
         
         if ( OP_FILE_CREATE == pData->m_OperationId )
@@ -702,7 +753,7 @@ WaiterThread (
             
             if ( pParamDesiredAccess )
             {
-                ULONG desired_access = *(PULONG) pParamDesiredAccess->m_Data;
+                ULONG desired_access = *(PULONG) pParamDesiredAccess->Value.m_Data;
                 assert( desired_access | FILE_READ_DATA );
                 if ( desired_access )
                 {
@@ -717,8 +768,8 @@ WaiterThread (
 
             if ( pParamInformation && pParamCreateMode )
             {
-                ULONG Mode = *(PULONG) pParamCreateMode->m_Data;
-                ULONG Information = *(PULONG) pParamInformation->m_Data;
+                ULONG Mode = *(PULONG) pParamCreateMode->Value.m_Data;
+                ULONG Information = *(PULONG) pParamInformation->Value.m_Data;
 
                 if ( FILE_OPENED == Information )
                 {
@@ -757,8 +808,8 @@ WaiterThread (
                 pData->m_OperationId == OP_FILE_CREATE ?
                 L"create(post)" : L"cleanup(pre)",
                 pData->m_OperationId,
-                pParam->m_Size / sizeof( WCHAR ),
-                pParam->m_Data,
+                pParam->Value.m_Size / sizeof( WCHAR ),
+                pParam->Value.m_Data,
                 sflags
                 );
             
