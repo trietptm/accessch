@@ -220,7 +220,6 @@ Filters::CheckParamsList (
     PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
     while ( Flink != &m_ParamsCheckList )
     {
-        /// \todo dont check entry with inactive filters only
         ParamCheckEntry* pEntry = CONTAINING_RECORD (
             Flink,
             ParamCheckEntry,
@@ -229,10 +228,25 @@ Filters::CheckParamsList (
 
         Flink = Flink->Flink;
 
-        NTSTATUS status = CheckSingleEntryUnsafe (
-            pEntry,
-            Event
-            );
+        // check necessary check param
+        BOOLEAN bExistActiveFilter = FALSE;
+        for ( ULONG cou = 0; cou < pEntry->m_PosCount; cou++ )
+        {
+            if ( !RtlCheckBit ( Filtersbitmap, pEntry->m_FilterPosList[cou] ) )
+            {
+                bExistActiveFilter = TRUE;
+                break;
+            }
+        }
+
+        if ( !bExistActiveFilter )
+        {
+            __debugbreak();
+            continue;
+        }
+
+        // check data
+        NTSTATUS status = CheckSingleEntryUnsafe( pEntry, Event );
 
         if ( NT_SUCCESS( status ) )
         {
@@ -242,20 +256,12 @@ Filters::CheckParamsList (
         // set unmatched filters bit
         for ( ULONG cou = 0; cou < pEntry->m_PosCount; cou++ )
         {
-            ULONG isset = RtlCheckBit (
-                Filtersbitmap,
-                pEntry->m_FilterPosList[cou]
-            );
-
-            if ( isset )
+            if ( RtlCheckBit( Filtersbitmap, pEntry->m_FilterPosList[cou] ) )
             {
                 continue;
             }
 
-            RtlSetBit (
-                Filtersbitmap,
-                pEntry->m_FilterPosList[cou]
-            );
+            RtlSetBit( Filtersbitmap, pEntry->m_FilterPosList[cou] );
 
             (*Unmatched)++;
             if ( *Unmatched == m_FilterCount )
