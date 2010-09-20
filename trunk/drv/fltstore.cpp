@@ -207,6 +207,7 @@ Filters::CheckParamsList (
     __in PRTL_BITMAP Filtersbitmap
     )
 {
+    // must - at least one filter is active
     ASSERT( Event );
     ASSERT( Unmatched );
     ASSERT( Filtersbitmap );
@@ -241,7 +242,8 @@ Filters::CheckParamsList (
 
         if ( !bExistActiveFilter )
         {
-            __debugbreak();
+            // this parameter used in already unmatcher filters
+            __debugbreak(); /// \todo check - nct
             continue;
         }
 
