@@ -544,6 +544,12 @@ PostCreate (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
+    if ( BooleanFlagOn( FltObjects->FileObject->Flags, FO_VOLUME_OPEN ) )
+    {
+        /// \todo access to volume - generate access
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
     PFLT_PARAMETERS fltParams = &Data->Iopb->Parameters;
 
     PSTREAM_CONTEXT pStreamContext = NULL;

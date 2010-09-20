@@ -67,8 +67,10 @@ typedef HRESULT (__cdecl * pfn_io_getsize) (
 
 typedef HRESULT (__cdecl * pfn_InitEngineProvider) (
     PHANDLE Session,
+    PWCHAR BasePath,
     pfn_io_read IORead,
-    pfn_io_getsize IOGetSize
+    pfn_io_getsize IOGetSize,
+    PULONG RecordCount
     );
 
 typedef HRESULT (__cdecl * pfn_DoneEngineProvider ) (
@@ -104,12 +106,6 @@ CustomRead (
     PULONG Read
     )
 {
-    UNREFERENCED_PARAMETER( Context );
-    UNREFERENCED_PARAMETER( Offset );
-    UNREFERENCED_PARAMETER( Buffer );
-    UNREFERENCED_PARAMETER( Size );
-    UNREFERENCED_PARAMETER( Read );
-
     PIOScanContext pScanContext = (PIOScanContext) Context;
     
     HRESULT hResult = E_FAIL;
@@ -912,20 +908,33 @@ main (
             
             if ( InitEngineProvider && DoneEngineProvider && ScanIO )
             {
-                printf( "Engine loading...\n", GetLastError() );
-                hResult = InitEngineProvider (
-                    &gEngine,
-                    CustomRead,
-                    CustomGetSize
-                    );
+                ULONG recordcount = 0;
+                WCHAR currentpath[0x1000];
                 
-                if ( SUCCEEDED( hResult ) )
+                DWORD pathLength = GetCurrentDirectory (
+                    sizeof( currentpath ),
+                    currentpath
+                    );
+
+                if ( pathLength )
                 {
-                    printf( "Engine loaded\n" );
-                }
-                else
-                {
-                    gEngine = NULL;
+                    printf( "Engine loading from %S\n", currentpath );
+                    hResult = InitEngineProvider (
+                        &gEngine,
+                        currentpath,
+                        CustomRead,
+                        CustomGetSize,
+                        &recordcount
+                        );
+                
+                    if ( SUCCEEDED( hResult ) )
+                    {
+                        printf( "Engine loaded. record count %d\n", recordcount );
+                    }
+                    else
+                    {
+                        gEngine = NULL;
+                    }
                 }
             }
         }
