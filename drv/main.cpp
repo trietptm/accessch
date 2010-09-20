@@ -539,14 +539,10 @@ PostCreate (
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
     NTSTATUS status;
 
+    /// \todo access to volume - generate access
+
     if ( IsSkipPostCreate( Data, FltObjects, Flags ) )
     {
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    if ( BooleanFlagOn( FltObjects->FileObject->Flags, FO_VOLUME_OPEN ) )
-    {
-        /// \todo access to volume - generate access
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
