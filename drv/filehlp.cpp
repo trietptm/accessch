@@ -83,12 +83,22 @@ __checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
+    __in_opt BOOLEAN Opened,
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
     PFLT_FILE_NAME_INFORMATION* FileNameInfo
     )
 {
-    ULONG QueryNameFlags = FLT_FILE_NAME_NORMALIZED
-        | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
+    ULONG QueryNameFlags = 0;
+    if ( Opened )
+    {
+       QueryNameFlags = FLT_FILE_NAME_OPENED 
+           | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
+    }
+    else
+    {
+        QueryNameFlags = FLT_FILE_NAME_NORMALIZED 
+            | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
+    }
 
     NTSTATUS status = FltGetFileNameInformation (
         Data,

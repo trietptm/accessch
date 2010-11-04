@@ -17,6 +17,7 @@ __checkReturn
 NTSTATUS
 QueryFileNameInfo (
     __in PFLT_CALLBACK_DATA Data,
+    __in_opt BOOLEAN Opened,
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
     PFLT_FILE_NAME_INFORMATION* FileNameInfo
     );

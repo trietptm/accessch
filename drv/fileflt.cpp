@@ -36,6 +36,19 @@ FileInterceptorContext::FileInterceptorContext (
     m_DesiredAccess = 0;
     m_CreateOptions = 0;
     m_CreateMode = 0;
+
+    if (
+        IRP_MJ_CREATE == m_Data->Iopb->MajorFunction
+        &&
+        PreProcessing == m_OperationType
+        )
+    {
+        m_PreCreate = TRUE;
+    }
+    else
+    {
+        m_PreCreate = FALSE;
+    }
 };
 
 FileInterceptorContext::~FileInterceptorContext (
@@ -93,6 +106,11 @@ FileInterceptorContext::CheckAccessToStreamContext (
     if ( m_StreamContext )
     {
         return STATUS_SUCCESS;
+    }
+
+    if ( m_PreCreate )
+    {
+        return STATUS_NOT_SUPPORTED;
     }
 
     NTSTATUS status = GenerateStreamContext (
@@ -249,6 +267,7 @@ FileInterceptorContext::QueryParameter (
         {
             status = QueryFileNameInfo (
                 m_Data,
+                m_PreCreate,
                 &m_FileNameInfo
                 );
 
@@ -268,6 +287,7 @@ FileInterceptorContext::QueryParameter (
         {
             status = QueryFileNameInfo (
                 m_Data,
+                m_PreCreate,
                 &m_FileNameInfo
                 );
 

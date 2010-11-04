@@ -84,6 +84,8 @@ private:
     ACCESS_MASK                 m_DesiredAccess;
     ULONG                       m_CreateOptions;
     ULONG                       m_CreateMode;
+
+    BOOLEAN                     m_PreCreate;
 };
 
 #endif // __fileflt_h

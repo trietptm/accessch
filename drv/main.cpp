@@ -54,6 +54,14 @@ InstanceSetup (
     __in FLT_FILESYSTEM_TYPE VolumeFilesystemType
     );
 
+FLT_PREOP_CALLBACK_STATUS
+FLTAPI
+PreCreate (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __out PVOID *CompletionContext
+    );
+
 FLT_POSTOP_CALLBACK_STATUS
 FLTAPI
 PostCreate (
@@ -105,7 +113,7 @@ const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
 #define _NO_PAGING  FLTFL_OPERATION_REGISTRATION_SKIP_PAGING_IO
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
-    { IRP_MJ_CREATE,            0,          NULL,           PostCreate },
+    { IRP_MJ_CREATE,            0,          PreCreate,      PostCreate },
     { IRP_MJ_CLEANUP,           0,          PreCleanup,     NULL },
     { IRP_MJ_WRITE,             _NO_PAGING, NULL,           PostWrite },
     { IRP_MJ_OPERATION_END}
@@ -489,6 +497,79 @@ InstanceSetup (
     return STATUS_SUCCESS;
 }
 
+FLT_PREOP_CALLBACK_STATUS
+FLTAPI
+PreCreate (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __out PVOID *CompletionContext
+    )
+{
+    FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
+
+    // check access by user filename
+    __try
+    {
+        if (FlagOn( Data->Iopb->OperationFlags, SL_OPEN_PAGING_FILE ) )
+        {
+            __leave;
+        }
+
+        if ( IsPassThrough( FltObjects, 0 ) )
+        {
+            __leave;
+        }
+
+        /// \todo skip checks to volume
+
+        if ( !FilterIsExistAny() )
+        {
+            __leave;
+        }
+
+        *CompletionContext = 0;
+        fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
+
+        VERDICT Verdict = VERDICT_NOT_FILTERED;
+        FileInterceptorContext event (
+            Data,
+            FltObjects,
+            FILE_MINIFILTER,
+            OP_FILE_CREATE,
+            0,
+            PreProcessing
+            );
+
+        PARAMS_MASK params2user;
+        NTSTATUS status = FilterEvent( &event, &Verdict, &params2user );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            if ( FlagOn( Verdict, VERDICT_ASK ) )
+            {
+                status = PortAskUser( &event, params2user, &Verdict );
+                if ( NT_SUCCESS( status ) )
+                {
+                    // nothing todo
+                }
+            }
+
+            if ( FlagOn( Verdict, VERDICT_DENY ) )
+            {
+                Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+                Data->IoStatus.Information = 0;
+
+                fltStatus = FLT_PREOP_COMPLETE;
+            }
+        }
+    }
+    __finally
+    {
+    }
+
+    return fltStatus;
+}
+
 __checkReturn
 BOOLEAN
 IsSkipPostCreate (
@@ -539,7 +620,7 @@ PostCreate (
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
     NTSTATUS status;
 
-    /// \todo access to volume - generate access
+    /// \todo access to volume - generate access event
 
     if ( IsSkipPostCreate( Data, FltObjects, Flags ) )
     {
@@ -596,6 +677,7 @@ PostCreate (
                status = PortAskUser( &event, params2user, &Verdict );
                 if ( NT_SUCCESS( status ) )
                 {
+                    // nothing todo
                 }
             }
 
