@@ -352,40 +352,47 @@ GenerateStreamHandleContext (
 
         return status;
     }
+    
+    PSTREAM_CONTEXT pStreamContext = NULL;
+    PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
+    
+    status = GenerateStreamContext( Filter, FltObjects, &pStreamContext );
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
 
     status = FltAllocateContext (
         Filter,
         FLT_STREAMHANDLE_CONTEXT,
         sizeof( STREAMHANDLE_CONTEXT ),
         NonPagedPool,
-        (PFLT_CONTEXT*) StreamHandleContext
+        (PFLT_CONTEXT*) &pStreamHandleContext
         );
 
     if ( !NT_SUCCESS( status ) )
     {
+        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+
         return status;
     }
 
-    RtlZeroMemory( *StreamHandleContext, sizeof( STREAMHANDLE_CONTEXT ) );
+    RtlZeroMemory( pStreamHandleContext, sizeof( STREAMHANDLE_CONTEXT ) );
+
+    pStreamHandleContext->m_StreamContext = pStreamContext;
 
     FltSetStreamHandleContext (
         FltObjects->Instance,
         FltObjects->FileObject,
         FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
-        *StreamHandleContext,
+        pStreamHandleContext,
         NULL
         );
 
-    if ( !NT_SUCCESS( status ) )
-    {
-        ReleaseContext( (PFLT_CONTEXT*) StreamHandleContext );
-    }
-    else
-    {
-        ASSERT( *StreamHandleContext );
-    }
-
+    *StreamHandleContext = pStreamHandleContext;
     
-    return STATUS_SUCCESS;
+    ASSERT( *StreamHandleContext );
+
+    return status;
 }
 

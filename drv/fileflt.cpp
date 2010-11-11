@@ -9,6 +9,7 @@
 FileInterceptorContext::FileInterceptorContext (
     __in PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in_opt PSTREAM_CONTEXT StreamContext,
     __in Interceptors InterceptorId,
     __in DriverOperationId Major,
     __in ULONG Minor,
@@ -16,12 +17,36 @@ FileInterceptorContext::FileInterceptorContext (
     ) :
     EventData( InterceptorId, Major, Minor, OperationType ),
     m_Data( Data ),
-    m_FltObjects( FltObjects )
+    m_FltObjects( FltObjects ),
+    m_StreamContext( StreamContext )
 {
     m_VolumeContext = 0;
-    m_StreamContext = NULL;
-    m_StreamFlagsTemp = 0;
+
     m_CacheSyncronizer = 0;
+    m_StreamFlagsTemp = 0;
+
+    if ( m_StreamContext )
+    {
+        m_StreamFlagsTemp = m_StreamContext->m_Flags;
+    
+        if ( !FlagOn( m_StreamFlagsTemp, _STREAM_FLAGS_DIRECTORY ) )
+        {
+            BOOLEAN isMarkedForDelete;
+            if ( NT_SUCCESS ( FileIsMarkedForDelete  (
+                m_FltObjects->Instance,
+                m_FltObjects->FileObject,
+                &isMarkedForDelete
+                ) ) )
+            {
+                if ( isMarkedForDelete )
+                {
+                    m_StreamFlagsTemp |= _STREAM_FLAGS_DELONCLOSE;
+                }
+            }
+        }
+
+        m_CacheSyncronizer = m_StreamContext->m_WriteCount;
+    }
 
     m_Section = NULL;
     m_SectionObject = NULL;
@@ -69,7 +94,6 @@ FileInterceptorContext::~FileInterceptorContext (
 
     ReleaseContext( (PFLT_CONTEXT*) &m_VolumeContext );
     ReleaseContext( (PFLT_CONTEXT*) &m_InstanceContext );
-    ReleaseContext( (PFLT_CONTEXT*) &m_StreamContext );
     ReleaseFileNameInfo( &m_FileNameInfo );
     SecurityFreeSid( &m_Sid );
 };
@@ -100,68 +124,12 @@ FileInterceptorContext::CheckAccessToVolumeContext (
 
 __checkReturn
 NTSTATUS
-FileInterceptorContext::CheckAccessToStreamContext (
-    )
-{
-    if ( m_StreamContext )
-    {
-        return STATUS_SUCCESS;
-    }
-
-    if ( m_PreCreate )
-    {
-        return STATUS_NOT_SUPPORTED;
-    }
-
-    NTSTATUS status = GenerateStreamContext (
-        Globals.m_Filter,
-        m_FltObjects,
-        &m_StreamContext
-        );
-
-    if ( !NT_SUCCESS( status ) )
-    {
-        m_StreamContext = NULL;
-    }
-    else
-    {
-        m_StreamFlagsTemp = m_StreamContext->m_Flags;
-
-        if ( !FlagOn( m_StreamFlagsTemp, _STREAM_FLAGS_DIRECTORY ) )
-        {
-            BOOLEAN isMarkedForDelete;
-            if ( NT_SUCCESS ( FileIsMarkedForDelete  (
-                m_FltObjects->Instance,
-                m_FltObjects->FileObject,
-                &isMarkedForDelete
-                ) ) )
-            {
-                if ( isMarkedForDelete )
-                {
-                    m_StreamFlagsTemp |= _STREAM_FLAGS_DELONCLOSE;
-                }
-            }
-        }
-
-        if ( !m_CacheSyncronizer )
-        {
-            m_CacheSyncronizer = m_StreamContext->m_WriteCount;
-        };
-    }
-
-    return status;
-}
-
-__checkReturn
-NTSTATUS
 FileInterceptorContext::CreateSectionForData (
     __deref_out PHANDLE Section,
     __out PLARGE_INTEGER Size
     )
 {
-    NTSTATUS status = CheckAccessToStreamContext(); 
-
-    if ( !NT_SUCCESS( status ) )
+    if ( !m_StreamContext )
     {
         return STATUS_NOT_SUPPORTED;
     }
@@ -190,7 +158,7 @@ FileInterceptorContext::CreateSectionForData (
     }
 #endif // ( NTDDI_VERSION < NTDDI_WIN6 )
 
-    status = FsRtlCreateSectionForDataScan (
+    NTSTATUS status = FsRtlCreateSectionForDataScan (
         &m_Section,
         &m_SectionObject,
         Size,
@@ -393,14 +361,10 @@ FileInterceptorContext::QueryParameter (
         break;
 
     case PARAMETER_OBJECT_STREAM_FLAGS:
-        if ( !m_StreamFlagsTemp )
+        if ( !m_StreamContext )
         {
-            status = CheckAccessToStreamContext();
-            if ( !NT_SUCCESS( status ) )
-            {
-                status = STATUS_NOT_SUPPORTED;
-                break;
-            }
+            status = STATUS_NOT_SUPPORTED;
+            break;
         }
 
         *Data = &m_StreamFlagsTemp;
@@ -524,9 +488,7 @@ void
 FileInterceptorContext::SetCache1 (
     )
 {
-    NTSTATUS status = CheckAccessToStreamContext(); 
-
-    if ( !NT_SUCCESS( status ) )
+    if ( !m_StreamContext )
     {
         return;
     }

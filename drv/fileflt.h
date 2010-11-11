@@ -9,6 +9,7 @@ public:
     FileInterceptorContext (
         __in PFLT_CALLBACK_DATA Data,
         __in PCFLT_RELATED_OBJECTS FltObjects,
+        __in_opt PSTREAM_CONTEXT StreamContext,
         __in Interceptors InterceptorId,
         __in DriverOperationId Major,
         __in ULONG Minor,
@@ -47,11 +48,6 @@ private:
 
     __checkReturn
     NTSTATUS
-    CheckAccessToStreamContext (
-        );
-
-    __checkReturn
-    NTSTATUS
     CreateSectionForData (
         __deref_out PHANDLE Section,
         __out PLARGE_INTEGER Size
@@ -62,9 +58,9 @@ private:
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
     PVOLUME_CONTEXT             m_VolumeContext;
+    PSTREAM_CONTEXT             m_StreamContext;
 
     // service field
-    PSTREAM_CONTEXT             m_StreamContext;
     LONG                        m_StreamFlagsTemp;
     LONG                        m_CacheSyncronizer;
 
