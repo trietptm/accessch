@@ -81,6 +81,15 @@ PreCleanup (
 
 FLT_POSTOP_CALLBACK_STATUS
 FLTAPI
+PostCleanup (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PVOID CompletionContext,
+    __in FLT_POST_OPERATION_FLAGS Flags
+    );
+
+FLT_POSTOP_CALLBACK_STATUS
+FLTAPI
 PostWrite (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -114,7 +123,7 @@ const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
     { IRP_MJ_CREATE,            0,          PreCreate,      PostCreate },
-    { IRP_MJ_CLEANUP,           0,          PreCleanup,     NULL },
+    { IRP_MJ_CLEANUP,           0,          PreCleanup,     PostCleanup },
     { IRP_MJ_WRITE,             _NO_PAGING, NULL,           PostWrite },
     { IRP_MJ_OPERATION_END}
 };
@@ -318,6 +327,8 @@ ContextCleanup (
 
     case FLT_STREAMHANDLE_CONTEXT:
         {
+            PSTREAMHANDLE_CONTEXT pStreamHandleContext = (PSTREAMHANDLE_CONTEXT) Pool;
+            ReleaseContext( (PFLT_CONTEXT*) &pStreamHandleContext->m_StreamContext );
         }
         break;
 
@@ -522,18 +533,19 @@ PreCreate (
 
         /// \todo skip checks to volume
 
+        *CompletionContext = 0;
+        fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
+
         if ( !FilterIsExistAny() )
         {
             __leave;
         }
 
-        *CompletionContext = 0;
-        fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
-
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext event (
             Data,
             FltObjects,
+            NULL,
             FILE_MINIFILTER,
             OP_FILE_CREATE,
             0,
@@ -618,42 +630,50 @@ PostCreate (
     UNREFERENCED_PARAMETER( CompletionContext );
 
     FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
-    NTSTATUS status;
 
     /// \todo access to volume - generate access event
 
-    if ( IsSkipPostCreate( Data, FltObjects, Flags ) )
-    {
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    PFLT_PARAMETERS fltParams = &Data->Iopb->Parameters;
-
-    PSTREAM_CONTEXT pStreamContext = NULL;
     PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
 
     __try
     {
-        if ( !FilterIsExistAny() )
+        NTSTATUS status;
+
+        if ( IsSkipPostCreate( Data, FltObjects, Flags ) )
         {
             __leave;
         }
 
+        status = GenerateStreamHandleContext (
+            Globals.m_Filter,
+            FltObjects,
+            &pStreamHandleContext
+            );
+        
+        if ( !NT_SUCCESS( status ) )
+        {
+            pStreamHandleContext = NULL;
+
+            __leave;
+        }
+
+        SetFlag( pStreamHandleContext->m_Flags, _STREAM_H_FLAGS_COUNTED );
+        InterlockedIncrement (
+            &pStreamHandleContext->m_StreamContext->m_HandlesPseudoCounter
+            );
+
         if ( IsPrefetchEcpPresent( Globals.m_Filter, Data ) )
         {
-            status = GenerateStreamHandleContext (
-                Globals.m_Filter,
-                FltObjects,
-                &pStreamHandleContext
+            SetFlag (
+                pStreamHandleContext->m_Flags,
+                _STREAM_H_FLAGS_ECPPREF
                 );
+            
+            __leave;
+        }
 
-            if ( NT_SUCCESS( status ) )
-            {
-                SetFlag (
-                    pStreamHandleContext->m_Flags,
-                    _STREAM_H_FLAGS_ECPPREF
-                    );
-            }
+        if ( !FilterIsExistAny() )
+        {
             __leave;
         }
 
@@ -661,6 +681,7 @@ PostCreate (
         FileInterceptorContext event (
             Data,
             FltObjects,
+            pStreamHandleContext->m_StreamContext,
             FILE_MINIFILTER,
             OP_FILE_CREATE,
             0,
@@ -710,7 +731,6 @@ PostCreate (
     }
     __finally
     {
-        ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
         ReleaseContext( (PFLT_CONTEXT*) &pStreamHandleContext );
     }
 
@@ -730,20 +750,43 @@ PreCleanup (
     UNREFERENCED_PARAMETER( CompletionContext );
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
+
     PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
+    
     __try
     {
+        status = GetStreamHandleContext (
+            FltObjects,
+            &pStreamHandleContext
+            );
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            pStreamHandleContext = NULL;
+
+            __leave;
+        }
+
+        if ( FlagOn (
+            pStreamHandleContext->m_Flags,
+            _STREAM_H_FLAGS_COUNTED )
+            )
+        {
+            FltReferenceContext (
+                (PFLT_CONTEXT) pStreamHandleContext->m_StreamContext
+                );
+
+            *CompletionContext = pStreamHandleContext->m_StreamContext;
+
+            fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
+        }
+
         if ( !FilterIsExistAny() )
         {
             __leave;
         }
 
-        status = GetStreamHandleContext (
-            FltObjects,
-            &pStreamHandleContext
-            );
-        
-        if ( NT_SUCCESS( status ) )
+        if ( pStreamHandleContext )
         {
             if ( FlagOn( pStreamHandleContext->m_Flags, _STREAM_H_FLAGS_ECPPREF ) )
             {
@@ -755,6 +798,7 @@ PreCleanup (
         FileInterceptorContext event (
             Data,
             FltObjects,
+            pStreamHandleContext->m_StreamContext,
             FILE_MINIFILTER,
             OP_FILE_CLEANUP,
             0,
@@ -786,6 +830,32 @@ PreCleanup (
     }
 
     return fltStatus;
+}
+
+FLT_POSTOP_CALLBACK_STATUS
+FLTAPI
+PostCleanup (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __in PVOID CompletionContext,
+    __in FLT_POST_OPERATION_FLAGS Flags
+    )
+{
+    UNREFERENCED_PARAMETER( Data );
+    UNREFERENCED_PARAMETER( FltObjects );
+    UNREFERENCED_PARAMETER( Flags );
+
+    ASSERT( CompletionContext );
+
+    PSTREAM_CONTEXT pStreamContext = ( PSTREAM_CONTEXT ) CompletionContext;
+
+    LONG newval = InterlockedDecrement( &pStreamContext->m_HandlesPseudoCounter );
+    
+    ASSERT( newval >= 0 );
+
+    ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
+
+    return FLT_POSTOP_FINISHED_PROCESSING;
 }
 
 __checkReturn

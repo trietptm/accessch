@@ -14,6 +14,7 @@
 #define _STREAM_FLAGS_CASHE1        0x00000100
 
 #define _STREAM_H_FLAGS_ECPPREF     0x00000001
+#define _STREAM_H_FLAGS_COUNTED     0x00000002
 
 typedef enum Interceptors
 {
