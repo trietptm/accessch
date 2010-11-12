@@ -26,6 +26,7 @@ TARGETLIBS= \
 
 SOURCES= \
 		main.cpp \
+		proclist.cpp \
 		commport.cpp \
 		filehlp.cpp \
 		volhlp.cpp \

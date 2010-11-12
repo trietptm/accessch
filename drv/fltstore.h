@@ -100,7 +100,7 @@ private:
         __in ULONG FilterPos
         );
 
-    VOID
+    void
     DeleteCheckParamsByFilterPosUnsafe (
         __in_opt ULONG Posittion
         );
@@ -140,17 +140,17 @@ class FiltersTree
 {
 public:
     static
-    VOID
+    void
     Initialize (
         );
 
     static
-    VOID
+    void
     Destroy (
         );
 
     static
-    VOID
+    void
     DeleteAllFilters (
         );
 
