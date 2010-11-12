@@ -92,7 +92,7 @@ PortConnect (
         pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag (
             NonPagedPool,
             sizeof( PORT_CONTEXT ),
-            _ALLOC_TAG
+            'cpSA'
             );
 
         if ( !pPortContext )
@@ -402,7 +402,7 @@ PortAllocateMessage (
     pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
         PagedPool,
         messageSize,
-        _ALLOC_TAG
+        'gmSA'
         );
 
     if ( !pMsg )

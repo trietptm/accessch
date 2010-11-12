@@ -60,7 +60,7 @@ SecurityAllocateCopySid (
 
     ULONG SidLength = RtlLengthSid( SidSrc );
 
-    *Sid = ExAllocatePoolWithTag( PagedPool, SidLength, _ALLOC_TAG );
+    *Sid = ExAllocatePoolWithTag( PagedPool, SidLength, 'isSA' );
     if ( !*Sid )
     {
         return STATUS_INSUFFICIENT_RESOURCES;

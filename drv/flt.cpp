@@ -4,6 +4,8 @@
 #include "fltstore.h"
 #include "excludes.h"
 
+ULONG Aggregation::m_AllocTag = 'gaSA';
+
 VOID
 RemoveAllFilters (
     )

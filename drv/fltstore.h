@@ -41,7 +41,6 @@ typedef struct _FilterEntry
 //////////////////////////////////////////////////////////////////////////
 class Filters
 {
-
 public:
     Filters();
     ~Filters();
@@ -71,7 +70,7 @@ public:
         );
 
 private:
-
+    static ULONG m_AllocTag;
     __checkReturn
     NTSTATUS
     ParseParamsUnsafe (
@@ -186,6 +185,7 @@ public:
         );
     
 private:
+    static ULONG            m_AllocTag;
     static RTL_AVL_TABLE    m_Tree;
     static EX_PUSH_LOCK     m_AccessLock;
     

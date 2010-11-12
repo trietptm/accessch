@@ -1,8 +1,6 @@
 #ifndef __mm_h
 #define __mm_h
 
-#define _ALLOC_TAG                  'hcSA'
-
 #ifndef FREE_POOL
 #define FREE_POOL( _PoolPtr ) \
     if ( _PoolPtr ) \

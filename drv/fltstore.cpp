@@ -3,6 +3,7 @@
 #include "flt.h"
 #include "fltstore.h"
 
+ULONG FiltersTree::m_AllocTag = 'tfSA';
 RTL_AVL_TABLE FiltersTree::m_Tree;
 EX_PUSH_LOCK FiltersTree::m_AccessLock;
 LONG FiltersTree::m_Count;
@@ -448,7 +449,7 @@ Filters::TryToFindExisting (
             pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
                 PagedPool,
                 sizeof( PosListItemType ) * ( pEntry->m_PosCount + 1 ),
-                _ALLOC_TAG
+                m_AllocTag
                 );
 
             if ( !pEntry->m_FilterPosList )
@@ -508,7 +509,7 @@ Filters::AddParameterWithFilterPos (
     pEntry = (ParamCheckEntry*) ExAllocatePoolWithTag (
         PagedPool,
         sizeof( ParamCheckEntry ) + ParamEntry->m_FltData.m_Size, // byte m_Data
-        _ALLOC_TAG
+        m_AllocTag
         );
     
     if ( !pEntry )
@@ -523,7 +524,7 @@ Filters::AddParameterWithFilterPos (
     pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
         PagedPool,
         sizeof( PosListItemType ),
-        _ALLOC_TAG
+        m_AllocTag
         );
 
     if ( !pEntry->m_FilterPosList )
@@ -612,7 +613,7 @@ Filters::GetFilterPosUnsafe (
     FilterEntry* pFiltersArray = (FilterEntry*) ExAllocatePoolWithTag (
         PagedPool,
         sizeof( FilterEntry ) * ( m_FilterCount + 1 ),
-        _ALLOC_TAG
+        m_AllocTag
         );
 
     if ( !pFiltersArray )
@@ -799,7 +800,7 @@ FiltersTree::Allocate (
     PVOID ptr = ExAllocatePoolWithTag (
         PagedPool,
         ByteSize,
-        _ALLOC_TAG
+        m_AllocTag
         );
     
     return ptr;
@@ -983,7 +984,7 @@ FiltersTree::GetOrCreateFiltersBy (
             pItem->m_Filters = (Filters*) ExAllocatePoolWithTag (
                 PagedPool,
                 sizeof(Filters),
-                _ALLOC_TAG
+                m_AllocTag
                 );
         
             if ( pItem->m_Filters )

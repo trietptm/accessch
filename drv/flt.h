@@ -9,6 +9,9 @@ typedef struct _AggregationItem
 
 class Aggregation
 {
+private:
+    static ULONG m_AllocTag;
+
 public:
     Aggregation (
         )
@@ -70,7 +73,7 @@ public:
         m_Items = (PAggregationItem) ExAllocatePoolWithTag (
             PagedPool,
             size,
-            _ALLOC_TAG
+            m_AllocTag
             );
 
         if ( !m_Items )
