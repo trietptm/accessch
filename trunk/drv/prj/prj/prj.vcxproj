@@ -235,6 +235,7 @@
     <ClCompile Include="..\..\fltstore.cpp" />
     <ClCompile Include="..\..\main.cpp" />
     <ClCompile Include="..\..\mm.cpp" />
+    <ClCompile Include="..\..\proclist.cpp" />
     <ClCompile Include="..\..\security.cpp" />
     <ClCompile Include="..\..\volhlp.cpp" />
     <ClCompile Include="..\..\volumeflt.cpp" />
@@ -250,6 +251,7 @@
     <ClInclude Include="..\..\main.h" />
     <ClInclude Include="..\..\mm.h" />
     <ClInclude Include="..\..\pch.h" />
+    <ClInclude Include="..\..\proclist.h" />
     <ClInclude Include="..\..\security.h" />
     <ClInclude Include="..\..\ver.h" />
     <ClInclude Include="..\..\volhlp.h" />

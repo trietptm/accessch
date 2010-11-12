@@ -1,63 +1,65 @@
 #ifndef __eventqueue_h
 #define __eventqueue_h
 
-struct QueuedItem
+class QueuedItem
 {
 public:
-        static
-        VOID
-        Initialize (
-            );
+    static
+    void
+    Initialize (
+        );
 
-        static
-        VOID
-        Destroy (
-            );
+    static
+    void
+    Destroy (
+        );
 
-        static
-        __checkReturn
-        NTSTATUS
-        Add (
-            __in PVOID Event,
-            __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) QueuedItem **Item
-            );
+    static
+    __checkReturn
+    NTSTATUS
+    Add (
+        __in PVOID Event,
+        __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) QueuedItem **Item
+        );
 
-        static
-        __checkReturn
-        NTSTATUS
-        Lookup (
-            __in ULONG EventId,
-            __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) QueuedItem **Item
-            );
+    static
+    __checkReturn
+    NTSTATUS
+    Lookup (
+        __in ULONG EventId,
+        __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) QueuedItem **Item
+        );
 
 public:
-        QueuedItem (
-            __in PVOID Data
-            );
-        
-        ~QueuedItem();
+    QueuedItem (
+        __in PVOID Data
+        );
 
-        VOID
-        WaitAndDestroy (
-            );
+    ~QueuedItem();
 
-        ULONG
-        GetId (
-            );
+    void
+    WaitAndDestroy (
+        );
 
-        NTSTATUS
-        Acquire (
-            );
+    ULONG
+    GetId (
+        );
 
-        VOID
-        Release (
-            );
+    NTSTATUS
+    Acquire (
+        );
 
-        inline PVOID GetData (
-            )
-        {
-            return m_Data;
-        }
+    void
+    Release (
+        );
+
+    inline
+    PVOID
+    GetData (
+        )
+    {
+        return m_Data;
+    }
 
 private:
     static LONG         m_EventId;
@@ -69,7 +71,7 @@ private:
     ULONG               m_Id;
     PVOID               m_Data;
 
-    VOID
+    void
     WaitForRelease();
 };
 
