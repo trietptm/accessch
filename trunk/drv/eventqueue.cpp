@@ -2,6 +2,7 @@
 #include "eventqueue.h"
 
 // static block
+ULONG           QueuedItem::m_AllocTag = 'iqSA';
 LONG            QueuedItem::m_EventId;
 LIST_ENTRY      QueuedItem::m_QueueItems;
 EX_PUSH_LOCK    QueuedItem::m_QueueLock;
@@ -35,7 +36,7 @@ QueuedItem::Add (
     QueuedItem *pItem = (QueuedItem*) ExAllocatePoolWithTag (
         PagedPool,
         sizeof( QueuedItem ),
-        _ALLOC_TAG
+        m_AllocTag
         );
 
     if ( !pItem )

@@ -62,6 +62,7 @@ public:
     }
 
 private:
+    static ULONG        m_AllocTag;
     static LONG         m_EventId;
     static LIST_ENTRY   m_QueueItems;
     static EX_PUSH_LOCK m_QueueLock;

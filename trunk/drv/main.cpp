@@ -93,20 +93,21 @@ PostWrite (
 // end init block
 
 //////////////////////////////////////////////////////////////////////////
+
 GLOBALS Globals;
 
 const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
     { FLT_INSTANCE_CONTEXT, 0, ContextCleanup, 
-        sizeof(INSTANCE_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
+        sizeof(INSTANCE_CONTEXT), 'siSA', NULL, NULL, NULL },
     
     { FLT_STREAM_CONTEXT, 0, ContextCleanup,
-        sizeof(STREAM_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
+        sizeof(STREAM_CONTEXT), 'csSA', NULL, NULL, NULL },
     
     { FLT_STREAMHANDLE_CONTEXT,  0, ContextCleanup,
-        sizeof(STREAMHANDLE_CONTEXT), _ALLOC_TAG, NULL, NULL, NULL },
+        sizeof(STREAMHANDLE_CONTEXT), 'chSA', NULL, NULL, NULL },
     
     { FLT_VOLUME_CONTEXT, 0, ContextCleanup, sizeof(VOLUME_CONTEXT),
-        _ALLOC_TAG, NULL, NULL, NULL} ,
+        'cvSA', NULL, NULL, NULL} ,
     
     { FLT_CONTEXT_END }
 };

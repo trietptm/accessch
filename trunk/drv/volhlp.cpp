@@ -31,7 +31,7 @@ QueryDeviceProperty (
 
     while ( STATUS_BUFFER_TOO_SMALL == status )
     {
-        pBuffer = ExAllocatePoolWithTag( PagedPool, BufferSize, _ALLOC_TAG );
+        pBuffer = ExAllocatePoolWithTag( PagedPool, BufferSize, 'bvSA' );
         if ( !pBuffer )
         {
             return STATUS_INSUFFICIENT_RESOURCES;
@@ -107,7 +107,7 @@ GetMediaSerialNumber (
     {
         PDEVCTRL_DEVICEINFO pDeviceInfo = NULL;
 
-        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, 'smSA' );
         if ( !QueryBuffer )
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
@@ -172,7 +172,7 @@ GetMediaSerialNumber (
         DeviceId->Buffer = (PWCH) ExAllocatePoolWithTag (
             PagedPool,
             pDeviceInfo->IdLenght,
-            _ALLOC_TAG
+            'bdSA'
             );
 
         if ( !DeviceId->Buffer )
@@ -217,7 +217,7 @@ GetDeviceInfo (
 
     __try
     {
-        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, _ALLOC_TAG );
+        QueryBuffer = ExAllocatePoolWithTag( PagedPool, QuerySize, 'dgSA' );
         if ( !QueryBuffer )
         {
             status= STATUS_INSUFFICIENT_RESOURCES;
