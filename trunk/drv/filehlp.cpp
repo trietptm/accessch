@@ -228,12 +228,12 @@ GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
-    PSTREAM_CONTEXT* StreamContext
+    PStreamContext* StreamCtx
     )
 {
     ASSERT( ARGUMENT_PRESENT( Filter ) );
     NTSTATUS status = STATUS_UNSUCCESSFUL;
-    PINSTANCE_CONTEXT InstanceContext = NULL;
+    PInstanceContext InstanceCtx = NULL;
 
     if ( !FsRtlSupportsPerStreamContexts( FltObjects->FileObject ) )
     {
@@ -243,12 +243,12 @@ GenerateStreamContext (
     status = FltGetStreamContext (
         FltObjects->Instance,
         FltObjects->FileObject,
-        (PFLT_CONTEXT*) StreamContext
+        (PFLT_CONTEXT*) StreamCtx
         );
 
     if ( NT_SUCCESS( status ) )
     {
-        ASSERT( *StreamContext );
+        ASSERT( *StreamCtx );
 
         return status;
     }
@@ -256,9 +256,9 @@ GenerateStreamContext (
     status = FltAllocateContext (
         Filter,
         FLT_STREAM_CONTEXT,
-        sizeof( STREAM_CONTEXT ),
+        sizeof( StreamContext ),
         NonPagedPool,
-        (PFLT_CONTEXT*) StreamContext
+        (PFLT_CONTEXT*) StreamCtx
         );
 
     if ( !NT_SUCCESS( status ) )
@@ -266,17 +266,17 @@ GenerateStreamContext (
         return status;
     }
 
-    RtlZeroMemory( *StreamContext, sizeof( STREAM_CONTEXT ) );
+    RtlZeroMemory( *StreamCtx, sizeof( StreamContext ) );
 
     status = FltGetInstanceContext (
         FltObjects->Instance,
-        (PFLT_CONTEXT *) &InstanceContext
+        (PFLT_CONTEXT *) &InstanceCtx
         );
 
     // \todo on shadow volumes will be NOT_FOUND
     // ASSERT( NT_SUCCESS( status ) );
 
-    (*StreamContext)->m_InstanceContext = InstanceContext;
+    (*StreamCtx)->m_InstanceCtx = InstanceCtx;
 
     BOOLEAN bIsDirectory;
 
@@ -291,7 +291,7 @@ GenerateStreamContext (
         if ( bIsDirectory )
         {
             InterlockedOr (
-                &(*StreamContext)->m_Flags,
+                &(*StreamCtx)->m_Flags,
                 _STREAM_FLAGS_DIRECTORY
                 );
         }
@@ -301,17 +301,17 @@ GenerateStreamContext (
         FltObjects->Instance,
         FltObjects->FileObject,
         FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
-        *StreamContext,
+        *StreamCtx,
         NULL
         );
 
     if ( !NT_SUCCESS( status ) )
     {
-        ReleaseContext( (PFLT_CONTEXT*) StreamContext );
+        ReleaseContext( (PFLT_CONTEXT*) StreamCtx );
     }
     else
     {
-        ASSERT( *StreamContext );
+        ASSERT( *StreamCtx );
     }
 
     return status;
@@ -321,13 +321,13 @@ __checkReturn
  NTSTATUS
  GetStreamHandleContext (
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
+    __deref_out_opt PStreamHandleContext* StreamHandleCtx
     )
 {
     NTSTATUS status = FltGetStreamHandleContext (
         FltObjects->Instance,
         FltObjects->FileObject,
-        (PFLT_CONTEXT*) StreamHandleContext
+        (PFLT_CONTEXT*) StreamHandleCtx
         );
 
     return status;
@@ -338,23 +338,23 @@ NTSTATUS
 GenerateStreamHandleContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
+    __deref_out_opt PStreamHandleContext* StreamHandleCtx
     )
 {
     NTSTATUS status = GetStreamHandleContext (
         FltObjects,
-        StreamHandleContext
+        StreamHandleCtx
         );
 
     if ( NT_SUCCESS( status ) )
     {
-        ASSERT( *StreamHandleContext );
+        ASSERT( *StreamHandleCtx );
 
         return status;
     }
     
-    PSTREAM_CONTEXT pStreamContext = NULL;
-    PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
+    PStreamContext pStreamContext = NULL;
+    PStreamHandleContext pStreamHandleContext = NULL;
     
     status = GenerateStreamContext( Filter, FltObjects, &pStreamContext );
     if ( !NT_SUCCESS( status ) )
@@ -365,7 +365,7 @@ GenerateStreamHandleContext (
     status = FltAllocateContext (
         Filter,
         FLT_STREAMHANDLE_CONTEXT,
-        sizeof( STREAMHANDLE_CONTEXT ),
+        sizeof( StreamHandleContext ),
         NonPagedPool,
         (PFLT_CONTEXT*) &pStreamHandleContext
         );
@@ -377,9 +377,9 @@ GenerateStreamHandleContext (
         return status;
     }
 
-    RtlZeroMemory( pStreamHandleContext, sizeof( STREAMHANDLE_CONTEXT ) );
+    RtlZeroMemory( pStreamHandleContext, sizeof( StreamHandleContext ) );
 
-    pStreamHandleContext->m_StreamContext = pStreamContext;
+    pStreamHandleContext->m_StreamCtx = pStreamContext;
 
     FltSetStreamHandleContext (
         FltObjects->Instance,
@@ -389,9 +389,9 @@ GenerateStreamHandleContext (
         NULL
         );
 
-    *StreamHandleContext = pStreamHandleContext;
+    *StreamHandleCtx = pStreamHandleContext;
     
-    ASSERT( *StreamHandleContext );
+    ASSERT( *StreamHandleCtx );
 
     return status;
 }

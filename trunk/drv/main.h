@@ -1,43 +1,38 @@
 #include "pch.h"
 
-/*
-\todo __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) vs 
- __drv_when(return==0, __deref_opt_out __drv_valueIs(!=0))
-*/
-
 // ----------------------------------------------------------------------------
 //
 
-typedef struct _GLOBALS
+typedef struct _Globals
 {
     PDRIVER_OBJECT          m_FilterDriverObject;
     PFLT_FILTER             m_Filter;
     PFLT_PORT               m_Port;
     EX_RUNDOWN_REF          m_RefClientPort;
     PFLT_PORT               m_ClientPort;
-}GLOBALS, *PGLOBALS;
+}Globals, *PGlobals;
 
-extern GLOBALS Globals;
+extern Globals GlobalData;
 
 // ----------------------------------------------------------------------------
 //
 
-typedef struct _INSTANCE_CONTEXT
+typedef struct _InstanceContext
 {
     DEVICE_TYPE             m_VolumeDeviceType;
     FLT_FILESYSTEM_TYPE     m_VolumeFilesystemType;
-} INSTANCE_CONTEXT, *PINSTANCE_CONTEXT;
+} InstanceContext, *PInstanceContext;
 
-typedef struct _STREAM_CONTEXT
+typedef struct _StreamContext
 {
-    PINSTANCE_CONTEXT       m_InstanceContext;
+    PInstanceContext        m_InstanceCtx;
     LONG                    m_Flags;
     LONG                    m_WriteCount;
-} STREAM_CONTEXT, *PSTREAM_CONTEXT;
+} StreamContext, *PStreamContext;
 
-typedef struct _STREAMHANDLE_CONTEXT
+typedef struct _StreamHandleContext
 {
-    PSTREAM_CONTEXT         m_StreamContext;
+    PStreamContext          m_StreamCtx;
     LUID                    m_Luid;
     LONG                    m_Flags;
-} STREAMHANDLE_CONTEXT, *PSTREAMHANDLE_CONTEXT;
+} StreamHandleContext, *PStreamHandleContext;

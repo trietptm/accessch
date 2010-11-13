@@ -3,7 +3,7 @@
 
 HANDLE gAttachedProcess = NULL;
 
-VOID
+void
 RegisterInvisibleProcess (
     HANDLE Process
     )
@@ -15,7 +15,7 @@ RegisterInvisibleProcess (
     gAttachedProcess = Process;
 }
 
-VOID
+void
 UnregisterInvisibleProcess (
     HANDLE Process
     )

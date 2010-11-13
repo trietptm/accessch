@@ -6,7 +6,7 @@
 
 ULONG Aggregation::m_AllocTag = 'gaSA';
 
-VOID
+void
 RemoveAllFilters (
     )
 {

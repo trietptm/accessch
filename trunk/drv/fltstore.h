@@ -70,7 +70,6 @@ public:
         );
 
 private:
-    static ULONG m_AllocTag;
     __checkReturn
     NTSTATUS
     ParseParamsUnsafe (
@@ -118,6 +117,8 @@ private:
         );
 
 private:
+    static ULONG        m_AllocTag;
+
     EX_RUNDOWN_REF      m_Ref;
     EX_PUSH_LOCK        m_AccessLock;
 
@@ -151,6 +152,12 @@ public:
     static
     void
     DeleteAllFilters (
+        );
+
+    static
+    void
+    CleanupFiltersByPid (
+        __in HANDLE ProcessId
         );
 
     static LONG GetNextFilterid();

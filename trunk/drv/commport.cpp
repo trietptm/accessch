@@ -83,7 +83,7 @@ PortConnect (
 
     __try
     {
-        if ( Globals.m_ClientPort )
+        if ( GlobalData.m_ClientPort )
         {
             status = STATUS_ALREADY_REGISTERED;
             __leave;
@@ -106,9 +106,9 @@ PortConnect (
         pPortContext->m_Connection = ClientPort;
 
         /// \todo  revise single port connection
-        Globals.m_ClientPort = ClientPort;
+        GlobalData.m_ClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
-        ExReInitializeRundownProtection( &Globals.m_RefClientPort );
+        ExReInitializeRundownProtection( &GlobalData.m_RefClientPort );
 
         *ConnectionCookie = pPortContext;
     }
@@ -130,14 +130,14 @@ PortDisconnect (
 
     RemoveAllFilters();
 
-    ExWaitForRundownProtectionRelease( &Globals.m_RefClientPort );
-    Globals.m_ClientPort = NULL;
+    ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
+    GlobalData.m_ClientPort = NULL;
 
-    FltCloseClientPort( Globals.m_Filter, &pPortContext->m_Connection );
+    FltCloseClientPort( GlobalData.m_Filter, &pPortContext->m_Connection );
 
     UnregisterInvisibleProcess( PsGetCurrentProcessId() );
 
-    ExRundownCompleted( &Globals.m_RefClientPort );
+    ExRundownCompleted( &GlobalData.m_RefClientPort );
 
     FREE_POOL( pPortContext );
 }
@@ -161,7 +161,7 @@ PortPostEmptyMessages (
     {
         LARGE_INTEGER timeout = { 1, 0 };
         status = FltSendMessage (
-            Globals.m_Filter,
+            GlobalData.m_Filter,
             &pPort,
             NULL,
             0,
@@ -316,14 +316,14 @@ PortQueryConnected (
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PFLT_PORT* Port
     )
 {
-    if ( !ExAcquireRundownProtection( &Globals.m_RefClientPort ) )
+    if ( !ExAcquireRundownProtection( &GlobalData.m_RefClientPort ) )
     {
         return STATUS_UNSUCCESSFUL;
     }
 
     if ( Port )
     {
-        *Port = Globals.m_ClientPort;
+        *Port = GlobalData.m_ClientPort;
         ASSERT( *Port );
     }
    
@@ -337,7 +337,7 @@ PortRelease (
 {
     UNREFERENCED_PARAMETER( Port );
 
-    ExReleaseRundownProtection( &Globals.m_RefClientPort );
+    ExReleaseRundownProtection( &GlobalData.m_RefClientPort );
 }
 
 __checkReturn
@@ -530,7 +530,7 @@ PortAskUser (
         }
 
         status = FltSendMessage (
-            Globals.m_Filter,
+            GlobalData.m_Filter,
             &pPort,
             pMessage,
             MessageSize,

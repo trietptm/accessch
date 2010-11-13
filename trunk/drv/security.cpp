@@ -9,18 +9,18 @@ SecurityGetLuid (
     NTSTATUS status = STATUS_UNSUCCESSFUL;
     PACCESS_TOKEN pToken = 0;
 
-    SECURITY_SUBJECT_CONTEXT SubjectContext;
+    SECURITY_SUBJECT_CONTEXT SubjectCtx;
 
-    SeCaptureSubjectContext( &SubjectContext );
+    SeCaptureSubjectContext( &SubjectCtx );
 
-    pToken = SeQuerySubjectContextToken( &SubjectContext );
+    pToken = SeQuerySubjectContextToken( &SubjectCtx );
 
     if ( pToken )
     {
         status = SeQueryAuthenticationIdToken( pToken, Luid );
     }
 
-    SeReleaseSubjectContext( &SubjectContext );
+    SeReleaseSubjectContext( &SubjectCtx );
 
     return status;
 }
