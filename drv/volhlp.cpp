@@ -64,7 +64,7 @@ __checkReturn
 NTSTATUS
 GetRemovableProperty (
     __in PDEVICE_OBJECT Device,
-    __in PVOLUME_CONTEXT VolumeContext
+    __in PVolumeContext VolumeCtx
     )
 {
     PVOID pBuffer = NULL;
@@ -82,7 +82,7 @@ GetRemovableProperty (
         PDEVICE_REMOVAL_POLICY pRemovalPolicy =
             (PDEVICE_REMOVAL_POLICY) pBuffer;
         
-        VolumeContext->m_RemovablePolicy = *pRemovalPolicy;
+        VolumeCtx->m_RemovablePolicy = *pRemovalPolicy;
 
         FREE_POOL( pBuffer );
     }
@@ -204,7 +204,7 @@ __checkReturn
 NTSTATUS
 GetDeviceInfo (
     __in PDEVICE_OBJECT Device,
-    __in PVOLUME_CONTEXT VolumeContext
+    __in PVolumeContext VolumeCtx
     )
 {
     PIRP Irp;
@@ -278,7 +278,7 @@ GetDeviceInfo (
         PSTORAGE_DEVICE_DESCRIPTOR pDesc = 
             (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer;
         
-        VolumeContext->m_BusType = pDesc->BusType;
+        VolumeCtx->m_BusType = pDesc->BusType;
     }
     __finally
     {
@@ -295,10 +295,10 @@ __checkReturn
 NTSTATUS
 FillVolumeProperties (
      __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in PVOLUME_CONTEXT VolumeContext
+    __in PVolumeContext VolumeCtx
     )
 {
-    ASSERT( ARGUMENT_PRESENT( VolumeContext ) );
+    ASSERT( ARGUMENT_PRESENT( VolumeCtx ) );
 
     NTSTATUS status;
     PDEVICE_OBJECT pDevice = NULL;
@@ -312,7 +312,7 @@ FillVolumeProperties (
             __leave;
         }
 
-        status = GetDeviceInfo( pDevice, VolumeContext );
+        status = GetDeviceInfo( pDevice, VolumeCtx );
         if ( !NT_SUCCESS( status ) )
         {
             __leave;
@@ -320,14 +320,14 @@ FillVolumeProperties (
         //ASSERT( NT_SUCCESS( status ) );
       
         /// \todo - need PDO object for GetRemovableProperty - Verifier BUGCHECK
-        // status = GetRemovableProperty( pDevice, pVolumeContext );
+        // status = GetRemovableProperty( pDevice, pVolumeCtx );
         //ASSERT( NT_SUCCESS( status ) );
 
         UNICODE_STRING deviceid;
         status = GetMediaSerialNumber( pDevice, &deviceid );
         if ( NT_SUCCESS( status ))
         {
-            VolumeContext->m_DeviceId = deviceid;
+            VolumeCtx->m_DeviceId = deviceid;
         }
 
         status = STATUS_SUCCESS;

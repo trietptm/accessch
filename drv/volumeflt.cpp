@@ -7,19 +7,19 @@
 
 VolumeInterceptorContext::VolumeInterceptorContext (
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in PINSTANCE_CONTEXT InstanceContext,
-    __in PVOLUME_CONTEXT VolumeContext,
+    __in PInstanceContext InstanceCtx,
+    __in PVolumeContext VolumeCtx,
     __in Interceptors InterceptorId,
     __in DriverOperationId Major,
     __in ULONG Minor,
     __in OperationPoint OperationType
     ) : EventData( InterceptorId, Major, Minor, OperationType ),
     m_FltObjects( FltObjects ),
-    m_InstanceContext( InstanceContext ),
-    m_VolumeContext( VolumeContext )
+    m_InstanceCtx( InstanceCtx ),
+    m_VolumeCtx( VolumeCtx )
 {
-    ASSERT( InstanceContext );
-    ASSERT( VolumeContext );
+    ASSERT( InstanceCtx );
+    ASSERT( VolumeCtx );
 
     m_RequestorPid = 0;
 }
@@ -50,31 +50,31 @@ VolumeInterceptorContext::QueryParameter (
         break;
 
     case PARAMETER_DEVICE_TYPE:
-        *Data = &m_InstanceContext->m_VolumeDeviceType;
-        *DataSize = sizeof( m_InstanceContext->m_VolumeDeviceType );
+        *Data = &m_InstanceCtx->m_VolumeDeviceType;
+        *DataSize = sizeof( m_InstanceCtx->m_VolumeDeviceType );
         status = STATUS_SUCCESS;
 
         break;
 
     case PARAMETER_FILESYSTEM_TYPE:
-        *Data = &m_InstanceContext->m_VolumeDeviceType;
-        *DataSize = sizeof( m_InstanceContext->m_VolumeDeviceType );
+        *Data = &m_InstanceCtx->m_VolumeDeviceType;
+        *DataSize = sizeof( m_InstanceCtx->m_VolumeDeviceType );
         status = STATUS_SUCCESS;
 
         break;
 
     case PARAMETER_BUS_TYPE:
-        *Data = &m_VolumeContext->m_BusType;
-        *DataSize = sizeof( m_VolumeContext->m_BusType );
+        *Data = &m_VolumeCtx->m_BusType;
+        *DataSize = sizeof( m_VolumeCtx->m_BusType );
         status = STATUS_SUCCESS;
 
         break;
 
     case PARAMETER_DEVICE_ID:
-        if ( m_VolumeContext->m_DeviceId.Length )
+        if ( m_VolumeCtx->m_DeviceId.Length )
         {
-            *Data = m_VolumeContext->m_DeviceId.Buffer;
-            *DataSize = m_VolumeContext->m_DeviceId.Length;
+            *Data = m_VolumeCtx->m_DeviceId.Buffer;
+            *DataSize = m_VolumeCtx->m_DeviceId.Length;
             status = STATUS_SUCCESS;
         }
 

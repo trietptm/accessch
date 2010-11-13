@@ -9,7 +9,7 @@
 FileInterceptorContext::FileInterceptorContext (
     __in PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in_opt PSTREAM_CONTEXT StreamContext,
+    __in_opt PStreamContext StreamCtx,
     __in Interceptors InterceptorId,
     __in DriverOperationId Major,
     __in ULONG Minor,
@@ -18,16 +18,16 @@ FileInterceptorContext::FileInterceptorContext (
     EventData( InterceptorId, Major, Minor, OperationType ),
     m_Data( Data ),
     m_FltObjects( FltObjects ),
-    m_StreamContext( StreamContext )
+    m_StreamCtx( StreamCtx )
 {
-    m_VolumeContext = 0;
+    m_VolumeCtx = 0;
 
     m_CacheSyncronizer = 0;
     m_StreamFlagsTemp = 0;
 
-    if ( m_StreamContext )
+    if ( m_StreamCtx )
     {
-        m_StreamFlagsTemp = m_StreamContext->m_Flags;
+        m_StreamFlagsTemp = m_StreamCtx->m_Flags;
     
         if ( !FlagOn( m_StreamFlagsTemp, _STREAM_FLAGS_DIRECTORY ) )
         {
@@ -45,7 +45,7 @@ FileInterceptorContext::FileInterceptorContext (
             }
         }
 
-        m_CacheSyncronizer = m_StreamContext->m_WriteCount;
+        m_CacheSyncronizer = m_StreamCtx->m_WriteCount;
     }
 
     m_Section = NULL;
@@ -53,7 +53,7 @@ FileInterceptorContext::FileInterceptorContext (
 
     m_RequestorProcessId = 0;
     m_RequestorThreadId = 0;
-    m_InstanceContext = 0;
+    m_InstanceCtxt = 0;
     m_FileNameInfo = 0;
     m_Sid = 0;
     SecurityLuidReset( &m_Luid );
@@ -92,8 +92,8 @@ FileInterceptorContext::~FileInterceptorContext (
         ObDereferenceObject( m_SectionObject );
     }
 
-    ReleaseContext( (PFLT_CONTEXT*) &m_VolumeContext );
-    ReleaseContext( (PFLT_CONTEXT*) &m_InstanceContext );
+    ReleaseContext( (PFLT_CONTEXT*) &m_VolumeCtx );
+    ReleaseContext( (PFLT_CONTEXT*) &m_InstanceCtxt );
     ReleaseFileNameInfo( &m_FileNameInfo );
     SecurityFreeSid( &m_Sid );
 };
@@ -103,20 +103,20 @@ NTSTATUS
 FileInterceptorContext::CheckAccessToVolumeContext (
     )
 {
-    if ( m_VolumeContext )
+    if ( m_VolumeCtx )
     {
         return STATUS_SUCCESS;
     }
 
     NTSTATUS status = FltGetVolumeContext (
-        Globals.m_Filter,
+        GlobalData.m_Filter,
         m_FltObjects->Volume, 
-        (PFLT_CONTEXT*) &m_VolumeContext
+        (PFLT_CONTEXT*) &m_VolumeCtx
         );
 
     if ( !NT_SUCCESS( status ) )
     {
-        m_VolumeContext = 0;
+        m_VolumeCtx = 0;
     }
 
     return status;
@@ -129,12 +129,12 @@ FileInterceptorContext::CreateSectionForData (
     __out PLARGE_INTEGER Size
     )
 {
-    if ( !m_StreamContext )
+    if ( !m_StreamCtx )
     {
         return STATUS_NOT_SUPPORTED;
     }
 
-    if ( FlagOn( m_StreamContext->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
+    if ( FlagOn( m_StreamCtx->m_Flags, _STREAM_FLAGS_DIRECTORY ) )
     {
         return STATUS_NOT_SUPPORTED;
     }
@@ -361,7 +361,7 @@ FileInterceptorContext::QueryParameter (
         break;
 
     case PARAMETER_OBJECT_STREAM_FLAGS:
-        if ( !m_StreamContext )
+        if ( !m_StreamCtx )
         {
             status = STATUS_NOT_SUPPORTED;
             break;
@@ -422,14 +422,14 @@ FileInterceptorContext::QueryParameter (
             break;
         }
 
-        if ( !m_VolumeContext->m_DeviceId.Buffer )
+        if ( !m_VolumeCtx->m_DeviceId.Buffer )
         {
             status = STATUS_UNSUCCESSFUL;
             break;
         }
 
-        *Data = m_VolumeContext->m_DeviceId.Buffer;
-        *DataSize = m_VolumeContext->m_DeviceId.Length;
+        *Data = m_VolumeCtx->m_DeviceId.Buffer;
+        *DataSize = m_VolumeCtx->m_DeviceId.Length;
 
         break;
 
@@ -488,13 +488,13 @@ void
 FileInterceptorContext::SetCache1 (
     )
 {
-    if ( !m_StreamContext )
+    if ( !m_StreamCtx )
     {
         return;
     }
 
-    if ( m_CacheSyncronizer == m_StreamContext->m_WriteCount )
+    if ( m_CacheSyncronizer == m_StreamCtx->m_WriteCount )
     {
-        InterlockedOr( &m_StreamContext->m_Flags, _STREAM_FLAGS_CASHE1 );
+        InterlockedOr( &m_StreamCtx->m_Flags, _STREAM_FLAGS_CASHE1 );
     }
 }

@@ -39,7 +39,7 @@ Unload (
     );
 
 
-VOID
+void
 FLTAPI
 ContextCleanup (
     __in PVOID Pool,
@@ -94,19 +94,19 @@ PostWrite (
 
 //////////////////////////////////////////////////////////////////////////
 
-GLOBALS Globals;
+Globals GlobalData;
 
 const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
     { FLT_INSTANCE_CONTEXT, 0, ContextCleanup, 
-        sizeof(INSTANCE_CONTEXT), 'siSA', NULL, NULL, NULL },
+        sizeof(InstanceContext), 'siSA', NULL, NULL, NULL },
     
     { FLT_STREAM_CONTEXT, 0, ContextCleanup,
-        sizeof(STREAM_CONTEXT), 'csSA', NULL, NULL, NULL },
+        sizeof(StreamContext), 'csSA', NULL, NULL, NULL },
     
     { FLT_STREAMHANDLE_CONTEXT,  0, ContextCleanup,
-        sizeof(STREAMHANDLE_CONTEXT), 'chSA', NULL, NULL, NULL },
+        sizeof(StreamHandleContext), 'chSA', NULL, NULL, NULL },
     
-    { FLT_VOLUME_CONTEXT, 0, ContextCleanup, sizeof(VOLUME_CONTEXT),
+    { FLT_VOLUME_CONTEXT, 0, ContextCleanup, sizeof(VolumeContext),
         'cvSA', NULL, NULL, NULL} ,
     
     { FLT_CONTEXT_END }
@@ -205,13 +205,13 @@ DriverEntry (
 
     UNREFERENCED_PARAMETER( RegistryPath );
 
-    RtlZeroMemory( &Globals, sizeof( Globals) );
+    RtlZeroMemory( &GlobalData, sizeof( GlobalData) );
 
-    Globals.m_FilterDriverObject = DriverObject;
+    GlobalData.m_FilterDriverObject = DriverObject;
     
-    ExInitializeRundownProtection( &Globals.m_RefClientPort );
-    ExWaitForRundownProtectionRelease( &Globals.m_RefClientPort );
-    ExRundownCompleted( &Globals.m_RefClientPort );
+    ExInitializeRundownProtection( &GlobalData.m_RefClientPort );
+    ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
+    ExRundownCompleted( &GlobalData.m_RefClientPort );
 
     ProcList::Initialize();
     QueuedItem::Initialize();
@@ -230,23 +230,23 @@ DriverEntry (
         status = FltRegisterFilter (
             DriverObject,
             (PFLT_REGISTRATION) &filterRegistration,
-            &Globals.m_Filter
+            &GlobalData.m_Filter
             );
 
         if ( !NT_SUCCESS( status ) )
         {
-            Globals.m_Filter = NULL;
+            GlobalData.m_Filter = NULL;
             __leave;
         }
 
-        status = PortCreate( Globals.m_Filter, &Globals.m_Port );
+        status = PortCreate( GlobalData.m_Filter, &GlobalData.m_Port );
         if ( !NT_SUCCESS( status ) )
         {
-            Globals.m_Port = NULL;
+            GlobalData.m_Port = NULL;
             __leave;
         }
 
-        status = FltStartFiltering( Globals.m_Filter );
+        status = FltStartFiltering( GlobalData.m_Filter );
         if ( !NT_SUCCESS( status ) )
         {
             __leave;
@@ -258,14 +258,14 @@ DriverEntry (
     {
         if ( !NT_SUCCESS( status ) )
         {
-            if ( Globals.m_Port )
+            if ( GlobalData.m_Port )
             {
-                FltCloseCommunicationPort( Globals.m_Port );
+                FltCloseCommunicationPort( GlobalData.m_Port );
             }
 
-            if ( Globals.m_Filter )
+            if ( GlobalData.m_Filter )
             {
-                FltUnregisterFilter( Globals.m_Filter );
+                FltUnregisterFilter( GlobalData.m_Filter );
             }
         }
     }
@@ -286,8 +286,8 @@ Unload (
         //return STATUS_FLT_DO_NOT_DETACH;
     }
 
-    FltCloseCommunicationPort( Globals.m_Port );
-    FltUnregisterFilter( Globals.m_Filter );
+    FltCloseCommunicationPort( GlobalData.m_Port );
+    FltUnregisterFilter( GlobalData.m_Filter );
 
     FiltersTree::Destroy();
     QueuedItem::Destroy();
@@ -298,7 +298,7 @@ Unload (
 
 
 // ----------------------------------------------------------------------------
-VOID
+void
 FLTAPI
 ContextCleanup (
     __in PVOID Pool,
@@ -314,22 +314,22 @@ ContextCleanup (
 
     case FLT_STREAM_CONTEXT:
         {
-            PSTREAM_CONTEXT pStreamContext = (PSTREAM_CONTEXT) Pool;
-            ReleaseContext( (PFLT_CONTEXT*) &pStreamContext->m_InstanceContext );
+            PStreamContext pStreamContext = (PStreamContext) Pool;
+            ReleaseContext( (PFLT_CONTEXT*) &pStreamContext->m_InstanceCtx );
             ASSERT ( pStreamContext );
         }
         break;
 
     case FLT_STREAMHANDLE_CONTEXT:
         {
-            PSTREAMHANDLE_CONTEXT pStreamHandleContext = (PSTREAMHANDLE_CONTEXT) Pool;
-            ReleaseContext( (PFLT_CONTEXT*) &pStreamHandleContext->m_StreamContext );
+            PStreamHandleContext pStreamHandleContext = (PStreamHandleContext) Pool;
+            ReleaseContext( (PFLT_CONTEXT*) &pStreamHandleContext->m_StreamCtx );
         }
         break;
 
     case FLT_VOLUME_CONTEXT:
         {
-            PVOLUME_CONTEXT pVolumeContext = (PVOLUME_CONTEXT) Pool;
+            PVolumeContext pVolumeContext = (PVolumeContext) Pool;
             FREE_POOL( pVolumeContext->m_DeviceId.Buffer );
         }
         break;
@@ -394,12 +394,12 @@ InstanceSetup (
     )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
-    PINSTANCE_CONTEXT pInstanceContext = NULL;
-    PVOLUME_CONTEXT pVolumeContext = NULL;
+    PInstanceContext pInstanceCtx = NULL;
+    PVolumeContext pVolumeContext = NULL;
 
     UNREFERENCED_PARAMETER( Flags );
 
-    ASSERT( FltObjects->Filter == Globals.m_Filter );
+    ASSERT( FltObjects->Filter == GlobalData.m_Filter );
 
     if (FLT_FSTYPE_RAW == VolumeFilesystemType)
     {
@@ -414,25 +414,25 @@ InstanceSetup (
     __try
     {
         status = FltAllocateContext (
-            Globals.m_Filter,
+            GlobalData.m_Filter,
             FLT_INSTANCE_CONTEXT,
-            sizeof( INSTANCE_CONTEXT ),
+            sizeof( InstanceContext ),
             NonPagedPool,
-            (PFLT_CONTEXT*) &pInstanceContext
+            (PFLT_CONTEXT*) &pInstanceCtx
             );
 
         if ( !NT_SUCCESS( status ) )
         {
-            pInstanceContext = NULL;
+            pInstanceCtx = NULL;
             __leave;
         }
 
-        RtlZeroMemory( pInstanceContext, sizeof( INSTANCE_CONTEXT ) );
+        RtlZeroMemory( pInstanceCtx, sizeof( InstanceContext ) );
 
         status = FltAllocateContext (
-            Globals.m_Filter,
+            GlobalData.m_Filter,
             FLT_VOLUME_CONTEXT,
-            sizeof( VOLUME_CONTEXT ),
+            sizeof( VolumeContext ),
             NonPagedPool,
             (PFLT_CONTEXT*) &pVolumeContext
             );
@@ -443,11 +443,11 @@ InstanceSetup (
             __leave;
         }
         
-        RtlZeroMemory( pVolumeContext, sizeof( VOLUME_CONTEXT ) );
+        RtlZeroMemory( pVolumeContext, sizeof( VolumeContext ) );
 
         // just for fun
-        pInstanceContext->m_VolumeDeviceType = VolumeDeviceType;
-        pInstanceContext->m_VolumeFilesystemType = VolumeFilesystemType;
+        pInstanceCtx->m_VolumeDeviceType = VolumeDeviceType;
+        pInstanceCtx->m_VolumeFilesystemType = VolumeFilesystemType;
 
         status = FillVolumeProperties( FltObjects, pVolumeContext );
         if ( !NT_SUCCESS( status ) )
@@ -460,7 +460,7 @@ InstanceSetup (
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         VolumeInterceptorContext event (
             FltObjects,
-            pInstanceContext,
+            pInstanceCtx,
             pVolumeContext,
             VOLUME_MINIFILTER,
             OP_VOLUME_ATTACH,
@@ -482,7 +482,7 @@ InstanceSetup (
         status = FltSetInstanceContext (
             FltObjects->Instance,
             FLT_SET_CONTEXT_KEEP_IF_EXISTS,
-            pInstanceContext,
+            pInstanceCtx,
             NULL
             );
 
@@ -496,7 +496,7 @@ InstanceSetup (
     }
     __finally
     {
-        ReleaseContext( (PFLT_CONTEXT*) &pInstanceContext );
+        ReleaseContext( (PFLT_CONTEXT*) &pInstanceCtx );
         ReleaseContext( (PFLT_CONTEXT*) &pVolumeContext );
     }
 
@@ -628,7 +628,7 @@ PostCreate (
 
     /// \todo access to volume - generate access event
 
-    PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
+    PStreamHandleContext pStreamHandleContext = NULL;
 
     __try
     {
@@ -645,7 +645,7 @@ PostCreate (
         }
 
         status = GenerateStreamHandleContext (
-            Globals.m_Filter,
+            GlobalData.m_Filter,
             FltObjects,
             &pStreamHandleContext
             );
@@ -657,7 +657,7 @@ PostCreate (
             __leave;
         }
 
-        if ( IsPrefetchEcpPresent( Globals.m_Filter, Data ) )
+        if ( IsPrefetchEcpPresent( GlobalData.m_Filter, Data ) )
         {
             SetFlag (
                 pStreamHandleContext->m_Flags,
@@ -671,7 +671,7 @@ PostCreate (
         FileInterceptorContext event (
             Data,
             FltObjects,
-            pStreamHandleContext->m_StreamContext,
+            pStreamHandleContext->m_StreamCtx,
             FILE_MINIFILTER,
             OP_FILE_CREATE,
             0,
@@ -741,7 +741,7 @@ PreCleanup (
 
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
 
-    PSTREAMHANDLE_CONTEXT pStreamHandleContext = NULL;
+    PStreamHandleContext pStreamHandleContext = NULL;
     
     __try
     {
@@ -771,7 +771,7 @@ PreCleanup (
         FileInterceptorContext event (
             Data,
             FltObjects,
-            pStreamHandleContext->m_StreamContext,
+            pStreamHandleContext->m_StreamCtx,
             FILE_MINIFILTER,
             OP_FILE_CLEANUP,
             0,
@@ -869,7 +869,7 @@ PostWrite (
         return FLT_POSTOP_FINISHED_PROCESSING;
     }
 
-    PSTREAM_CONTEXT pStreamContext = NULL;
+    PStreamContext pStreamContext = NULL;
 
     __try
     {
@@ -879,7 +879,7 @@ PostWrite (
         }
 
         NTSTATUS status = GenerateStreamContext (
-            Globals.m_Filter,
+            GlobalData.m_Filter,
             FltObjects,
             &pStreamContext
             );

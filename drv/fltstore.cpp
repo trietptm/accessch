@@ -2,6 +2,7 @@
 #include "../inc/accessch.h"
 #include "flt.h"
 #include "fltstore.h"
+#include "proclist.h"
 
 ULONG FiltersTree::m_AllocTag = 'tfSA';
 RTL_AVL_TABLE FiltersTree::m_Tree;
@@ -10,11 +11,14 @@ LONG FiltersTree::m_Count;
 LONG FiltersTree::m_Flags;
 LONG FiltersTree::m_FilterIdCounter;
 
+ULONG Filters::m_AllocTag = 'ifSA';
+
+
 #define _FT_FLAGS_PAUSED 0x000
 #define _FT_FLAGS_ACTIVE 0x001
 
 //////////////////////////////////////////////////////////////////////////
-typedef struct _ITEM_FILTERS
+typedef struct _FiltersItem
 {
     Interceptors        m_Interceptor;
     DriverOperationId   m_Operation;
@@ -22,7 +26,7 @@ typedef struct _ITEM_FILTERS
     OperationPoint      m_OperationType;
     
     Filters*            m_Filters;
-} ITEM_FILTERS, *PITEM_FILTERS;
+} FiltersItem, *pFiltersItem;
 //////////////////////////////////////////////////////////////////////////
 Filters::Filters (
     )
@@ -549,7 +553,7 @@ Filters::AddParameterWithFilterPos (
     return pEntry;
 }
 
-VOID
+void
 Filters::DeleteCheckParamsByFilterPosUnsafe (
     __in_opt ULONG Posittion
     )
@@ -717,7 +721,7 @@ Filters::AddFilter (
 
 //////////////////////////////////////////////////////////////////////////
 
-VOID
+void
 FiltersTree::Initialize (
     )
 {
@@ -734,13 +738,18 @@ FiltersTree::Initialize (
     m_Count = 0;
     m_Flags = _FT_FLAGS_PAUSED;
     m_FilterIdCounter = 0;
+
+    NTSTATUS status = ProcList::RegisterExitProcessCb( CleanupFiltersByPid );
+ 
+    ASSERT( NT_SUCCESS( status ) );
 }
 
-
-VOID
+void
 FiltersTree::Destroy (
     )
 {
+    ProcList::UnregisterExitProcessCb( CleanupFiltersByPid );
+
     FltDeletePushLock( &m_AccessLock );
 }
 
@@ -756,9 +765,9 @@ FiltersTree::Compare (
 
     RTL_GENERIC_COMPARE_RESULTS result;
 
-    PITEM_FILTERS Struct1 = (PITEM_FILTERS) FirstStruct;
-    PITEM_FILTERS Struct2 = (PITEM_FILTERS) SecondStruct;
-    ULONG comparesize = FIELD_OFFSET( ITEM_FILTERS, m_Filters );
+    pFiltersItem Struct1 = (pFiltersItem) FirstStruct;
+    pFiltersItem Struct2 = (pFiltersItem) SecondStruct;
+    ULONG comparesize = FIELD_OFFSET( FiltersItem, m_Filters );
 
     int ires = memcmp (
         Struct1,
@@ -806,7 +815,7 @@ FiltersTree::Allocate (
     return ptr;
 }
 
-VOID
+void
 NTAPI
 FiltersTree::Free (
     __in struct _RTL_AVL_TABLE *Table,
@@ -830,17 +839,17 @@ FiltersTree::~FiltersTree (
     /// \todo free tree items
 }
 
-VOID
+void
 FiltersTree::DeleteAllFilters (
     )
 {
-    PITEM_FILTERS pItem;
+    pFiltersItem pItem;
 
     FltAcquirePushLockExclusive( &m_AccessLock );
 
     do 
     {
-        pItem = (PITEM_FILTERS) RtlEnumerateGenericTableAvl (
+        pItem = (pFiltersItem) RtlEnumerateGenericTableAvl (
             &m_Tree,
             TRUE
             );
@@ -860,6 +869,16 @@ FiltersTree::DeleteAllFilters (
     m_FilterIdCounter = 0;
 
     FltReleasePushLock( &m_AccessLock );
+}
+
+void
+FiltersTree::CleanupFiltersByPid (
+    __in HANDLE ProcessId
+    )
+{
+    UNREFERENCED_PARAMETER( ProcessId );
+    
+    __debugbreak();
 }
 
 LONG
@@ -919,7 +938,7 @@ FiltersTree::GetFiltersBy (
 {
     Filters* pFilters = NULL;
 
-    ITEM_FILTERS item;
+    FiltersItem item;
     item.m_Interceptor = Interceptor;
     item.m_Operation = Operation;
     item.m_Minor = Minor;
@@ -927,7 +946,7 @@ FiltersTree::GetFiltersBy (
 
     FltAcquirePushLockShared( &m_AccessLock );
 
-    PITEM_FILTERS pItem = (PITEM_FILTERS) RtlLookupElementGenericTableAvl (
+    pFiltersItem pItem = (pFiltersItem) RtlLookupElementGenericTableAvl (
         &m_Tree,
         &item
         );
@@ -960,7 +979,7 @@ FiltersTree::GetOrCreateFiltersBy (
 {
     Filters* pFilters = NULL;
 
-    ITEM_FILTERS item;
+    FiltersItem item;
     item.m_Interceptor = Interceptor;
     item.m_Operation = Operation;
     item.m_Minor = Minor;
@@ -970,20 +989,20 @@ FiltersTree::GetOrCreateFiltersBy (
     
     FltAcquirePushLockExclusive( &m_AccessLock );
 
-    PITEM_FILTERS pItem = (PITEM_FILTERS) RtlInsertElementGenericTableAvl (
+    pFiltersItem pItem = (pFiltersItem) RtlInsertElementGenericTableAvl (
         &m_Tree,
         &item,
         sizeof( item ),
         &newElement
         );
     
-    if ( pItem)
+    if ( pItem )
     {
         if ( newElement )
         {
             pItem->m_Filters = (Filters*) ExAllocatePoolWithTag (
                 PagedPool,
-                sizeof(Filters),
+                sizeof( Filters ),
                 m_AllocTag
                 );
         

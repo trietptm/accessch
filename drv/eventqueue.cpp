@@ -7,7 +7,7 @@ LONG            QueuedItem::m_EventId;
 LIST_ENTRY      QueuedItem::m_QueueItems;
 EX_PUSH_LOCK    QueuedItem::m_QueueLock;
 
-VOID
+void
 QueuedItem::Initialize (
     )
 {
@@ -16,7 +16,7 @@ QueuedItem::Initialize (
     FltInitializePushLock( &m_QueueLock );
 };
 
-VOID
+void
 QueuedItem::Destroy (
     )
 {
@@ -117,7 +117,7 @@ QueuedItem::~QueuedItem (
     ExRundownCompleted( &m_Ref );
 }
 
-VOID
+void
 QueuedItem::WaitAndDestroy (
     )
 {
@@ -150,14 +150,14 @@ QueuedItem::Acquire (
     return STATUS_UNSUCCESSFUL;
 }
 
-VOID
+void
 QueuedItem::WaitForRelease (
     )
 {
     ExWaitForRundownProtectionRelease( &m_Ref );
 }
 
-VOID
+void
 QueuedItem::Release (
     )
 {

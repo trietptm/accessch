@@ -67,7 +67,7 @@ private:
     static LIST_ENTRY   m_QueueItems;
     static EX_PUSH_LOCK m_QueueLock;
     
-    LIST_ENTRY   m_List;
+    LIST_ENTRY          m_List;
     EX_RUNDOWN_REF      m_Ref;
     ULONG               m_Id;
     PVOID               m_Data;

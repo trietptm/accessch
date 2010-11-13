@@ -9,7 +9,7 @@ public:
     FileInterceptorContext (
         __in PFLT_CALLBACK_DATA Data,
         __in PCFLT_RELATED_OBJECTS FltObjects,
-        __in_opt PSTREAM_CONTEXT StreamContext,
+        __in_opt PStreamContext StreamCtx,
         __in Interceptors InterceptorId,
         __in DriverOperationId Major,
         __in ULONG Minor,
@@ -57,8 +57,8 @@ private:
     // intercepted data
     PFLT_CALLBACK_DATA          m_Data;
     PCFLT_RELATED_OBJECTS       m_FltObjects;
-    PVOLUME_CONTEXT             m_VolumeContext;
-    PSTREAM_CONTEXT             m_StreamContext;
+    PVolumeContext              m_VolumeCtx;
+    PStreamContext             m_StreamCtx;
 
     // service field
     LONG                        m_StreamFlagsTemp;
@@ -72,7 +72,7 @@ private:
     // queryed parameters
     HANDLE                      m_RequestorProcessId;
     HANDLE                      m_RequestorThreadId;
-    PINSTANCE_CONTEXT           m_InstanceContext;
+    PInstanceContext           m_InstanceCtxt;
     PFLT_FILE_NAME_INFORMATION  m_FileNameInfo;
     PSID                        m_Sid;
     LUID                        m_Luid;

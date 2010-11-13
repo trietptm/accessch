@@ -7,7 +7,7 @@
 
 #define _VOLUME_FLAG_NONE           0x0000
 
-typedef struct _VOLUME_CONTEXT
+typedef struct _VolumeContext
 {
     PFLT_INSTANCE           m_Instance;
     ULONG                   m_Flags;
@@ -18,13 +18,13 @@ typedef struct _VOLUME_CONTEXT
     UCHAR                   m_ProductId[_VOLUME_DESCRIPTION_LENGTH];
     UCHAR                   m_ProductRevisionLevel[_VOLUME_DESCRIPTION_LENGTH];
     UCHAR                   m_VendorSpecific[_VOLUME_DESCRIPTION_LENGTH];
-} VOLUME_CONTEXT, *PVOLUME_CONTEXT;
+} VolumeContext, *PVolumeContext;
 
 __checkReturn
 NTSTATUS
 FillVolumeProperties (
      __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in PVOLUME_CONTEXT VolumeContext
+    __in PVolumeContext VolumeCtx
     );
     
 #endif // __volhlp_h

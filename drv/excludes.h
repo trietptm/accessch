@@ -1,11 +1,11 @@
 #ifndef __excludes_h
 
-VOID
+void
 RegisterInvisibleProcess (
     HANDLE Process
     );
 
-VOID
+void
 UnregisterInvisibleProcess (
     HANDLE Process
     );

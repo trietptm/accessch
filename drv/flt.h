@@ -234,7 +234,7 @@ protected:
         return status;
     }*/
 
-VOID
+void
 RemoveAllFilters (
     );
 

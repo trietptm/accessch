@@ -55,14 +55,14 @@ GenerateStreamContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0))
-    PSTREAM_CONTEXT* StreamContext
+    PStreamContext* StreamCtx
     );
 
 __checkReturn
 NTSTATUS
 GetStreamHandleContext (
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
+    __deref_out_opt PStreamHandleContext* StreamHandleCtx
     );
 
 __checkReturn
@@ -70,7 +70,7 @@ NTSTATUS
 GenerateStreamHandleContext (
     __in PFLT_FILTER Filter,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __deref_out_opt PSTREAMHANDLE_CONTEXT* StreamHandleContext
+    __deref_out_opt PStreamHandleContext* StreamHandleCtx
     );
 
 #endif // __filehlp_h
