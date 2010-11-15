@@ -469,7 +469,7 @@ InstanceSetup (
             );
 
         PARAMS_MASK params2user;
-        status = FilterEvent( &event, &Verdict, &params2user );
+        status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
 
         if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
         {
@@ -531,7 +531,7 @@ PreCreate (
         *CompletionContext = 0;
         fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
-        if ( !FilterIsExistAny() )
+        if ( !FilteringSystem::IsExistFilters() )
         {
             __leave;
         }
@@ -548,7 +548,7 @@ PreCreate (
             );
 
         PARAMS_MASK params2user;
-        NTSTATUS status = FilterEvent( &event, &Verdict, &params2user );
+        NTSTATUS status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
 
         if ( NT_SUCCESS( status ) )
         {
@@ -639,7 +639,7 @@ PostCreate (
             __leave;
         }
 
-        if ( !FilterIsExistAny() )
+        if ( !FilteringSystem::IsExistFilters() )
         {
             __leave;
         }
@@ -679,7 +679,7 @@ PostCreate (
             );
 
         PARAMS_MASK params2user;
-        status = FilterEvent( &event, &Verdict, &params2user );
+        status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
 
         if ( NT_SUCCESS( status ) )
         {
@@ -745,7 +745,7 @@ PreCleanup (
     
     __try
     {
-        if ( !FilterIsExistAny() )
+        if ( !FilteringSystem::IsExistFilters() )
         {
             __leave;
         }
@@ -779,7 +779,7 @@ PreCleanup (
             );
 
         PARAMS_MASK params2user;
-        status = FilterEvent( &event, &Verdict, &params2user );
+        status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
 
         if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
         {
@@ -873,7 +873,7 @@ PostWrite (
 
     __try
     {
-        if ( !FilterIsExistAny() )
+        if ( !FilteringSystem::IsExistFilters() )
         {
             __leave;
         }

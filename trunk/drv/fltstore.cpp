@@ -51,7 +51,7 @@ Filters::Filters (
     
     RtlClearAllBits( &m_ActiveFilters );
 
-    m_FilterCount = 0;
+    m_FiltersCount = 0;
     m_FiltersArray = NULL;
     InitializeListHead( &m_ParamsCheckList );
 }
@@ -105,6 +105,18 @@ Filters::Release (
     ExReleaseRundownProtection( &m_Ref );
 }
 
+BOOLEAN
+Filters::IsEmpty (
+    )
+{
+    if ( m_FiltersCount )
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 NTSTATUS
 Filters::CheckSingleEntryUnsafe (
     __in ParamCheckEntry* Entry,
@@ -123,7 +135,7 @@ Filters::CheckSingleEntryUnsafe (
     {
         if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_BE_PRESENT ) )
         {
-            __debugbreak();
+            __debugbreak(); //nct
 
             return status;
         }
@@ -181,7 +193,7 @@ Filters::CheckSingleEntryUnsafe (
         }
         else
         {
-            __debugbreak();
+            __debugbreak(); //not impelemented
         }
 
         break;
@@ -248,7 +260,7 @@ Filters::CheckParamsList (
         if ( !bExistActiveFilter )
         {
             // this parameter used in already unmatcher filters
-            __debugbreak(); /// \todo check - nct
+            __debugbreak(); /// nct
             continue;
         }
 
@@ -271,7 +283,7 @@ Filters::CheckParamsList (
             RtlSetBit( Filtersbitmap, pEntry->m_FilterPosList[cou] );
 
             (*Unmatched)++;
-            if ( *Unmatched == m_FilterCount )
+            if ( *Unmatched == m_FiltersCount )
             {
                 // break circle - no filter left
                 return STATUS_NOT_FOUND;
@@ -310,14 +322,14 @@ Filters::GetVerdict (
         RtlClearAllBits( &filtersbitmap );
 
         // set inactive filters
-        for ( ULONG cou = 0; cou < m_FilterCount; cou++ )
+        for ( ULONG cou = 0; cou < m_FiltersCount; cou++ )
         {
             if ( !RtlCheckBit( &m_ActiveFilters, cou ) )
             {
                 RtlSetBit( &filtersbitmap, cou );
 
                 unmatched++;
-                if ( unmatched == m_FilterCount )
+                if ( unmatched == m_FiltersCount )
                 {
                     __leave;
                 }
@@ -357,11 +369,6 @@ Filters::GetVerdict (
 
             FilterEntry* pFilter = &m_FiltersArray[ position ];
             
-            ASSERT( FlagOn (
-                pFilter->m_Flags,
-                FLT_POSITION_BISY
-                ) );
-
             ASSERT( RtlCheckBit( &m_ActiveFilters, position ) );
 
             if ( RtlCheckBit( &groupsmap, pFilter->m_GroupId ) )
@@ -405,7 +412,7 @@ __checkReturn
 NTSTATUS
 Filters::TryToFindExisting (
     __in PPARAM_ENTRY ParamEntry,
-    __in ULONG FilterPos,
+    __in ULONG Position,
     __deref_out_opt ParamCheckEntry** Entry
     )
 {
@@ -447,7 +454,7 @@ Filters::TryToFindExisting (
             }
             
             // the same ParamEntry, attach to existing
-            __debugbreak();
+            __debugbreak(); //nct
 
             PULONG pPostListTmp = pEntry->m_FilterPosList;
             pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
@@ -470,7 +477,7 @@ Filters::TryToFindExisting (
                 pEntry->m_PosCount * sizeof( PosListItemType )
                 );
 
-            pEntry->m_FilterPosList[ pEntry->m_PosCount ] = FilterPos;
+            pEntry->m_FilterPosList[ pEntry->m_PosCount ] = Position;
             pEntry->m_PosCount++;
 
             FREE_POOL( pPostListTmp );
@@ -491,13 +498,13 @@ Filters::TryToFindExisting (
 ParamCheckEntry*
 Filters::AddParameterWithFilterPos (
     __in PPARAM_ENTRY ParamEntry,
-    __in ULONG FilterPos
+    __in ULONG Position
     )
 {
     ParamCheckEntry* pEntry = NULL;
 
     // find existing
-    NTSTATUS status = TryToFindExisting( ParamEntry, FilterPos, &pEntry );
+    NTSTATUS status = TryToFindExisting( ParamEntry, Position, &pEntry );
     if ( NT_SUCCESS( status ) )
     {
         return pEntry;
@@ -538,7 +545,7 @@ Filters::AddParameterWithFilterPos (
         return NULL;
     }
     
-    pEntry->m_FilterPosList[0] = FilterPos;
+    pEntry->m_FilterPosList[0] = Position;
     pEntry->m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
     pEntry->m_Data.m_Count = ParamEntry->m_FltData.m_Count;
 
@@ -555,16 +562,84 @@ Filters::AddParameterWithFilterPos (
 
 void
 Filters::DeleteCheckParamsByFilterPosUnsafe (
-    __in_opt ULONG Posittion
+    __in_opt ULONG Position
     )
 {
-    __debugbreak();
+    if ( IsListEmpty( &m_ParamsCheckList ) )
+    {
+        return;
+    }
+
+    PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+
+    while ( Flink != &m_ParamsCheckList )
+    {
+        ParamCheckEntry* pEntry = CONTAINING_RECORD (
+            Flink,
+            ParamCheckEntry,
+            m_List
+            );
+
+        Flink = Flink->Flink;
+
+        ULONG foundcount = 0;
+        for ( ULONG idx = 0; idx < pEntry->m_PosCount; idx++ )
+        {
+            if ( pEntry->m_FilterPosList[ idx ] == Position )
+            {
+                foundcount++;
+            }
+        }
+
+        if ( foundcount )
+        {
+            if ( foundcount == pEntry->m_PosCount )
+            {
+                RemoveEntryList( &pEntry->m_List );
+
+                FREE_POOL( pEntry->m_FilterPosList );
+                FREE_POOL( pEntry );
+
+                continue;
+            }
+           
+            __debugbreak(); //nct
+
+            PosListItemType* pTmp = (PosListItemType*) ExAllocatePoolWithTag (
+                PagedPool,
+                sizeof( PosListItemType ) * pEntry->m_PosCount - foundcount,
+                m_AllocTag
+                );
+
+            if ( pTmp )
+            {
+                ULONG idxto = 0;
+                for ( ULONG idx = 0; idx < pEntry->m_PosCount; idx++ )
+                {
+                    if ( pEntry->m_FilterPosList[ idx ] != Position )
+                    {
+                        pTmp[ idxto++ ] = pEntry->m_FilterPosList[ idx ];
+                    }
+                }
+                
+                FREE_POOL( pEntry->m_FilterPosList );
+                pEntry->m_FilterPosList = pTmp;
+            }
+            else
+            {
+                // low resources
+                KeBugCheck( 0x7d ); // install more memory or reuse old buffer
+            }
+            
+            pEntry->m_PosCount = pEntry->m_PosCount - foundcount;
+        }
+    };
 }
 
 __checkReturn
 NTSTATUS
 Filters::ParseParamsUnsafe (
-    __in ULONG FilterPos,
+    __in ULONG Position,
     __in ULONG ParamsCount,
     __in PPARAM_ENTRY Params
     )
@@ -579,13 +654,13 @@ Filters::ParseParamsUnsafe (
 
         ParamCheckEntry* pEntry = AddParameterWithFilterPos (
             params,
-            FilterPos
+            Position
             );
 
         if ( !pEntry )
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
-            DeleteCheckParamsByFilterPosUnsafe( FilterPos );
+            DeleteCheckParamsByFilterPosUnsafe( Position );
             break;
         }
 
@@ -604,19 +679,9 @@ Filters::GetFilterPosUnsafe (
     PULONG Position
     )
 {
-    for ( ULONG cou = 0; cou < m_FilterCount; cou++ )
-    {
-        if  ( !FlagOn( m_FiltersArray[ cou ].m_Flags, FLT_POSITION_BISY ) )
-        {
-            *Position = cou;
-            
-            return STATUS_SUCCESS;
-        }
-    }
-
     FilterEntry* pFiltersArray = (FilterEntry*) ExAllocatePoolWithTag (
         PagedPool,
-        sizeof( FilterEntry ) * ( m_FilterCount + 1 ),
+        sizeof( FilterEntry ) * ( m_FiltersCount + 1 ),
         m_AllocTag
         );
 
@@ -625,12 +690,12 @@ Filters::GetFilterPosUnsafe (
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     
-    if ( m_FilterCount )
+    if ( m_FiltersCount )
     {
         RtlCopyMemory( 
             pFiltersArray,
             m_FiltersArray,
-            sizeof( FilterEntry ) * m_FilterCount
+            sizeof( FilterEntry ) * m_FiltersCount
             );
 
         FREE_POOL( m_FiltersArray );
@@ -638,8 +703,8 @@ Filters::GetFilterPosUnsafe (
 
     m_FiltersArray = pFiltersArray;
 
-    RtlZeroMemory( &m_FiltersArray[ m_FilterCount ], sizeof( FilterEntry ) );
-    *Position = m_FilterCount;
+    RtlZeroMemory( &m_FiltersArray[ m_FiltersCount ], sizeof( FilterEntry ) );
+    *Position = m_FiltersCount;
 
     return STATUS_SUCCESS;
 }
@@ -649,6 +714,7 @@ NTSTATUS
 Filters::AddFilter (
     __in UCHAR GroupId,
     __in VERDICT Verdict,
+    __in HANDLE ProcessId,
     __in_opt ULONG RequestTimeout,
     __in PARAMS_MASK WishMask,
     __in_opt ULONG ParamsCount,
@@ -685,18 +751,14 @@ Filters::AddFilter (
         {
             __leave;
         }
-
+        
         pEntry->m_Verdict = Verdict;
+        pEntry->m_ProcessId = ProcessId;
         pEntry->m_RequestTimeout = RequestTimeout;
         pEntry->m_WishMask = WishMask;
         pEntry->m_FilterId = FiltersTree::GetNextFilterid();
         pEntry->m_GroupId = GroupId;
-
-        SetFlag (
-            m_FiltersArray[ position ].m_Flags,
-            FLT_POSITION_BISY
-            );
-
+        
         RtlSetBit( &m_ActiveFilters, position );
 
         if ( !RtlCheckBit( &m_GroupsMap, GroupId ) )
@@ -705,7 +767,7 @@ Filters::AddFilter (
             m_GroupCount++;        
         }
 
-        m_FilterCount++;
+        m_FiltersCount++;
         *FilterId = pEntry->m_FilterId;
 
         status = STATUS_SUCCESS;
@@ -717,6 +779,57 @@ Filters::AddFilter (
     FltReleasePushLock( &m_AccessLock );
 
     return status;
+}
+
+ULONG
+Filters::CleanupByProcess (
+    __in HANDLE ProcessId
+    )
+{
+    ULONG removed = 0;
+
+    FltAcquirePushLockExclusive( &m_AccessLock );
+
+    for ( ULONG idx = 0; idx < m_FiltersCount; idx++ )
+    {
+        FilterEntry* pEntry = &m_FiltersArray[ idx ];
+
+        if ( pEntry->m_ProcessId != ProcessId )
+        {
+            continue;
+        }
+
+        removed++;
+
+        RtlClearBit( &m_ActiveFilters, idx );
+        DeleteCheckParamsByFilterPosUnsafe( idx );
+
+        m_FiltersCount--;
+
+        if ( !m_FiltersCount )
+        {
+            FREE_POOL( m_FiltersArray );
+            
+            break;
+        }
+
+        __debugbreak();
+        /// \todo
+        // если не последний - удалить текущий фильтр и
+        // сдвинуть прочие фильтры на одну позицию и
+        // изменить в параметрах позицию фильтра и
+        // продолжить проверку фильтров по pid-у
+    }
+
+    if ( !m_FiltersCount)
+    {
+        ASSERT( IsListEmpty( &m_ParamsCheckList ) );
+    }
+
+
+    FltReleasePushLock( &m_AccessLock );
+
+    return removed;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -877,8 +990,45 @@ FiltersTree::CleanupFiltersByPid (
     )
 {
     UNREFERENCED_PARAMETER( ProcessId );
+
+    pFiltersItem pItem;
     
-    __debugbreak();
+    FltAcquirePushLockExclusive( &m_AccessLock );
+
+    pItem = (pFiltersItem) RtlEnumerateGenericTableAvl (
+        &m_Tree,
+        TRUE
+        );
+
+    while ( pItem )
+    {
+        ASSERT( pItem->m_Filters );
+        ULONG removed = pItem->m_Filters->CleanupByProcess( ProcessId );
+
+        if ( pItem->m_Filters->IsEmpty() )
+        {
+            pItem->m_Filters->Filters::~Filters();
+            FREE_POOL( pItem->m_Filters );
+
+            RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
+
+            m_Count -= removed;
+
+            pItem = (pFiltersItem) RtlEnumerateGenericTableAvl (
+                &m_Tree,
+                TRUE
+                );
+        }
+        else
+        {
+            pItem = (pFiltersItem) RtlEnumerateGenericTableAvl (
+                &m_Tree,
+                FALSE
+                );
+        }
+    };
+
+    FltReleasePushLock( &m_AccessLock );
 }
 
 LONG
