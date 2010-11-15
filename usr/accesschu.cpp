@@ -25,7 +25,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 #define THREAD_MAXCOUNT_WAITERS     8
-#define DRV_EVENT_CONTENT_SIZE      0x1000 
 
 typedef struct _COMMUNICATIONS {
     HANDLE                  m_hPort;

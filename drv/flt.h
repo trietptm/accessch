@@ -234,35 +234,46 @@ protected:
         return status;
     }*/
 
-void
-RemoveAllFilters (
-    );
 
-__checkReturn
- BOOLEAN
- FilterIsExistAny (
-    );
+class FilteringSystem
+{
+public:
+    
+    static
+    void
+    RemoveAllFilters (
+        );
 
-__checkReturn
-NTSTATUS
-FilterEvent (
-    __in EventData *Event,
-    __inout PVERDICT Verdict,
-    __out PARAMS_MASK *ParamsMask
-    );
+    static
+    __checkReturn
+    BOOLEAN
+    IsExistFilters (
+        );
 
-__checkReturn
-NTSTATUS
-FilterProceedChain (
-    __in PFILTERS_CHAIN Chain,
-    __in ULONG ChainSize,
-    __out PULONG FilterId
-    );
+    static
+    __checkReturn
+    NTSTATUS
+    FilterEvent (
+        __in EventData *Event,
+        __inout PVERDICT Verdict,
+        __out PARAMS_MASK *ParamsMask
+        );
 
-__checkReturn
-NTSTATUS
-FilterChangeState (
-    BOOLEAN Activate
-    );
+    static
+    __checkReturn
+    NTSTATUS
+    ProceedChain (
+        __in PFILTERS_CHAIN Chain,
+        __in ULONG ChainSize,
+        __out PULONG FilterId
+        );
+
+    static
+    __checkReturn
+    NTSTATUS
+    ChangeState (
+        BOOLEAN Activate
+        );
+};
 
 #endif //__flt_h

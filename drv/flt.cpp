@@ -7,7 +7,7 @@
 ULONG Aggregation::m_AllocTag = 'gaSA';
 
 void
-RemoveAllFilters (
+FilteringSystem::RemoveAllFilters (
     )
 {
     FiltersTree::DeleteAllFilters();
@@ -15,7 +15,7 @@ RemoveAllFilters (
 
 __checkReturn
 BOOLEAN
-FilterIsExistAny (
+FilteringSystem::IsExistFilters (
     )
 {
     if ( !FiltersTree::IsActive()
@@ -31,7 +31,7 @@ FilterIsExistAny (
 
 __checkReturn
 NTSTATUS
-FilterEvent (
+FilteringSystem::FilterEvent (
     __in EventData *Event,
     __inout PVERDICT Verdict,
     __out PARAMS_MASK *ParamsMask
@@ -79,7 +79,7 @@ FilterEvent (
 
 __checkReturn
 NTSTATUS
-FilterProceedChain (
+FilteringSystem::ProceedChain (
     __in PFILTERS_CHAIN Chain,
     __in ULONG ChainSize,
     __out PULONG FilterId
@@ -112,6 +112,7 @@ FilterProceedChain (
                         status = pFilters->AddFilter (
                             pEntry->m_Filter->m_GroupId,
                             pEntry->m_Filter->m_Verdict,
+                            UlongToHandle( pEntry->m_Filter->m_ProcessId ),
                             pEntry->m_Filter->m_RequestTimeout,
                             pEntry->m_Filter->m_WishMask,
                             pEntry->m_Filter->m_ParamsCount,
@@ -151,7 +152,7 @@ FilterProceedChain (
 
 __checkReturn
 NTSTATUS
-FilterChangeState (
+FilteringSystem::ChangeState (
     BOOLEAN Activate
     )
 {

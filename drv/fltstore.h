@@ -25,17 +25,15 @@ typedef struct _ParamCheckEntry
     FltData             m_Data;
 } ParamCheckEntry;
 
-#define FLT_POSITION_BISY   0x0001
-
 typedef struct _FilterEntry
 {
     ULONG               m_Flags;
     ULONG               m_FilterId;
     UCHAR               m_GroupId;
     VERDICT             m_Verdict;
+    HANDLE              m_ProcessId;
     PARAMS_MASK         m_WishMask;
     ULONG               m_RequestTimeout;
-    //ULONG               m_AggregationId;
 } FilterEntry;
 
 //////////////////////////////////////////////////////////////////////////
@@ -52,6 +50,9 @@ public:
     void
     Release();
 
+    BOOLEAN
+    IsEmpty();
+
     VERDICT
     GetVerdict (
         __in EventData *Event,
@@ -62,6 +63,7 @@ public:
     AddFilter (
         __in UCHAR GroupId,
         __in VERDICT Verdict,
+        __in HANDLE ProcessId,
         __in_opt ULONG RequestTimeout,
         __in PARAMS_MASK WishMask,
         __in_opt ULONG ParamsCount,
@@ -69,11 +71,16 @@ public:
         __out PULONG FilterId
         );
 
+    ULONG
+    CleanupByProcess (
+        __in HANDLE ProcessId
+        );
+
 private:
     __checkReturn
     NTSTATUS
     ParseParamsUnsafe (
-        __in ULONG FilterPos,
+        __in ULONG Position,
         __in ULONG ParamsCount,
         __in PPARAM_ENTRY Params
         );
@@ -88,19 +95,19 @@ private:
     NTSTATUS
     TryToFindExisting (
         __in PPARAM_ENTRY ParamEntry,
-        __in ULONG FilterPos,
+        __in ULONG Position,
         __deref_out_opt ParamCheckEntry** Entry
         );
 
     ParamCheckEntry*
     AddParameterWithFilterPos (
         __in PPARAM_ENTRY ParamEntry,
-        __in ULONG FilterPos
+        __in ULONG Position
         );
 
     void
     DeleteCheckParamsByFilterPosUnsafe (
-        __in_opt ULONG Posittion
+        __in_opt ULONG Position
         );
 
     NTSTATUS
@@ -128,8 +135,7 @@ private:
 
     RTL_BITMAP          m_ActiveFilters;
     ULONG               m_ActiveFiltersBuffer[ BitMapBufferSizeInUlong ];
-    ULONG               m_FilterCount;
-    
+    ULONG               m_FiltersCount;
     FilterEntry*        m_FiltersArray;
     LIST_ENTRY          m_ParamsCheckList;
 };

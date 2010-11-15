@@ -128,7 +128,7 @@ PortDisconnect (
 
     ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
-    RemoveAllFilters();
+    FilteringSystem::RemoveAllFilters();
 
     ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
     GlobalData.m_ClientPort = NULL;
@@ -219,11 +219,11 @@ PortMessageNotify (
         switch( pCommand->m_Command )
         {
         case ntfcom_Activate:
-            status = FilterChangeState( TRUE );
+            status = FilteringSystem::ChangeState( TRUE );
             break;
 
         case ntfcom_Pause:
-            status = FilterChangeState( FALSE );
+            status = FilteringSystem::ChangeState( FALSE );
             PortPostEmptyMessages( pPortContext );
             break;
 
@@ -274,7 +274,7 @@ PortMessageNotify (
                 }
 
                 ULONG FilterId;
-                status = FilterProceedChain( pChain, size, &FilterId );
+                status = FilteringSystem::ProceedChain( pChain, size, &FilterId );
                 if ( NT_SUCCESS( status ) )
                 {
                     if ( OutputBuffer && OutputBufferSize == sizeof( ULONG ) )
