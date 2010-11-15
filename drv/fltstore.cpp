@@ -804,46 +804,37 @@ Filters::CleanupByProcess (
         RtlClearBit( &m_ActiveFilters, idx );
         DeleteParamsByFilterPosUnsafe( idx );
 
-        m_FiltersCount--;
-
-        if ( !m_FiltersCount )
-        {
-            FREE_POOL( m_FiltersArray );
-            
-            break;
-        }
-
         __debugbreak();
-        FilterEntry* pTmp = ExAllocatePoolWithTag (
-            PagedPool,
-            sizeof( FilterEntry ) * m_FiltersCount
-            );
-
-        if ( !pTmp )
+        FilterEntry* pFiltersArrayNew = NULL;
+        
+        if ( m_FiltersCount > 1 )
         {
-            // reuse all buffer
-            KeBugCheck( 0x7d );
-        }
+            FilterEntry* pFiltersArrayNew = ExAllocatePoolWithTag (
+                PagedPool,
+                sizeof( FilterEntry ) * ( m_FiltersCount - 1 )
+                );
 
-        ULONG idxto = 0;
-        for ( ULONG idx2 = 0; idx2 < m_FiltersCount + 1; idx2++ )
-        {
-            if ( idx2 == idx )
+            if ( !pFiltersArrayNew )
             {
-                continue;
+                // reuse all buffer
+                KeBugCheck( 0x7d );
             }
-            
-            pTmp[ idxto++ ] = m_FiltersArray[ idx2 ];
+
+            ULONG idxto = 0;
+            for ( ULONG idx2 = 0; idx2 < m_FiltersCount; idx2++ )
+            {
+                if ( idx2 == idx )
+                {
+                    continue;
+                }
+
+                pFiltersArrayNew[ idxto++ ] = m_FiltersArray[ idx2 ];
+            }
         }
 
+        m_FiltersCount--;
         FREE_POOL( m_FiltersArray );
-        m_FiltersArray = pTmp;
-
-        /// \todo
-        // если не последний - удалить текущий фильтр и
-        // сдвинуть прочие фильтры на одну позицию и
-        // изменить в параметрах позицию фильтра и
-        // продолжить проверку фильтров по pid-у
+        m_FiltersArray = pFiltersArrayNew;
     }
 
     if ( !m_FiltersCount)
