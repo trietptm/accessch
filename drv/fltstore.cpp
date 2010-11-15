@@ -561,7 +561,7 @@ Filters::AddParameterWithFilterPos (
 }
 
 void
-Filters::DeleteCheckParamsByFilterPosUnsafe (
+Filters::DeleteParamsByFilterPosUnsafe (
     __in_opt ULONG Position
     )
 {
@@ -660,7 +660,7 @@ Filters::ParseParamsUnsafe (
         if ( !pEntry )
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
-            DeleteCheckParamsByFilterPosUnsafe( Position );
+            DeleteParamsByFilterPosUnsafe( Position );
             break;
         }
 
@@ -802,7 +802,7 @@ Filters::CleanupByProcess (
         removed++;
 
         RtlClearBit( &m_ActiveFilters, idx );
-        DeleteCheckParamsByFilterPosUnsafe( idx );
+        DeleteParamsByFilterPosUnsafe( idx );
 
         m_FiltersCount--;
 
@@ -814,6 +814,31 @@ Filters::CleanupByProcess (
         }
 
         __debugbreak();
+        FilterEntry* pTmp = ExAllocatePoolWithTag (
+            PagedPool,
+            sizeof( FilterEntry ) * m_FiltersCount
+            );
+
+        if ( !pTmp )
+        {
+            // reuse all buffer
+            KeBugCheck( 0x7d );
+        }
+
+        ULONG idxto = 0;
+        for ( ULONG idx2 = 0; idx2 < m_FiltersCount + 1; idx2++ )
+        {
+            if ( idx2 == idx )
+            {
+                continue;
+            }
+            
+            pTmp[ idxto++ ] = m_FiltersArray[ idx2 ];
+        }
+
+        FREE_POOL( m_FiltersArray );
+        m_FiltersArray = pTmp;
+
         /// \todo
         // если не последний - удалить текущий фильтр и
         // сдвинуть прочие фильтры на одну позицию и

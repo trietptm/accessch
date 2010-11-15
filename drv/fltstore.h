@@ -106,7 +106,7 @@ private:
         );
 
     void
-    DeleteCheckParamsByFilterPosUnsafe (
+    DeleteParamsByFilterPosUnsafe (
         __in_opt ULONG Position
         );
 
