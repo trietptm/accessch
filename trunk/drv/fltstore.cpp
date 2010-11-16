@@ -454,7 +454,6 @@ Filters::TryToFindExisting (
             }
             
             // the same ParamEntry, attach to existing
-            __debugbreak(); //nct
 
             PULONG pPostListTmp = pEntry->m_FilterPosList;
             pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
@@ -603,8 +602,6 @@ Filters::DeleteParamsByFilterPosUnsafe (
                 continue;
             }
            
-            __debugbreak(); //nct
-
             PosListItemType* pTmp = (PosListItemType*) ExAllocatePoolWithTag (
                 PagedPool,
                 sizeof( PosListItemType ) * pEntry->m_PosCount - foundcount,
@@ -634,6 +631,39 @@ Filters::DeleteParamsByFilterPosUnsafe (
             pEntry->m_PosCount = pEntry->m_PosCount - foundcount;
         }
     };
+}
+
+void
+Filters::MoveFilterPosInParams (
+    ULONG IdxFrom,
+    ULONG IdxTo
+    )
+{
+    if ( IsListEmpty( &m_ParamsCheckList ) )
+    {
+        return;
+    }
+
+    PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
+
+    while ( Flink != &m_ParamsCheckList )
+    {
+        ParamCheckEntry* pEntry = CONTAINING_RECORD (
+            Flink,
+            ParamCheckEntry,
+            m_List
+            );
+
+        Flink = Flink->Flink;
+
+        for ( ULONG idx = 0; idx < pEntry->m_PosCount; idx++ )
+        {
+            if ( pEntry->m_FilterPosList[ idx ] == IdxFrom )
+            {
+                pEntry->m_FilterPosList[ idx ] = IdxTo;
+            }
+        }
+    }
 }
 
 __checkReturn
@@ -786,25 +816,31 @@ Filters::CleanupByProcess (
     __in HANDLE ProcessId
     )
 {
-    ULONG removed = 0;
+    ULONG removedcount = 0;
 
     FltAcquirePushLockExclusive( &m_AccessLock );
 
-    for ( ULONG idx = 0; idx < m_FiltersCount; idx++ )
+    ULONG idx = 0;
+    while ( TRUE )
     {
+        if ( idx == m_FiltersCount )
+        {
+            break;
+        }
+
         FilterEntry* pEntry = &m_FiltersArray[ idx ];
 
         if ( pEntry->m_ProcessId != ProcessId )
         {
+            idx++;
             continue;
         }
 
-        removed++;
+        removedcount++;
 
         RtlClearBit( &m_ActiveFilters, idx );
         DeleteParamsByFilterPosUnsafe( idx );
 
-        __debugbreak();
         FilterEntry* pFiltersArrayNew = NULL;
         
         if ( m_FiltersCount > 1 )
@@ -829,7 +865,9 @@ Filters::CleanupByProcess (
                     continue;
                 }
 
-                pFiltersArrayNew[ idxto++ ] = m_FiltersArray[ idx2 ];
+                pFiltersArrayNew[ idxto ] = m_FiltersArray[ idx2 ];
+                MoveFilterPosInParams( idx2, idxto );
+                idxto++;
             }
         }
 
@@ -843,10 +881,9 @@ Filters::CleanupByProcess (
         ASSERT( IsListEmpty( &m_ParamsCheckList ) );
     }
 
-
     FltReleasePushLock( &m_AccessLock );
 
-    return removed;
+    return removedcount;
 }
 
 //////////////////////////////////////////////////////////////////////////

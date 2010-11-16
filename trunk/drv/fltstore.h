@@ -110,6 +110,12 @@ private:
         __in_opt ULONG Position
         );
 
+    void
+    MoveFilterPosInParams (
+        ULONG IdxFrom,
+        ULONG IdxTo
+        );
+
     NTSTATUS
     CheckSingleEntryUnsafe (
         __in ParamCheckEntry* Entry,
