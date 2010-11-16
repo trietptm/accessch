@@ -118,7 +118,56 @@ Filters::IsEmpty (
 }
 
 NTSTATUS
-Filters::CheckSingleEntryUnsafe (
+Filters::CheckEntryUnsafe (
+    __in ParamCheckEntry* Entry,
+    __in EventData *Event
+    )
+{
+    NTSTATUS status = STATUS_NOT_IMPLEMENTED;
+
+    switch ( Entry->m_Type )
+    {
+    case GerenicItem:
+        status = CheckGenericUnsafe( Entry, Event );
+        break;
+
+    case Container:
+        status = CheckContainerUnsafe( Entry, Event );
+        break;
+
+    default:
+        return STATUS_NOT_IMPLEMENTED;
+    }
+
+    switch ( status )
+    {
+    case STATUS_SUCCESS:
+    case STATUS_UNSUCCESSFUL:
+        if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_NEGATION ) )
+        {
+            if ( NT_SUCCESS( status ) )
+            {
+                status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                status = STATUS_SUCCESS;
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+
+
+    return status;
+}
+
+__checkReturn
+__drv_valueIs( STATUS_SUCCESS; STATUS_UNSUCCESSFUL; STATUS_NOT_FOUND )
+NTSTATUS
+Filters::CheckGenericUnsafe (
     __in ParamCheckEntry* Entry,
     __in EventData *Event
     )
@@ -126,7 +175,7 @@ Filters::CheckSingleEntryUnsafe (
     PVOID pData;
     ULONG datasize;
     NTSTATUS status = Event->QueryParameter (
-        Entry->m_Parameter,
+        Entry->Generic.m_Parameter,
         &pData,
         &datasize
         );
@@ -143,18 +192,20 @@ Filters::CheckSingleEntryUnsafe (
     
     status = STATUS_UNSUCCESSFUL;
 
-    PVOID ptr = Entry->m_Data.m_Data;
+    PVOID ptr = Entry->Generic.m_Data.m_Data;
 
     ULONG item;
-    switch( Entry->m_Operation )
+    switch( Entry->Generic.m_Operation )
     {
     case _fltop_equ:
-        if ( datasize != Entry->m_Data.m_DataSize / Entry->m_Data.m_Count )
+        if ( datasize
+            != 
+            Entry->Generic.m_Data.m_DataSize / Entry->Generic.m_Data.m_Count )
         {
             break;
         }
         
-        for ( item = 0; item < Entry->m_Data.m_Count; item++ )
+        for ( item = 0; item < Entry->Generic.m_Data.m_Count; item++ )
         {
             if ( datasize == RtlCompareMemory (
                 ptr,
@@ -172,9 +223,11 @@ Filters::CheckSingleEntryUnsafe (
         break;
 
     case _fltop_and:
-        ASSERT( Entry->m_Data.m_Count == 1 );
+        ASSERT( Entry->Generic.m_Data.m_Count == 1 );
 
-        if ( datasize != Entry->m_Data.m_DataSize / Entry->m_Data.m_Count )
+        if ( datasize
+            !=
+            Entry->Generic.m_Data.m_DataSize / Entry->Generic.m_Data.m_Count )
         {
             break;
         }
@@ -200,19 +253,31 @@ Filters::CheckSingleEntryUnsafe (
         break;
     }
 
-    if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_NEGATION ) )
-    {
-        if ( NT_SUCCESS( status ) )
-        {
-            status = STATUS_UNSUCCESSFUL;
-        }
-        else
-        {
-            status = STATUS_SUCCESS;
-        }
-    }
-
     return status;
+}
+
+NTSTATUS
+Filters::CheckContainerUnsafe (
+    __in ParamCheckEntry* Entry,
+    __in EventData *Event
+    )
+{
+    UNREFERENCED_PARAMETER( Entry );
+    UNREFERENCED_PARAMETER( Event );
+
+    //if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_NEGATION ) )
+    //{
+    //    if ( NT_SUCCESS( status ) )
+    //    {
+    //        status = STATUS_UNSUCCESSFUL;
+    //    }
+    //    else
+    //    {
+    //        status = STATUS_SUCCESS;
+    //    }
+    //}
+
+    return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS
@@ -263,8 +328,8 @@ Filters::CheckParamsList (
         }
 
         // check data
-        NTSTATUS status = CheckSingleEntryUnsafe( pEntry, Event );
-
+        NTSTATUS status = CheckEntryUnsafe( pEntry, Event );
+        
         if ( NT_SUCCESS( status ) )
         {
             continue;
@@ -435,16 +500,16 @@ Filters::TryToFindExisting (
             Flink = Flink->Flink;
 
             if (
-                pEntry->m_Operation != ParamEntry->m_Operation
+                pEntry->Generic.m_Operation != ParamEntry->m_Operation
                 ||
                 pEntry->m_Flags != ParamEntry->m_Flags
                 ||
-                pEntry->m_Data.m_DataSize != ParamEntry->m_FltData.m_Size
+                pEntry->Generic.m_Data.m_DataSize != ParamEntry->m_FltData.m_Size
                 ||
-                pEntry->m_Data.m_DataSize != RtlCompareMemory (
-                    pEntry->m_Data.m_Data,
+                pEntry->Generic.m_Data.m_DataSize != RtlCompareMemory (
+                    pEntry->Generic.m_Data.m_Data,
                     ParamEntry->m_FltData.m_Data,
-                    pEntry->m_Data.m_DataSize
+                    pEntry->Generic.m_Data.m_DataSize
                     )
                 )
             {
@@ -525,9 +590,9 @@ Filters::AddParameterWithFilterPos (
         return NULL;
     }
 
-    pEntry->m_Operation = ParamEntry->m_Operation;
+    pEntry->Generic.m_Operation = ParamEntry->m_Operation;
     pEntry->m_Flags = ParamEntry->m_Flags;
-    pEntry->m_Parameter = ParamEntry->m_Id;
+    pEntry->Generic.m_Parameter = ParamEntry->m_Id;
     pEntry->m_PosCount = 1;
     pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
         PagedPool,
@@ -543,11 +608,11 @@ Filters::AddParameterWithFilterPos (
     }
     
     pEntry->m_FilterPosList[0] = Position;
-    pEntry->m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
-    pEntry->m_Data.m_Count = ParamEntry->m_FltData.m_Count;
+    pEntry->Generic.m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
+    pEntry->Generic.m_Data.m_Count = ParamEntry->m_FltData.m_Count;
 
     RtlCopyMemory (
-        pEntry->m_Data.m_Data,
+        pEntry->Generic.m_Data.m_Data,
         ParamEntry->m_FltData.m_Data,
         ParamEntry->m_FltData.m_Size
         );

@@ -14,15 +14,34 @@ typedef struct _FltData
 
 #define PosListItemType  ULONG
 
+enum CheckEntryType
+{
+    GerenicItem = 0,
+    Container   = 1
+};
+
 typedef struct _ParamCheckEntry
 {
     LIST_ENTRY          m_List;
-    Parameters          m_Parameter;
-    FltOperation        m_Operation;
-    ULONG               m_Flags;
+    ULONG               m_Flags;    // _PARAM_ENTRY_FLAG_XXX
     ULONG               m_PosCount;
     PosListItemType*    m_FilterPosList;
-    FltData             m_Data;
+    
+    CheckEntryType      m_Type;
+    union
+    {
+        struct {
+            Parameters          m_Parameter;
+            FltOperation        m_Operation;
+            FltData             m_Data;
+        } Generic;
+
+        struct {
+            ULONG       m_FilterId;
+            VERDICT     m_Verdict;
+        } Container;
+
+    };
 } ParamCheckEntry;
 
 typedef struct _FilterEntry
@@ -117,7 +136,19 @@ private:
         );
 
     NTSTATUS
-    CheckSingleEntryUnsafe (
+    CheckEntryUnsafe (
+        __in ParamCheckEntry* Entry,
+        __in EventData *Event
+        );
+
+    NTSTATUS
+    CheckGenericUnsafe (
+        __in ParamCheckEntry* Entry,
+        __in EventData *Event
+        );
+
+    NTSTATUS
+    CheckContainerUnsafe (
         __in ParamCheckEntry* Entry,
         __in EventData *Event
         );
