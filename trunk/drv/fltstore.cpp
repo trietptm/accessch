@@ -160,7 +160,6 @@ Filters::CheckEntryUnsafe (
         break;
     }
 
-
     return status;
 }
 
@@ -264,18 +263,6 @@ Filters::CheckContainerUnsafe (
 {
     UNREFERENCED_PARAMETER( Entry );
     UNREFERENCED_PARAMETER( Event );
-
-    //if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_NEGATION ) )
-    //{
-    //    if ( NT_SUCCESS( status ) )
-    //    {
-    //        status = STATUS_UNSUCCESSFUL;
-    //    }
-    //    else
-    //    {
-    //        status = STATUS_SUCCESS;
-    //    }
-    //}
 
     return STATUS_UNSUCCESSFUL;
 }
