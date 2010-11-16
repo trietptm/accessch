@@ -135,9 +135,7 @@ Filters::CheckSingleEntryUnsafe (
     {
         if ( FlagOn( Entry->m_Flags, _PARAM_ENTRY_FLAG_BE_PRESENT ) )
         {
-            __debugbreak(); //nct
-
-            return status;
+            return STATUS_NOT_FOUND;
         }
         
         return STATUS_SUCCESS;
@@ -259,7 +257,7 @@ Filters::CheckParamsList (
 
         if ( !bExistActiveFilter )
         {
-            // this parameter used in already unmatcher filters
+            // this parameter used in already unmatched filters
             __debugbreak(); /// nct
             continue;
         }
