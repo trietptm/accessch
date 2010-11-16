@@ -809,14 +809,15 @@ Filters::CleanupByProcess (
         
         if ( m_FiltersCount > 1 )
         {
-            FilterEntry* pFiltersArrayNew = ExAllocatePoolWithTag (
+            pFiltersArrayNew = ( FilterEntry* ) ExAllocatePoolWithTag (
                 PagedPool,
-                sizeof( FilterEntry ) * ( m_FiltersCount - 1 )
+                sizeof( FilterEntry ) * ( m_FiltersCount - 1 ),
+                m_AllocTag
                 );
 
             if ( !pFiltersArrayNew )
             {
-                // reuse all buffer
+                // reuse old buffer
                 KeBugCheck( 0x7d );
             }
 
