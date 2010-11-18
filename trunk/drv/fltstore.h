@@ -18,12 +18,18 @@ typedef struct _FltData
 
 enum CheckEntryType
 {
-    GerenicItem = 0,
-    Container   = 1
+    InvalidEntry    = 0,
+    GerenicItem     = 1,
+    BoxItem         = 2
 };
 
-typedef struct _ParamCheckEntry
+class ParamCheckEntry
 {
+public:
+    ParamCheckEntry();
+    ~ParamCheckEntry();
+
+public:
     LIST_ENTRY          m_List;
     ULONG               m_Flags;    // _PARAM_ENTRY_FLAG_XXX
     ULONG               m_PosCount;
@@ -42,9 +48,8 @@ typedef struct _ParamCheckEntry
             FilterBox*          m_Box;
             PRTL_BITMAP         m_Affecting;
         } Container;
-
     };
-} ParamCheckEntry;
+};
 
 typedef struct _FilterEntry
 {
@@ -64,6 +69,7 @@ public:
     Filters();
     ~Filters();
 
+    __checkReturn
     NTSTATUS
     AddRef (
         );
@@ -71,15 +77,18 @@ public:
     void
     Release();
 
+    __checkReturn
     BOOLEAN
     IsEmpty();
 
+    __checkReturn
     VERDICT
     GetVerdict (
         __in EventData *Event,
         __out PARAMS_MASK *ParamsMask
         );
     
+    __checkReturn
     NTSTATUS
     AddFilter (
         __in UCHAR GroupId,
