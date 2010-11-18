@@ -255,6 +255,8 @@ Filters::CheckGenericUnsafe (
     return status;
 }
 
+__checkReturn
+__drv_valueIs( STATUS_SUCCESS; STATUS_UNSUCCESSFUL; STATUS_NOT_FOUND )
 NTSTATUS
 Filters::CheckContainerUnsafe (
     __in ParamCheckEntry* Entry,

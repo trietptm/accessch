@@ -1,6 +1,8 @@
 #ifndef __fltstore_h
 #define __fltstore_h
 
+#include "fltbox.h"
+
 // used for filterid and groupid
 #define NumberOfBits 256
 #define BitMapBufferSizeInUlong (NumberOfBits / 32)
@@ -37,8 +39,8 @@ typedef struct _ParamCheckEntry
         } Generic;
 
         struct {
-            ULONG       m_FilterId;
-            VERDICT     m_Verdict;
+            FilterBox*          m_Box;
+            PRTL_BITMAP         m_Affecting;
         } Container;
 
     };
