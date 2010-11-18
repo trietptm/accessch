@@ -18,9 +18,9 @@ typedef struct _FltData
 
 enum CheckEntryType
 {
-    InvalidEntry    = 0,
-    GerenicItem     = 1,
-    BoxItem         = 2
+    CheckEntryInvalid   = 0,
+    CheckEntryGeneric   = 1,
+    CheckEntryBox       = 2
 };
 
 class ParamCheckEntry
@@ -109,7 +109,7 @@ public:
 private:
     __checkReturn
     NTSTATUS
-    ParseParamsUnsafe (
+    AddParamsUnsafe (
         __in ULONG Position,
         __in ULONG ParamsCount,
         __in PPARAM_ENTRY Params

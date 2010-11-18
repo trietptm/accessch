@@ -33,7 +33,7 @@ ParamCheckEntry::ParamCheckEntry (
     )
 {
     m_FilterPosList = NULL;
-    m_Type = InvalidEntry;
+    m_Type = CheckEntryInvalid;
 }
 
 ParamCheckEntry::~ParamCheckEntry (
@@ -43,13 +43,13 @@ ParamCheckEntry::~ParamCheckEntry (
 
     switch ( m_Type )
     {
-    case InvalidEntry:
+    case CheckEntryInvalid:
         break;
 
-    case GerenicItem:
+    case CheckEntryGeneric:
         break;
 
-    case BoxItem:
+    case CheckEntryBox:
         Container.m_Box->Release();
         FREE_POOL( Container.m_Affecting );
         break;
@@ -165,11 +165,11 @@ Filters::CheckEntryUnsafe (
 
     switch ( Entry->m_Type )
     {
-    case GerenicItem:
+    case CheckEntryGeneric:
         status = CheckGenericUnsafe( Entry, Event );
         break;
 
-    case BoxItem:
+    case CheckEntryBox:
         status = CheckContainerUnsafe( Entry, Event );
         break;
 
@@ -620,6 +620,8 @@ Filters::AddParameterWithFilterPos (
 
     pEntry->ParamCheckEntry::ParamCheckEntry();
 
+    pEntry->m_Type = CheckEntryGeneric;
+
     pEntry->Generic.m_Operation = ParamEntry->m_Operation;
     pEntry->m_Flags = ParamEntry->m_Flags;
     pEntry->Generic.m_Parameter = ParamEntry->m_Id;
@@ -762,7 +764,7 @@ Filters::MoveFilterPosInParams (
 
 __checkReturn
 NTSTATUS
-Filters::ParseParamsUnsafe (
+Filters::AddParamsUnsafe (
     __in ULONG Position,
     __in ULONG ParamsCount,
     __in PPARAM_ENTRY Params
@@ -865,7 +867,7 @@ Filters::AddFilter (
 
         FilterEntry* pEntry = &m_FiltersArray[ position ];
 
-        status = ParseParamsUnsafe (
+        status = AddParamsUnsafe (
             position,
             ParamsCount,
             Params
