@@ -232,6 +232,7 @@
     <ClCompile Include="..\..\fileflt.cpp" />
     <ClCompile Include="..\..\filehlp.cpp" />
     <ClCompile Include="..\..\flt.cpp" />
+    <ClCompile Include="..\..\fltbox.cpp" />
     <ClCompile Include="..\..\fltstore.cpp" />
     <ClCompile Include="..\..\main.cpp" />
     <ClCompile Include="..\..\mm.cpp" />
@@ -247,6 +248,7 @@
     <ClInclude Include="..\..\fileflt.h" />
     <ClInclude Include="..\..\filehlp.h" />
     <ClInclude Include="..\..\flt.h" />
+    <ClInclude Include="..\..\fltbox.h" />
     <ClInclude Include="..\..\fltstore.h" />
     <ClInclude Include="..\..\main.h" />
     <ClInclude Include="..\..\mm.h" />

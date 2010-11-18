@@ -28,6 +28,41 @@ typedef struct _FiltersItem
     Filters*            m_Filters;
 } FiltersItem, *pFiltersItem;
 //////////////////////////////////////////////////////////////////////////
+
+ParamCheckEntry::ParamCheckEntry (
+    )
+{
+    m_FilterPosList = NULL;
+    m_Type = InvalidEntry;
+}
+
+ParamCheckEntry::~ParamCheckEntry (
+    )
+{
+    FREE_POOL( m_FilterPosList );
+
+    switch ( m_Type )
+    {
+    case InvalidEntry:
+        break;
+
+    case GerenicItem:
+        break;
+
+    case BoxItem:
+        Container.m_Box->Release();
+        FREE_POOL( Container.m_Affecting );
+        break;
+
+    default:
+        {
+            __debugbreak();
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 Filters::Filters (
     )
 {
@@ -78,7 +113,7 @@ Filters::~Filters (
             
             Flink = Flink->Flink;
 
-            FREE_POOL( pEntry->m_FilterPosList );
+            pEntry->ParamCheckEntry::~ParamCheckEntry();
             FREE_POOL( pEntry );
         }
     }
@@ -86,6 +121,7 @@ Filters::~Filters (
     FREE_POOL( m_FiltersArray );
 }
 
+__checkReturn
 NTSTATUS
 Filters::AddRef (
     )
@@ -105,6 +141,7 @@ Filters::Release (
     ExReleaseRundownProtection( &m_Ref );
 }
 
+__checkReturn
 BOOLEAN
 Filters::IsEmpty (
     )
@@ -117,6 +154,7 @@ Filters::IsEmpty (
     return TRUE;
 }
 
+__checkReturn
 NTSTATUS
 Filters::CheckEntryUnsafe (
     __in ParamCheckEntry* Entry,
@@ -131,11 +169,12 @@ Filters::CheckEntryUnsafe (
         status = CheckGenericUnsafe( Entry, Event );
         break;
 
-    case Container:
+    case BoxItem:
         status = CheckContainerUnsafe( Entry, Event );
         break;
 
     default:
+        __debugbreak();
         return STATUS_NOT_IMPLEMENTED;
     }
 
@@ -579,6 +618,8 @@ Filters::AddParameterWithFilterPos (
         return NULL;
     }
 
+    pEntry->ParamCheckEntry::ParamCheckEntry();
+
     pEntry->Generic.m_Operation = ParamEntry->m_Operation;
     pEntry->m_Flags = ParamEntry->m_Flags;
     pEntry->Generic.m_Parameter = ParamEntry->m_Id;
@@ -591,6 +632,7 @@ Filters::AddParameterWithFilterPos (
 
     if ( !pEntry->m_FilterPosList )
     {
+        pEntry->ParamCheckEntry::~ParamCheckEntry();
         FREE_POOL( pEntry );
         
         return NULL;
@@ -648,7 +690,7 @@ Filters::DeleteParamsByFilterPosUnsafe (
             {
                 RemoveEntryList( &pEntry->m_List );
 
-                FREE_POOL( pEntry->m_FilterPosList );
+                pEntry->ParamCheckEntry::~ParamCheckEntry();
                 FREE_POOL( pEntry );
 
                 continue;
