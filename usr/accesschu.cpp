@@ -7,6 +7,11 @@
 
 #define Add2Ptr(P,I) ((PVOID)((PUCHAR)(P) + (I)))
 
+// {25650500-453D-417D-968E-7EC1754CC251}
+static const GUID gBoxGuid = 
+{ 0x25650500, 0x453d, 0x417d, { 0x96, 0x8e, 0x7e, 0xc1, 0x75, 0x4c, 0xc2, 0x51 } };
+
+
 //////////////////////////////////////////////////////////////////////////
 #define FILE_SUPERSEDE                  0x00000000
 #define FILE_OPEN                       0x00000001
@@ -159,6 +164,57 @@ CustomGetSize (
 }
 
 //////////////////////////////////////////////////////////////////////////
+HRESULT
+CreateExtensionsBox(
+    __in PCOMMUNICATIONS CommPort,
+    __in PWCHAR Pattern
+    )
+{
+    assert( CommPort );
+
+    HRESULT hResult = E_FAIL;
+
+    char buffer[0x1000];
+
+    ZeroMemory( buffer, sizeof( buffer) );
+
+    PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) buffer;
+    pCommand->m_Command = ntfcom_FiltersChain;
+
+    PFILTERS_CHAIN pChain = (PFILTERS_CHAIN) pCommand->m_Data;
+
+    pChain->m_Count = 1;
+    pChain->m_Entry[0].m_Operation = _fltbox_create;
+
+    PFLTBOX pBox = pChain->m_Entry[0].m_Box;
+    RtlCopyMemory( &pBox->m_Guid, &gBoxGuid, sizeof( GUID ) );
+    pBox->m_Operation = _fltbox_add;
+    pBox->Items.m_ParamsCount = 1;
+
+    PPARAM_ENTRY pEntry = pBox->Items.m_Params;
+
+    pEntry->m_Id = PARAMETER_FILE_NAME;
+    pEntry->m_Operation = _fltop_pattern;
+    pEntry->m_FltData.m_Count = 0;
+    pEntry->m_FltData.m_Size = lstrlen( Pattern ) *sizeof( WCHAR );
+    PWCHAR pPattern = (PWCHAR) pEntry->m_FltData.m_Data;
+    StringCbCopy( pPattern, MAX_PATH, Pattern );
+
+    ULONG requestsize = (ULONG) ((char*)pPattern - buffer) 
+        + pEntry->m_FltData.m_Size;
+
+    DWORD retsize;
+    hResult = FilterSendMessage (
+        CommPort->m_hPort,
+        pCommand,
+        requestsize,
+        NULL,
+        0,
+        &retsize
+        );
+
+    return hResult;
+}
 
 HRESULT
 CreateFilter_PostCreate (
@@ -172,7 +228,7 @@ CreateFilter_PostCreate (
     // create filters manually
     char buffer[0x1000];
 
-    memset( buffer, 0, sizeof( buffer) );
+    ZeroMemory( buffer, sizeof( buffer) );
 
     PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) buffer;
     pCommand->m_Command = ntfcom_FiltersChain;
@@ -284,7 +340,7 @@ CreateFilter_PreCleanup (
     // create filters manually
     char buffer[0x1000];
 
-    memset( buffer, 0, sizeof( buffer) );
+    ZeroMemory( buffer, sizeof( buffer) );
 
     PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) buffer;
     pCommand->m_Command = ntfcom_FiltersChain;
@@ -351,7 +407,14 @@ CreateFilters (
     __in PCOMMUNICATIONS CommPort
     )
 {
-    HRESULT hResult = CreateFilter_PostCreate( CommPort );
+    HRESULT hResult;
+
+    hResult = CreateExtensionsBox( CommPort, L"*.exe" );
+    hResult = CreateExtensionsBox( CommPort, L"*.com" );
+    hResult = CreateExtensionsBox( CommPort, L"*.bat" );
+    hResult = CreateExtensionsBox( CommPort, L"*.dll" );
+
+    hResult = CreateFilter_PostCreate( CommPort );
     if ( SUCCEEDED( hResult ) )
     {
         hResult = CreateFilter_PreCleanup( CommPort );
@@ -384,7 +447,7 @@ WaitForSingleMessage (
         return E_OUTOFMEMORY;
     }
 
-    memset( &pEvent->m_Ovlp, 0, sizeof( OVERLAPPED ) );
+    ZeroMemory( &pEvent->m_Ovlp, sizeof( OVERLAPPED ) );
 
     HRESULT hResult = FilterGetMessage (
         hPort,
@@ -732,6 +795,7 @@ WaiterThread (
 
             OutputDebugString( wchOut );*/
         }
+
         PEVENT_PARAMETER pParamSFlags = GetEventParam (
             pData, PARAMETER_OBJECT_STREAM_FLAGS );
 
@@ -814,7 +878,7 @@ WaiterThread (
         // release
         
         REPLY_MESSAGE Reply;
-        memset( &Reply, 0, sizeof( Reply) );
+        ZeroMemory( &Reply, sizeof( Reply) );
 
         Reply.m_Verdict.m_Flags = VERDICT_CACHE1;
         if ( bBlock )

@@ -7,7 +7,6 @@
 ULONG FiltersTree::m_AllocTag = 'tfSA';
 RTL_AVL_TABLE FiltersTree::m_Tree;
 EX_PUSH_LOCK FiltersTree::m_AccessLock;
-LONG FiltersTree::m_Count;
 LONG FiltersTree::m_Flags;
 LONG FiltersTree::m_FilterIdCounter;
 
@@ -998,7 +997,6 @@ FiltersTree::Initialize (
         NULL
         );
 
-    m_Count = 0;
     m_Flags = _FT_FLAGS_PAUSED;
     m_FilterIdCounter = 0;
 
@@ -1128,7 +1126,6 @@ FiltersTree::DeleteAllFilters (
 
     } while ( pItem );
 
-    m_Count = 0;
     m_FilterIdCounter = 0;
 
     FltReleasePushLock( &m_AccessLock );
@@ -1162,8 +1159,6 @@ FiltersTree::CleanupFiltersByPid (
 
             RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
 
-            m_Count -= removed;
-
             pItem = (pFiltersItem) RtlEnumerateGenericTableAvl (
                 &m_Tree,
                 TRUE
@@ -1188,13 +1183,6 @@ FiltersTree::GetNextFilterid (
     LONG result = InterlockedIncrement( &m_FilterIdCounter );
 
     return result;
-}
-
-LONG
-FiltersTree::GetCount (
-    )
-{
-    return m_Count;
 }
 
 BOOLEAN

@@ -216,6 +216,7 @@ DriverEntry (
     ProcList::Initialize();
     QueuedItem::Initialize();
     FiltersTree::Initialize();
+    FilteringSystem::Initialize();
 
     __try
     {
@@ -292,6 +293,7 @@ Unload (
     FiltersTree::Destroy();
     QueuedItem::Destroy();
     ProcList::Destroy();
+    FilteringSystem::Destroy();
 
     return STATUS_SUCCESS;
 }
