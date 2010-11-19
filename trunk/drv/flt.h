@@ -10,7 +10,7 @@ typedef struct _AggregationItem
 class Aggregation
 {
 private:
-    static ULONG m_AllocTag;
+    static ULONG        m_AllocTag;
 
 public:
     Aggregation (
@@ -211,37 +211,33 @@ protected:
     OperationPoint          m_OperationType;
 };
 
- /*   NTSTATUS
-    QueryParameterAsUnicodeString (
-        __in Parameters PrarameterId,
-        __out PUNICODE_STRING String
-        )
-    {
-        ULONG lenght;
-        PVOID buffer;
-        NTSTATUS status = m_InterceptorContext->QueryParameter (
-            PrarameterId,
-            &buffer,
-            &lenght
-            );
-
-        if ( NT_SUCCESS( status ) )
-        {
-            String->Buffer = (PWSTR) buffer;
-            String->Length = String->MaximumLength = (USHORT) lenght;
-        }
-
-        return status;
-    }*/
-
+//////////////////////////////////////////////////////////////////////////
 
 class FilteringSystem
 {
 public:
-    
+    static ULONG        m_AllocTag;
+
+    static EX_PUSH_LOCK m_AccessLock;
+    static LIST_ENTRY   m_FltObjects;
+    static LONG         m_ActiveCount;
+
+    FilteringSystem();
+    ~FilteringSystem();
+
+    static void Initialize();
+    static void Destroy();
+
     static
     void
-    RemoveAllFilters (
+    Attach (
+        __in FilteringSystem* FltObject
+    );
+
+    static
+    void
+    Detach (
+        __in FilteringSystem* FltObject
         );
 
     static
@@ -259,7 +255,21 @@ public:
         __out PARAMS_MASK *ParamsMask
         );
 
-    static
+public:
+    NTSTATUS
+    AddRef();
+
+    void
+    Release();
+
+    BOOLEAN
+    IsActive (
+        );
+
+    void
+    RemoveAllFilters (
+        );
+
     __checkReturn
     NTSTATUS
     ProceedChain (
@@ -268,11 +278,37 @@ public:
         __out PULONG FilterId
         );
 
-    static
     __checkReturn
     NTSTATUS
     ChangeState (
         BOOLEAN Activate
+        );
+
+    static
+    __checkReturn
+    NTSTATUS
+    SubFilterEvent (
+        __in EventData *Event,
+        __inout PVERDICT Verdict,
+        __out PARAMS_MASK *ParamsMask
+        );
+
+private:
+     EX_RUNDOWN_REF m_Ref;
+     LIST_ENTRY     m_List;
+
+    __checkReturn
+    NTSTATUS
+    ProceedChainGeneric (
+        __in PCHAIN_ENTRY pEntry,
+        __out PULONG FilterId
+        );
+
+    __checkReturn
+    NTSTATUS
+    ProceedChainBox (
+        __in PCHAIN_ENTRY pEntry,
+        __out PULONG FilterId
         );
 };
 

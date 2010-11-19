@@ -147,6 +147,7 @@ typedef enum FltOperation
 {
     _fltop_equ      = 0x0000,
     _fltop_and      = 0x0001,
+    _fltop_pattern  = 0x0002,
 };
 
 typedef struct _FILTER_PARAMETER
@@ -189,12 +190,33 @@ typedef struct _FILTER
     PARAMS_MASK         m_WishMask;
     ULONG               m_ParamsCount;
     PARAM_ENTRY         m_Params[1];
-} FILTER,*PFILTER;
+} FILTER, *PFILTER;
+
+typedef enum FltBoxOperation
+{
+    _fltbox_add         = 0,
+};
+
+typedef struct _FLTBOX
+{
+    GUID                m_Guid;
+    FltBoxOperation     m_Operation;
+    union
+    {
+        struct { 
+            ULONG       m_ParamsCount;
+            PARAM_ENTRY m_Params[1];
+        } Items;
+
+        ULONG           m_Index;
+    };
+} FLTBOX, *PFLTBOX;
 
 typedef enum ChainOperation
 {
     _fltchain_add       = 0,
     _fltchain_del       = 1,
+    _fltbox_create      = 2,
 };
 
 typedef struct _CHAIN_ENTRY
@@ -202,17 +224,16 @@ typedef struct _CHAIN_ENTRY
     ChainOperation      m_Operation;
     union
     {
-        FILTER          m_Filter[1];    // add filters
-        ULONG           m_Id[1];        // delete filters
+        FILTER          m_Filter[1];    // _fltchain_add
+        ULONG           m_Id[1];        // _fltchain_del
+        FLTBOX          m_Box[1];       // _fltbox_create
     };
-
 } CHAIN_ENTRY,*PCHAIN_ENTRY;
 
 typedef struct _FILTERS_CHAIN
 {
     ULONG               m_Count;
     CHAIN_ENTRY         m_Entry[1];
-
 } FILTERS_CHAIN, *PFILTERS_CHAIN;
 // end filters structures
 

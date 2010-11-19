@@ -215,7 +215,6 @@ public:
         );
 
     static LONG GetNextFilterid();
-    static LONG GetCount();
     static BOOLEAN IsActive();
     static NTSTATUS ChangeState (
         __in_opt BOOLEAN Activate
@@ -257,7 +256,6 @@ public:
     FiltersTree();
     ~FiltersTree();
 
-    static LONG             m_Count;
     static LONG             m_Flags;
 };
 

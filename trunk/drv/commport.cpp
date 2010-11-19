@@ -11,6 +11,7 @@
 typedef struct _PORT_CONTEXT
 {
     PFLT_PORT           m_Connection;
+    FilteringSystem*    m_pFltSystem;
 }PORT_CONTEXT, *PPORT_CONTEXT;
 
 // ----------------------------------------------------------------------------
@@ -104,8 +105,22 @@ PortConnect (
         RtlZeroMemory( pPortContext, sizeof( PORT_CONTEXT ) );
 
         pPortContext->m_Connection = ClientPort;
+        pPortContext->m_pFltSystem = ( FilteringSystem* ) ExAllocatePoolWithTag (
+            PagedPool,
+            sizeof( FilteringSystem ),
+            FilteringSystem::m_AllocTag
+            );
+
+        if ( !pPortContext->m_pFltSystem )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            __leave;
+        }
 
         /// \todo  revise single port connection
+        pPortContext->m_pFltSystem->FilteringSystem::FilteringSystem();
+        FilteringSystem::Attach( pPortContext->m_pFltSystem );
+
         GlobalData.m_ClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
         ExReInitializeRundownProtection( &GlobalData.m_RefClientPort );
@@ -114,6 +129,20 @@ PortConnect (
     }
     __finally
     {   
+        if ( !NT_SUCCESS( status ) )
+        {
+            if ( pPortContext )
+            {
+                FilteringSystem* pFltSystem = pPortContext->m_pFltSystem;
+                if ( pFltSystem )
+                {
+                    pFltSystem->FilteringSystem::~FilteringSystem();
+                    FREE_POOL( pPortContext->m_pFltSystem );
+                }
+
+                FREE_POOL( pPortContext );
+            }
+        }
     }
 
     return status;
@@ -128,7 +157,7 @@ PortDisconnect (
 
     ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
-    FilteringSystem::RemoveAllFilters();
+    FilteringSystem::Detach( pPortContext->m_pFltSystem );
 
     ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
     GlobalData.m_ClientPort = NULL;
@@ -139,6 +168,8 @@ PortDisconnect (
 
     ExRundownCompleted( &GlobalData.m_RefClientPort );
 
+    pPortContext->m_pFltSystem->FilteringSystem::~FilteringSystem();
+    FREE_POOL( pPortContext->m_pFltSystem );
     FREE_POOL( pPortContext );
 }
 
@@ -219,11 +250,11 @@ PortMessageNotify (
         switch( pCommand->m_Command )
         {
         case ntfcom_Activate:
-            status = FilteringSystem::ChangeState( TRUE );
+            status =  pPortContext->m_pFltSystem->ChangeState( TRUE );
             break;
 
         case ntfcom_Pause:
-            status = FilteringSystem::ChangeState( FALSE );
+            status = pPortContext->m_pFltSystem->ChangeState( FALSE );
             PortPostEmptyMessages( pPortContext );
             break;
 
@@ -265,16 +296,13 @@ PortMessageNotify (
                     m_Data
                     );
 
-                if ( pChain->m_Count != 1 )
-                {
-                    /// \todo prepare output data;
-                    status = STATUS_NOT_SUPPORTED;
-                    __debugbreak();
-                    break;
-                }
-
                 ULONG FilterId;
-                status = FilteringSystem::ProceedChain( pChain, size, &FilterId );
+                status = pPortContext->m_pFltSystem->ProceedChain (
+                    pChain,
+                    size,
+                    &FilterId
+                    );
+
                 if ( NT_SUCCESS( status ) )
                 {
                     if ( OutputBuffer && OutputBufferSize == sizeof( ULONG ) )
@@ -491,7 +519,7 @@ PortAskUser (
 
     ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
 
-    // \toso fill result verdict
+    // \todo fill result verdict
     UNREFERENCED_PARAMETER( Verdict );
 
     __try
