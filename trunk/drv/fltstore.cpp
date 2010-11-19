@@ -5,10 +5,10 @@
 #include "proclist.h"
 
 ULONG FiltersTree::m_AllocTag = 'tfSA';
-RTL_AVL_TABLE FiltersTree::m_Tree;
-EX_PUSH_LOCK FiltersTree::m_AccessLock;
-LONG FiltersTree::m_Flags;
-LONG FiltersTree::m_FilterIdCounter;
+//RTL_AVL_TABLE FiltersTree::m_Tree;
+//EX_PUSH_LOCK FiltersTree::m_AccessLock;
+//LONG FiltersTree::m_Flags;
+//LONG FiltersTree::m_FilterIdCounter;
 
 ULONG Filters::m_AllocTag = 'ifSA';
 
@@ -844,7 +844,7 @@ Filters::AddFilter (
     __in PARAMS_MASK WishMask,
     __in_opt ULONG ParamsCount,
     __in PPARAM_ENTRY Params,
-    __out PULONG FilterId
+    __in ULONG FilterId
     )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
@@ -881,7 +881,7 @@ Filters::AddFilter (
         pEntry->m_ProcessId = ProcessId;
         pEntry->m_RequestTimeout = RequestTimeout;
         pEntry->m_WishMask = WishMask;
-        pEntry->m_FilterId = FiltersTree::GetNextFilterid();
+        pEntry->m_FilterId = FilterId;
         pEntry->m_GroupId = GroupId;
         
         RtlSetBit( &m_ActiveFilters, position );
@@ -893,7 +893,6 @@ Filters::AddFilter (
         }
 
         m_FiltersCount++;
-        *FilterId = pEntry->m_FilterId;
 
         status = STATUS_SUCCESS;
     }
@@ -983,8 +982,7 @@ Filters::CleanupByProcess (
 
 //////////////////////////////////////////////////////////////////////////
 
-void
-FiltersTree::Initialize (
+FiltersTree::FiltersTree (
     )
 {
     FltInitializePushLock( &m_AccessLock );
@@ -1000,13 +998,12 @@ FiltersTree::Initialize (
     m_Flags = _FT_FLAGS_PAUSED;
     m_FilterIdCounter = 0;
 
-    NTSTATUS status = ProcList::RegisterExitProcessCb( CleanupFiltersByPid );
+    NTSTATUS status = ProcList::RegisterExitProcessCb( CleanupFiltersByPid, this );
  
     ASSERT( NT_SUCCESS( status ) );
 }
 
-void
-FiltersTree::Destroy (
+FiltersTree::~FiltersTree (
     )
 {
     ProcList::UnregisterExitProcessCb( CleanupFiltersByPid );
@@ -1088,18 +1085,6 @@ FiltersTree::Free (
     FREE_POOL( Buffer );
 }
 
-FiltersTree::FiltersTree (
-    )
-{
-
-}
-
-FiltersTree::~FiltersTree (
-    )
-{
-    /// \todo free tree items
-}
-
 void
 FiltersTree::DeleteAllFilters (
     )
@@ -1133,6 +1118,17 @@ FiltersTree::DeleteAllFilters (
 
 void
 FiltersTree::CleanupFiltersByPid (
+    __in HANDLE ProcessId,
+    __in PVOID Opaque
+    )
+{
+    FiltersTree* pThis = ( FiltersTree* ) Opaque;
+    
+    pThis->CleanupFiltersByPidp( ProcessId );
+}
+
+void
+FiltersTree::CleanupFiltersByPidp (
     __in HANDLE ProcessId
     )
 {

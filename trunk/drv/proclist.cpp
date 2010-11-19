@@ -64,6 +64,7 @@ typedef struct _ExitProcessCbList
     LIST_ENTRY          m_List;
     EX_RUNDOWN_REF      m_Ref;
     _tpProcessExitCb    m_Cb;
+    PVOID               m_Opaque;
 } ExitProcessCbList, *PExitProcessCbList;
 
 //////////////////////////////////////////////////////////////////////////
@@ -128,7 +129,8 @@ ProcList::Destroy (
 
 NTSTATUS
 ProcList::RegisterExitProcessCb (
-    __in _tpProcessExitCb CbFunc
+    __in _tpProcessExitCb CbFunc,
+    __in_opt PVOID Opaque
     )
 {
     ASSERT( CbFunc );
@@ -145,6 +147,7 @@ ProcList::RegisterExitProcessCb (
     }
 
     pItem->m_Cb = CbFunc;
+    pItem->m_Opaque = Opaque;
     ExInitializeRundownProtection( &pItem->m_Ref );
 
     FltAcquirePushLockExclusive( &m_CbAccessLock );
@@ -389,7 +392,7 @@ ProcList::UnregisterProcess (
 
     if ( pItemCb )
     {
-        pItemCb->m_Cb( ProcessId );
+        pItemCb->m_Cb( ProcessId, pItemCb->m_Opaque );
         ExReleaseRundownProtection( &pItemCb->m_Ref );
     }
 
