@@ -213,10 +213,10 @@ DriverEntry (
     ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
     ExRundownCompleted( &GlobalData.m_RefClientPort );
 
+    FilteringSystem::Initialize();
     ProcList::Initialize();
     QueuedItem::Initialize();
-    FiltersTree::Initialize();
-    FilteringSystem::Initialize();
+
 
     __try
     {
@@ -290,7 +290,6 @@ Unload (
     FltCloseCommunicationPort( GlobalData.m_Port );
     FltUnregisterFilter( GlobalData.m_Filter );
 
-    FiltersTree::Destroy();
     QueuedItem::Destroy();
     ProcList::Destroy();
     FilteringSystem::Destroy();

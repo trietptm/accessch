@@ -210,7 +210,8 @@ FilteringSystem::ProceedChainGeneric (
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    ULONG id;
+    ULONG id = GetNextFilterid();
+
     NTSTATUS status = pFilters->AddFilter (
         pEntry->m_Filter->m_GroupId,
         pEntry->m_Filter->m_Verdict,
@@ -219,7 +220,7 @@ FilteringSystem::ProceedChainGeneric (
         pEntry->m_Filter->m_WishMask,
         pEntry->m_Filter->m_ParamsCount,
         pEntry->m_Filter->m_Params,
-        &id
+        id
         );
 
     if ( FilterId )
@@ -336,7 +337,7 @@ FilteringSystem::SubFilterEvent (
     __out PARAMS_MASK *ParamsMask
     )
 {
-    Filters* pFilters = FiltersTree::GetFiltersBy (
+    Filters* pFilters = GetFiltersBy (
         Event->GetInterceptorId(),
         Event->GetOperationId(),
         Event->GetMinor(),

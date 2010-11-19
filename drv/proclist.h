@@ -1,7 +1,7 @@
 #ifndef __proclist_h
 #define __proclist_h
 
-typedef void ( *_tpProcessExitCb )( HANDLE ProcessId );
+typedef void ( *_tpProcessExitCb )( HANDLE ProcessId, PVOID Opaque );
 
 class ProcList
 {
@@ -19,7 +19,8 @@ public:
     static
     NTSTATUS
     RegisterExitProcessCb (
-        __in _tpProcessExitCb CbFunc
+        __in _tpProcessExitCb CbFunc,
+        __in_opt PVOID Opaque
         );
 
     static

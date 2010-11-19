@@ -212,8 +212,9 @@ protected:
 };
 
 //////////////////////////////////////////////////////////////////////////
+#include "fltstore.h"
 
-class FilteringSystem
+class FilteringSystem: private FiltersTree
 {
 public:
     static ULONG        m_AllocTag;
@@ -284,7 +285,6 @@ public:
         BOOLEAN Activate
         );
 
-    static
     __checkReturn
     NTSTATUS
     SubFilterEvent (

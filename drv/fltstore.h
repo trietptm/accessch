@@ -98,7 +98,7 @@ public:
         __in PARAMS_MASK WishMask,
         __in_opt ULONG ParamsCount,
         __in PPARAM_ENTRY Params,
-        __out PULONG FilterId
+        __in ULONG FilterId
         );
 
     ULONG
@@ -193,17 +193,12 @@ private:
 class FiltersTree
 {
 public:
-    static
-    void
-    Initialize (
+    FiltersTree (
         );
 
-    static
-    void
-    Destroy (
+    ~FiltersTree (
         );
 
-    static
     void
     DeleteAllFilters (
         );
@@ -211,12 +206,18 @@ public:
     static
     void
     CleanupFiltersByPid (
-        __in HANDLE ProcessId
+        __in HANDLE ProcessId,
+        __in PVOID Context
         );
 
-    static LONG GetNextFilterid();
-    static BOOLEAN IsActive();
-    static NTSTATUS ChangeState (
+    LONG
+    GetNextFilterid();
+
+    BOOLEAN
+    IsActive();
+    
+    NTSTATUS
+    ChangeState (
         __in_opt BOOLEAN Activate
         );
 
@@ -225,7 +226,6 @@ public:
     static RTL_AVL_FREE_ROUTINE Free;
   
     __checkReturn
-    static
     Filters*
     GetFiltersBy (
         __in Interceptors Interceptor,
@@ -235,7 +235,6 @@ public:
         );
     
     __checkReturn
-    static
     Filters*
     GetOrCreateFiltersBy (
         __in Interceptors Interceptor,
@@ -245,18 +244,20 @@ public:
         );
     
 private:
-    static ULONG            m_AllocTag;
-    static RTL_AVL_TABLE    m_Tree;
-    static EX_PUSH_LOCK     m_AccessLock;
+    static ULONG     m_AllocTag;
+    RTL_AVL_TABLE    m_Tree;
+    EX_PUSH_LOCK     m_AccessLock;
     
     /// \todo clear counter when disconnected
-    static LONG             m_FilterIdCounter;
+    LONG             m_FilterIdCounter;
+
+    void
+    CleanupFiltersByPidp (
+        __in HANDLE ProcessId
+        );
 
 public:
-    FiltersTree();
-    ~FiltersTree();
-
-    static LONG             m_Flags;
+    LONG             m_Flags;
 };
 
 
