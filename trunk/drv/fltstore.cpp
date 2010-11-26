@@ -397,19 +397,19 @@ Filters::GetVerdict (
     RTL_BITMAP filtersbitmap;
     ULONG mapbuffer[ BitMapBufferSizeInUlong ];
 
+    RtlInitializeBitMap (
+        &filtersbitmap,
+        mapbuffer,
+        NumberOfBits
+        );
+
+    RtlClearAllBits( &filtersbitmap );
+
     FltAcquirePushLockShared( &m_AccessLock );
 
     __try
     {
         ULONG unmatched = 0;
-
-        RtlInitializeBitMap (
-            &filtersbitmap,
-            mapbuffer,
-            NumberOfBits
-            );
-
-        RtlClearAllBits( &filtersbitmap );
 
         // set inactive filters
         for ( ULONG cou = 0; cou < m_FiltersCount; cou++ )
@@ -432,6 +432,7 @@ Filters::GetVerdict (
             __leave;
         }
 
+        // scan finished, lookup matched filters
         // at least 1 filter matched and bit not set
         *ParamsMask = 0;
 
