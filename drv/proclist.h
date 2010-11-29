@@ -38,31 +38,18 @@ private:
     static LIST_ENTRY       m_ExitProcessCbList;
 
 //////////////////////////////////////////////////////////////////////////
-    
-    static
-    RTL_GENERIC_COMPARE_RESULTS
-    NTAPI
-    Compare (
-        __in struct _RTL_AVL_TABLE *Table,
-        __in PVOID FirstStruct,
-        __in PVOID SecondStruct
-        );
 
     static
-    PVOID
-    NTAPI
-    Allocate (
-        __in struct _RTL_AVL_TABLE *Table,
-        __in CLONG ByteSize
-        );
+    RTL_AVL_COMPARE_ROUTINE
+    Compare;
 
     static
-    void
-    NTAPI
-    Free (
-        __in struct _RTL_AVL_TABLE *Table,
-        __in __drv_freesMem(Mem) __post_invalid PVOID Buffer
-        );
+    RTL_AVL_ALLOCATE_ROUTINE
+    Allocate;
+
+    static
+    RTL_AVL_FREE_ROUTINE
+    Free;
 
     //////////////////////////////////////////////////////////////////////////
 

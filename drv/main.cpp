@@ -60,7 +60,7 @@ FLTAPI
 PreCreate (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __out PVOID *CompletionContext
+    __deref_out_opt PVOID *CompletionContext
     );
 
 FLT_POSTOP_CALLBACK_STATUS
@@ -509,7 +509,7 @@ FLTAPI
 PreCreate (
     __inout PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
-    __out PVOID *CompletionContext
+    __deref_out_opt PVOID *CompletionContext
     )
 {
     FLT_PREOP_CALLBACK_STATUS fltStatus = FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -529,7 +529,7 @@ PreCreate (
 
         /// \todo skip checks to volume
 
-        *CompletionContext = 0;
+        *CompletionContext = NULL;
         fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
         if ( !FilteringSystem::IsExistFilters() )

@@ -245,6 +245,13 @@ FileInterceptorContext::QueryParameter (
             }
         }
 
+        if ( !m_FileNameInfo )
+        {
+            ASSERT( m_FileNameInfo );
+            status = STATUS_UNSUCCESSFUL;
+            break;
+        }
+
         *Data = m_FileNameInfo->Name.Buffer;
         *DataSize = m_FileNameInfo->Name.Length;
 
@@ -261,6 +268,14 @@ FileInterceptorContext::QueryParameter (
 
             if ( !NT_SUCCESS( status ) )
             {
+                break;
+            }
+            
+            if ( !m_FileNameInfo )
+            {
+                ASSERT( m_FileNameInfo );
+                status = STATUS_UNSUCCESSFUL;
+                
                 break;
             }
         }
