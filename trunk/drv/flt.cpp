@@ -107,6 +107,12 @@ FilteringSystem::FilterEvent (
         return STATUS_UNSUCCESSFUL;
     }
 
+    if( !pRequestorProcess )
+    {
+        ASSERT( pRequestorProcess );
+        return STATUS_UNSUCCESSFUL;
+    }
+
     if ( IsInvisibleProcess( *pRequestorProcess ) )
     {
         return STATUS_NOT_SUPPORTED;

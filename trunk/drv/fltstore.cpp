@@ -395,7 +395,7 @@ Filters::GetVerdict (
     NTSTATUS status;
 
     RTL_BITMAP filtersbitmap;
-    ULONG mapbuffer[ BitMapBufferSizeInUlong ];
+    ULONG mapbuffer[ BitMapBufferSizeInUlong ] = { 0 };
 
     RtlInitializeBitMap (
         &filtersbitmap,
@@ -439,7 +439,7 @@ Filters::GetVerdict (
         ULONG groupcount = m_GroupCount;
 
         RTL_BITMAP groupsmap;
-        ULONG groupsmapbuffer[ BitMapBufferSizeInUlong ];
+        ULONG groupsmapbuffer[ BitMapBufferSizeInUlong ] = { 0 };
         
         RtlInitializeBitMap( &groupsmap, groupsmapbuffer, NumberOfBits );
         RtlClearAllBits( &groupsmap );
@@ -720,8 +720,7 @@ Filters::DeleteParamsByFilterPosUnsafe (
             }
             else
             {
-                // low resources
-                KeBugCheck( 0x7d ); // install more memory or reuse old buffer
+                /!
             }
             
             pEntry->m_PosCount = pEntry->m_PosCount - foundcount;
@@ -948,8 +947,7 @@ Filters::CleanupByProcess (
 
             if ( !pFiltersArrayNew )
             {
-                // reuse old buffer
-                KeBugCheck( 0x7d );
+                /!
             }
 
             ULONG idxto = 0;

@@ -87,7 +87,10 @@ ProcList::Initialize (
     InitializeListHead( &m_ExitProcessCbList );
 
 #if ( NTDDI_VERSION < NTDDI_WIN7 )
-    PsSetCreateProcessNotifyRoutineEx( CreateProcessNotifyExCb, FALSE );
+    PsSetCreateProcessNotifyRoutineEx (
+        (PCREATE_PROCESS_NOTIFY_ROUTINE_EX) CreateProcessNotifyExCb,
+        FALSE
+        );
 #else
     PsSetCreateProcessNotifyRoutine( CreateProcessNotifyCb, FALSE );
 #endif
@@ -98,7 +101,10 @@ ProcList::Destroy (
     )
 {
 #if ( NTDDI_VERSION < NTDDI_WIN7 )
-    PsSetCreateProcessNotifyRoutineEx( CreateProcessNotifyExCb, TRUE );
+    PsSetCreateProcessNotifyRoutineEx (
+        (PCREATE_PROCESS_NOTIFY_ROUTINE_EX) CreateProcessNotifyExCb,
+        TRUE
+        );
 #else
     PsSetCreateProcessNotifyRoutine( CreateProcessNotifyCb, TRUE );
 #endif
@@ -327,11 +333,16 @@ ProcList::RegisterNewProcess (
     {
         if ( newElement )
         {
+#pragma warning( push )
+#pragma warning( disable:28197 ) // m_Info will be freed in UnregisterProcess
+
             pItem->m_Info = (ProcessInfo*) ExAllocatePoolWithTag (
                 PagedPool,
                 sizeof( ProcessInfo ),
                 m_AllocTag
                 );
+
+#pragma warning( pop )
 
             if ( pItem->m_Info )
             {

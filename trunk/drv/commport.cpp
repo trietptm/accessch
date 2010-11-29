@@ -191,7 +191,8 @@ PortPostEmptyMessages (
     for( ULONG cou = 0; cou < 256; cou++ )
     {
         LARGE_INTEGER timeout = { 1, 0 };
-        status = FltSendMessage (
+        
+        FltSendMessage (
             GlobalData.m_Filter,
             &pPort,
             NULL,
@@ -251,10 +252,19 @@ PortMessageNotify (
         {
         case ntfcom_Activate:
             status =  pPortContext->m_pFltSystem->ChangeState( TRUE );
+            if ( !NT_SUCCESS( status ) )
+            {
+                // nct
+            }
             break;
 
         case ntfcom_Pause:
             status = pPortContext->m_pFltSystem->ChangeState( FALSE );
+            if ( !NT_SUCCESS( status ) )
+            {
+                // nct
+            }
+
             PortPostEmptyMessages( pPortContext );
             break;
 
@@ -270,6 +280,13 @@ PortMessageNotify (
 
             if ( NT_SUCCESS( status ) )
             {
+                if ( !pItem )
+                {
+                    ASSERT( pItem );
+                    status = STATUS_UNSUCCESSFUL;
+                    break;
+                }
+
                 pEvent = (EventData*) pItem->GetData();
                 NC_IOPREPARE prepare;
                 ULONG preparesize = sizeof( prepare );

@@ -18,4 +18,21 @@ private:
     EX_RUNDOWN_REF      m_Ref;
 };
 
+
+class FilterBoxList
+{
+public:
+    FilterBoxList();
+    ~FilterBoxList();
+
+    __checkReturn
+    NTSTATUS
+    GetOrCreateBox (
+        LPGUID Guid
+        );
+
+private:
+
+    EX_PUSH_LOCK    m_AccessLock;
+};
 #endif // __fltbox_h

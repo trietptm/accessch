@@ -33,3 +33,30 @@ FilterBox::Release (
 {
     ExReleaseRundownProtection( &m_Ref );
 }
+
+//////////////////////////////////////////////////////////////////////////
+
+FilterBoxList::FilterBoxList (
+    )
+{
+    FltInitializePushLock( &m_AccessLock );
+}
+
+FilterBoxList::~FilterBoxList (
+    )
+{
+    FltDeletePushLock( &m_AccessLock );
+}
+
+__checkReturn
+NTSTATUS
+FilterBoxListGetOrCreateBox (
+    LPGUID Guid
+    )
+{
+    ASSERT( Guid );
+
+    UNREFERENCED_PARAMETER( Guid );
+    
+    return STATUS_NOT_IMPLEMENTED;
+}
