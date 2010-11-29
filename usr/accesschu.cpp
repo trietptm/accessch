@@ -325,15 +325,6 @@ CreateFilter_PostCreate (
         &retsize
         );
 
-    hResult = FilterSendMessage (
-        CommPort->m_hPort,
-        pCommand,
-        requestsize,
-        NULL,
-        0,
-        &retsize
-        );
-
     return hResult;
 }
 
