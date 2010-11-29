@@ -704,9 +704,10 @@ Filters::DeleteParamsByFilterPosUnsafe (
                 m_AllocTag
                 );
 
+            ULONG idxto = 0;
+
             if ( pTmp )
             {
-                ULONG idxto = 0;
                 for ( ULONG idx = 0; idx < pEntry->m_PosCount; idx++ )
                 {
                     if ( pEntry->m_FilterPosList[ idx ] != Position )
@@ -720,7 +721,14 @@ Filters::DeleteParamsByFilterPosUnsafe (
             }
             else
             {
-                /!
+                pTmp = pEntry->m_FilterPosList;
+                for ( ULONG idx = 0; idx < pEntry->m_PosCount; idx++ )
+                {
+                    if ( pTmp[ idx ] != Position )
+                    {
+                        pTmp[ idxto++ ] = pTmp[ idx ];
+                    }
+                }
             }
             
             pEntry->m_PosCount = pEntry->m_PosCount - foundcount;
@@ -945,28 +953,42 @@ Filters::CleanupByProcess (
                 m_AllocTag
                 );
 
+            ULONG idxto = 0;
             if ( !pFiltersArrayNew )
             {
-                /!
-            }
-
-            ULONG idxto = 0;
-            for ( ULONG idx2 = 0; idx2 < m_FiltersCount; idx2++ )
-            {
-                if ( idx2 == idx )
+                pFiltersArrayNew = m_FiltersArray;
+                for ( ULONG idx2 = 0; idx2 < m_FiltersCount; idx2++ )
                 {
-                    continue;
+                    if ( idx2 == idx )
+                    {
+                        continue;
+                    }
+
+                    pFiltersArrayNew[ idxto ] = m_FiltersArray[ idx2 ];
+                    MoveFilterPosInParams( idx2, idxto );
+                    idxto++;
+                }
+            }
+            else
+            {
+                for ( ULONG idx2 = 0; idx2 < m_FiltersCount; idx2++ )
+                {
+                    if ( idx2 == idx )
+                    {
+                        continue;
+                    }
+
+                    pFiltersArrayNew[ idxto ] = m_FiltersArray[ idx2 ];
+                    MoveFilterPosInParams( idx2, idxto );
+                    idxto++;
                 }
 
-                pFiltersArrayNew[ idxto ] = m_FiltersArray[ idx2 ];
-                MoveFilterPosInParams( idx2, idxto );
-                idxto++;
+                FREE_POOL( m_FiltersArray );
+                m_FiltersArray = pFiltersArrayNew;
             }
         }
 
         m_FiltersCount--;
-        FREE_POOL( m_FiltersArray );
-        m_FiltersArray = pFiltersArrayNew;
     }
 
     if ( !m_FiltersCount)
