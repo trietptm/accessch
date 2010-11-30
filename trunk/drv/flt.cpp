@@ -226,6 +226,7 @@ FilteringSystem::ProceedChainGeneric (
         pEntry->m_Filter->m_WishMask,
         pEntry->m_Filter->m_ParamsCount,
         pEntry->m_Filter->m_Params,
+        &m_BoxList,
         id
         );
 
@@ -254,6 +255,27 @@ FilteringSystem::ProceedChainBox (
     switch ( pBox->m_Operation )
     {
     case _fltbox_add:
+        status = m_BoxList.GetOrCreateBox( &pEntry->m_Box->m_Guid, &pFltBox );
+        if ( !NT_SUCCESS( status ) )
+        {
+            pFltBox = NULL;
+            break;
+        }
+        
+        if ( !pFltBox )
+        {
+            ASSERT( pFltBox );
+            status = STATUS_UNSUCCESSFUL;
+            
+            break;
+        }
+        
+        status = pFltBox->AddParams (
+            pEntry->m_Box->Items.m_ParamsCount,
+            pEntry->m_Box->Items.m_Params,
+            FilterId
+            );
+
         break;
 
     default:

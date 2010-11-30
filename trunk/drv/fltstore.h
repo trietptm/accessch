@@ -98,6 +98,7 @@ public:
         __in PARAMS_MASK WishMask,
         __in_opt ULONG ParamsCount,
         __in PPARAM_ENTRY Params,
+        __in PFilterBoxList BoxList,
         __in ULONG FilterId
         );
 
@@ -112,7 +113,8 @@ private:
     AddParamsUnsafe (
         __in ULONG Position,
         __in ULONG ParamsCount,
-        __in PPARAM_ENTRY Params
+        __in PPARAM_ENTRY Params,
+        __in PFilterBoxList BoxList
         );
 
     __checkReturn
@@ -132,7 +134,8 @@ private:
     ParamCheckEntry*
     AddParameterWithFilterPos (
         __in PPARAM_ENTRY ParamEntry,
-        __in ULONG Position
+        __in ULONG Position,
+        __in PFilterBoxList BoxList
         );
 
     void
@@ -247,7 +250,8 @@ private:
     static ULONG     m_AllocTag;
     RTL_AVL_TABLE    m_Tree;
     EX_PUSH_LOCK     m_AccessLock;
-    
+
+       
     /// \todo clear counter when disconnected
     LONG             m_FilterIdCounter;
 
@@ -258,6 +262,7 @@ private:
 
 public:
     LONG             m_Flags;
+    FilterBoxList    m_BoxList;
 };
 
 

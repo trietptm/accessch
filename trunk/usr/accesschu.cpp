@@ -11,6 +11,8 @@
 static const GUID gBoxGuid = 
 { 0x25650500, 0x453d, 0x417d, { 0x96, 0x8e, 0x7e, 0xc1, 0x75, 0x4c, 0xc2, 0x51 } };
 
+ULONG gbBitMask = 0;
+
 
 //////////////////////////////////////////////////////////////////////////
 #define FILE_SUPERSEDE                  0x00000000
@@ -165,9 +167,10 @@ CustomGetSize (
 
 //////////////////////////////////////////////////////////////////////////
 HRESULT
-CreateExtensionsBox(
+CreateExtensionsBox (
     __in PCOMMUNICATIONS CommPort,
-    __in PWCHAR Pattern
+    __in PWCHAR Pattern,
+    __out_opt PULONG Position
     )
 {
     assert( CommPort );
@@ -195,12 +198,13 @@ CreateExtensionsBox(
 
     pEntry->m_Id = PARAMETER_FILE_NAME;
     pEntry->m_Operation = _fltop_pattern;
+    pEntry->m_Flags = _PARAM_ENTRY_CASE_INSENSITIVE;
     pEntry->m_FltData.m_Count = 0;
-    pEntry->m_FltData.m_Size = lstrlen( Pattern ) *sizeof( WCHAR );
+    pEntry->m_FltData.m_Size = lstrlen( Pattern ) * sizeof( WCHAR );
     PWCHAR pPattern = (PWCHAR) pEntry->m_FltData.m_Data;
     StringCbCopy( pPattern, MAX_PATH, Pattern );
 
-    ULONG requestsize = (ULONG) ((char*)pPattern - buffer) 
+    ULONG requestsize = (ULONG) ( ( char* ) pPattern - buffer ) 
         + pEntry->m_FltData.m_Size;
 
     DWORD retsize;
@@ -208,8 +212,8 @@ CreateExtensionsBox(
         CommPort->m_hPort,
         pCommand,
         requestsize,
-        NULL,
-        0,
+        Position,
+        sizeof( ULONG ),
         &retsize
         );
 
@@ -245,7 +249,7 @@ CreateFilter_PostCreate (
     pFilter->m_GroupId = 1;
     pFilter->m_Verdict = VERDICT_ASK;
     pFilter->m_RequestTimeout = 0;
-    pFilter->m_ParamsCount = 3;
+    pFilter->m_ParamsCount = 4;
     pFilter->m_WishMask = Id2Bit( PARAMETER_FILE_NAME )
         | Id2Bit( PARAMETER_VOLUME_NAME )
         | Id2Bit( PARAMETER_REQUESTOR_PROCESS_ID )
@@ -312,8 +316,28 @@ CreateFilter_PostCreate (
     PULONG pInformation = (PULONG) pEntry->m_FltData.m_Data;
     *pInformation = FILE_OPENED;
      
+    // forth
+    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+        pEntry,
+        _sizeof_param_entry + pEntry->m_FltData.m_Size
+        );
+    pEntry->m_Id = PARAMETER_EXT_BOX_FILTERS;
+    pEntry->m_Operation = _fltop_equ;
+    pEntry->m_FltData.m_Size = sizeof( FILTERBOX_CONTROL );
+    pEntry->m_FltData.m_Count = 1;
+    pEntry->m_FltData.m_Box[0].m_Guid = gBoxGuid;
+
+    // understand that next lines wrong
+    pEntry->m_FltData.m_Box[0].m_BitCount = sizeof( gbBitMask ) * 8;
+    pEntry->m_FltData.m_Box[0].m_BitMask[0] = gbBitMask;
+    
     // result size
-    ULONG requestsize = (ULONG) ((char*)pFlags - buffer) + sizeof( ULONG );
+    PVOID lastptr = Add2Ptr( 
+        pEntry,
+        _sizeof_param_entry + pEntry->m_FltData.m_Size
+        );
+
+    ULONG requestsize = (ULONG) ( ( char* ) lastptr - buffer ) + sizeof( ULONG );
 
     DWORD retsize;
     hResult = FilterSendMessage (
@@ -387,7 +411,7 @@ CreateFilter_PreCleanup (
     *pFlags = _STREAM_FLAGS_MODIFIED;
 
     // result size
-    ULONG requestsize = (ULONG) ((char*)pFlags - buffer) + sizeof( ULONG );
+    ULONG requestsize = (ULONG) ( ( char* ) pFlags - buffer ) + sizeof( ULONG );
 
     DWORD retsize;
     hResult = FilterSendMessage (
@@ -409,10 +433,29 @@ CreateFilters (
 {
     HRESULT hResult;
 
-    hResult = CreateExtensionsBox( CommPort, L"*.exe" );
-    hResult = CreateExtensionsBox( CommPort, L"*.com" );
-    hResult = CreateExtensionsBox( CommPort, L"*.bat" );
-    hResult = CreateExtensionsBox( CommPort, L"*.dll" );
+    ULONG position;
+    hResult = CreateExtensionsBox( CommPort, L"*.EXE", &position );
+    if ( SUCCEEDED( hResult ) )
+    {
+        gbBitMask |= 1 << position;
+    }
+    hResult = CreateExtensionsBox( CommPort, L"*.COM", &position );
+    if ( SUCCEEDED( hResult ) )
+    {
+        gbBitMask |= 1 << position;
+    }
+
+    hResult = CreateExtensionsBox( CommPort, L"*.BAT", &position );
+    if ( SUCCEEDED( hResult ) )
+    {
+        gbBitMask |= 1 << position;
+    }
+
+    hResult = CreateExtensionsBox( CommPort, L"*.DLL", &position );
+    if ( SUCCEEDED( hResult ) )
+    {
+        gbBitMask |= 1 << position;
+    }
 
     hResult = CreateFilter_PostCreate( CommPort );
     if ( SUCCEEDED( hResult ) )

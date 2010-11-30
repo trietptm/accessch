@@ -36,8 +36,8 @@ typedef enum OperationPoint
 typedef enum Parameters
 {
     // bit position
-    PARAMETER_RESERVED0             = 0,
-    PARAMETER_RESERVED1             = 1,
+    PARAMETER_EXT_BOX_FILTERS       = 0,
+    PARAMETER_RESERVED              = 1,
     PARAMETER_FILE_NAME             = 2,
     PARAMETER_VOLUME_NAME           = 3,
     PARAMETER_REQUESTOR_PROCESS_ID  = 4,
@@ -150,17 +150,29 @@ typedef enum FltOperation
     _fltop_pattern  = 0x0002,
 };
 
+typedef struct _FILTERBOX_CONTROL
+{
+    GUID        m_Guid;
+    ULONG       m_BitCount;
+    ULONG       m_BitMask[1];
+} FILTERBOX_CONTROL, *PFILTERBOX_CONTROL;
+
 typedef struct _FILTER_PARAMETER
 {
-    ULONG               m_Size;
-    ULONG               m_Count;
-    UCHAR               m_Data[1];
+    ULONG                   m_Size;
+    ULONG                   m_Count;
+    union
+    {
+        UCHAR               m_Data[1];
+        FILTERBOX_CONTROL   m_Box[1];
+    };
 } FILTER_PARAMETER, *PFILTER_PARAMETER;
 
 #define ParamEntryFlags ULONG
 #define _PARAM_ENTRY_FLAG_NONE          0x0000
 #define _PARAM_ENTRY_FLAG_NEGATION      0x0001
 #define _PARAM_ENTRY_FLAG_BE_PRESENT    0x0002
+#define _PARAM_ENTRY_CASE_INSENSITIVE   0x0010
 
 typedef struct _PARAM_ENTRY
 {

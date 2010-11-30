@@ -301,10 +301,12 @@ Filters::CheckContainerUnsafe (
     __in EventData *Event
     )
 {
-    UNREFERENCED_PARAMETER( Entry );
-    UNREFERENCED_PARAMETER( Event );
+    NTSTATUS status = Entry->Container.m_Box->MatchEvent (
+        Event,
+        Entry->Container.m_Affecting
+        );
 
-    return STATUS_UNSUCCESSFUL;
+    return status;
 }
 
 NTSTATUS
@@ -588,7 +590,8 @@ Filters::TryToFindExisting (
 ParamCheckEntry*
 Filters::AddParameterWithFilterPos (
     __in PPARAM_ENTRY ParamEntry,
-    __in ULONG Position
+    __in ULONG Position,
+    __in PFilterBoxList BoxList
     )
 {
     ParamCheckEntry* pEntry = NULL;
@@ -607,50 +610,127 @@ Filters::AddParameterWithFilterPos (
     }
 
     // create new
-    pEntry = (ParamCheckEntry*) ExAllocatePoolWithTag (
-        PagedPool,
-        sizeof( ParamCheckEntry ) + ParamEntry->m_FltData.m_Size, // byte m_Data
-        m_AllocTag
-        );
-    
-    if ( !pEntry )
+    status = STATUS_SUCCESS;
+
+    __try
     {
-        return NULL;
+        pEntry = (ParamCheckEntry*) ExAllocatePoolWithTag (
+            PagedPool,
+            sizeof( ParamCheckEntry ) + ParamEntry->m_FltData.m_Size, // byte m_Data
+            m_AllocTag
+            );
+
+        if ( !pEntry )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            
+            __leave;
+        }
+
+        pEntry->ParamCheckEntry::ParamCheckEntry();
+
+        pEntry->m_Flags = ParamEntry->m_Flags;
+        pEntry->m_PosCount = 1;
+
+        pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
+            PagedPool,
+            sizeof( PosListItemType ),
+            m_AllocTag
+            );
+
+        if ( !pEntry->m_FilterPosList )
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+
+            __leave;
+        }
+
+        pEntry->m_FilterPosList[0] = Position;
+
+        // types of entry
+        if ( PARAMETER_EXT_BOX_FILTERS == ParamEntry->m_Id )
+        {
+            ULONG bitcount = ParamEntry->m_FltData.m_Box->m_BitCount;
+
+            if (
+                !bitcount
+                ||
+                bitcount % 32
+                )
+            {
+                ASSERT( FALSE );
+                status = STATUS_INVALID_PARAMETER_2;
+
+                __leave;
+            }
+
+            pEntry->m_Type = CheckEntryBox;
+            pEntry->Container.m_Affecting = NULL;
+
+            pEntry->Container.m_Box = BoxList->LookupBox( &ParamEntry->m_FltData.m_Box->m_Guid );
+
+            if ( !pEntry->Container.m_Box )
+            {
+                status = STATUS_INSUFFICIENT_RESOURCES;
+               
+                __leave;
+            }
+
+            ULONG sizecb = ParamEntry->m_FltData.m_Box->m_BitCount / 8;
+            pEntry->Container.m_Affecting = ( PRTL_BITMAP ) ExAllocatePoolWithTag (
+                PagedPool,
+                sizeof( RTL_BITMAP ) + sizecb,
+                m_AllocTag
+                );
+
+            if ( !pEntry->Container.m_Affecting )
+            {
+                status = STATUS_INSUFFICIENT_RESOURCES;
+
+                __leave;
+            }
+
+            RtlInitializeBitMap (
+                pEntry->Container.m_Affecting,
+                (PULONG) Add2Ptr( pEntry->Container.m_Affecting, sizeof( RTL_BITMAP ) ),
+                ParamEntry->m_FltData.m_Box->m_BitCount
+                );
+
+            RtlCopyMemory (
+                pEntry->Container.m_Affecting->Buffer,
+                &ParamEntry->m_FltData.m_Box->m_BitMask[0],
+                sizecb
+                );
+        }
+        else
+        {
+            pEntry->m_Type = CheckEntryGeneric;
+
+            pEntry->Generic.m_Operation = ParamEntry->m_Operation;
+            pEntry->Generic.m_Parameter = ParamEntry->m_Id;
+            pEntry->Generic.m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
+            pEntry->Generic.m_Data.m_Count = ParamEntry->m_FltData.m_Count;
+
+            RtlCopyMemory (
+                pEntry->Generic.m_Data.m_Data,
+                ParamEntry->m_FltData.m_Data,
+                ParamEntry->m_FltData.m_Size
+                );
+        }
+
+        InsertTailList( &m_ParamsCheckList, &pEntry->m_List );
     }
-
-    pEntry->ParamCheckEntry::ParamCheckEntry();
-
-    pEntry->m_Type = CheckEntryGeneric;
-
-    pEntry->Generic.m_Operation = ParamEntry->m_Operation;
-    pEntry->m_Flags = ParamEntry->m_Flags;
-    pEntry->Generic.m_Parameter = ParamEntry->m_Id;
-    pEntry->m_PosCount = 1;
-    pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
-        PagedPool,
-        sizeof( PosListItemType ),
-        m_AllocTag
-        );
-
-    if ( !pEntry->m_FilterPosList )
+    __finally
     {
-        pEntry->ParamCheckEntry::~ParamCheckEntry();
-        FREE_POOL( pEntry );
-        
-        return NULL;
+        if ( !NT_SUCCESS( status ) )
+        {
+            if ( pEntry )
+            {
+                pEntry->ParamCheckEntry::~ParamCheckEntry();
+                FREE_POOL( pEntry );
+            }
+        }
     }
-    
-    pEntry->m_FilterPosList[0] = Position;
-    pEntry->Generic.m_Data.m_DataSize = ParamEntry->m_FltData.m_Size;
-    pEntry->Generic.m_Data.m_Count = ParamEntry->m_FltData.m_Count;
-
-    RtlCopyMemory (
-        pEntry->Generic.m_Data.m_Data,
-        ParamEntry->m_FltData.m_Data,
-        ParamEntry->m_FltData.m_Size
-        );
-
-    InsertTailList( &m_ParamsCheckList, &pEntry->m_List );
 
     return pEntry;
 }
@@ -774,7 +854,8 @@ NTSTATUS
 Filters::AddParamsUnsafe (
     __in ULONG Position,
     __in ULONG ParamsCount,
-    __in PPARAM_ENTRY Params
+    __in PPARAM_ENTRY Params,
+    __in PFilterBoxList BoxList
     )
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -787,7 +868,8 @@ Filters::AddParamsUnsafe (
 
         ParamCheckEntry* pEntry = AddParameterWithFilterPos (
             params,
-            Position
+            Position,
+            BoxList
             );
 
         if ( !pEntry )
@@ -852,6 +934,7 @@ Filters::AddFilter (
     __in PARAMS_MASK WishMask,
     __in_opt ULONG ParamsCount,
     __in PPARAM_ENTRY Params,
+    __in PFilterBoxList BoxList,
     __in ULONG FilterId
     )
 {
@@ -877,7 +960,8 @@ Filters::AddFilter (
         status = AddParamsUnsafe (
             position,
             ParamsCount,
-            Params
+            Params,
+            BoxList
             );
 
         if ( !NT_SUCCESS( status ) )

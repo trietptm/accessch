@@ -297,8 +297,6 @@ private:
      EX_RUNDOWN_REF m_Ref;
      LIST_ENTRY     m_List;
 
-     FilterBoxList  m_BoxList;
-
     __checkReturn
     NTSTATUS
     ProceedChainGeneric (
