@@ -194,7 +194,7 @@ typedef struct _FILTER
     UCHAR               m_Reserverd1;
     UCHAR               m_Reserverd2;
     UCHAR               m_Reserverd3;
-    ULONG               m_ProcessId;            // auto delete by exit process
+    ULONG               m_CleanupProcessId;
     ULONG               m_Reserved4;
     ULONG               m_Reserved5;
     VERDICT             m_Verdict;

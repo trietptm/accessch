@@ -113,12 +113,28 @@ FilterBox::AddParams (
 }
 
 NTSTATUS
-MatchEvent (
+FilterBox::MatchEvent (
     __in EventData *Event,
     __in PRTL_BITMAP Affecting
     )
 {
-    return STATUS_NOT_SUPPORTED;
+    NTSTATUS status = STATUS_NOT_FOUND;
+    
+    PBoxFilterItem pEntry = NULL;
+
+    PLIST_ENTRY Flink = m_Items.Flink;
+    while ( Flink != &m_Items )
+    {
+        pEntry = CONTAINING_RECORD (
+            Flink,
+            BoxFilterItem,
+            m_List
+            );
+
+        Flink = Flink->Flink;
+    }
+
+    return status;
 }
 
 
