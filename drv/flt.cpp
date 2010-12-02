@@ -221,7 +221,7 @@ FilteringSystem::ProceedChainGeneric (
     NTSTATUS status = pFilters->AddFilter (
         pEntry->m_Filter->m_GroupId,
         pEntry->m_Filter->m_Verdict,
-        UlongToHandle( pEntry->m_Filter->m_ProcessId ),
+        UlongToHandle( pEntry->m_Filter->m_CleanupProcessId ),
         pEntry->m_Filter->m_RequestTimeout,
         pEntry->m_Filter->m_WishMask,
         pEntry->m_Filter->m_ParamsCount,
