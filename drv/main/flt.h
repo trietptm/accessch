@@ -1,6 +1,8 @@
 #ifndef __flt_h
 #define __flt_h
 
+#include "../../inc/filters.h"
+
 typedef struct _AggregationItem
 {
     ULONG       m_FilterId;

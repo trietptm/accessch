@@ -1,6 +1,8 @@
 #ifndef __accesscheck_h
 #define __accesscheck_h
 
+#include "filters.h"
+
 #define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define ACCESSCH_MAX_CONNECTIONS    1
 
@@ -65,19 +67,9 @@ typedef enum Parameters
 
 #define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * 8 )
 
-typedef ULONG VERDICT, *PVERDICT;
-#define VERDICT_NOT_FILTERED        0x0000
-#define VERDICT_DENY                0x0001
-#define VERDICT_ASK                 0x0002
-#define VERDICT_CACHE1              0x0100
-
 #include <pshpack8.h>
 
 // send message communication  
-typedef struct _REPLY_RESULT
-{
-    VERDICT             m_Flags;
-} REPLY_RESULT, *PREPLY_RESULT;
 
 typedef struct _EVENT_PARAMETER
 {
