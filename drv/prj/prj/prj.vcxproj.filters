@@ -15,96 +15,107 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\filehlp.cpp">
+    <ResourceCompile Include="..\..\main\accessch.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\main\commport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\flt.cpp">
+    <ClCompile Include="..\..\main\eventqueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\main.cpp">
+    <ClCompile Include="..\..\main\excludes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\mm.cpp">
+    <ClCompile Include="..\..\main\fileflt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\security.cpp">
+    <ClCompile Include="..\..\main\filehlp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\volhlp.cpp">
+    <ClCompile Include="..\..\main\flt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\eventqueue.cpp">
+    <ClCompile Include="..\..\main\fltbox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\commport.cpp">
+    <ClCompile Include="..\..\main\fltstore.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\excludes.cpp">
+    <ClCompile Include="..\..\main\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fileflt.cpp">
+    <ClCompile Include="..\..\main\mm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\volumeflt.cpp">
+    <ClCompile Include="..\..\main\proclist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fltstore.cpp">
+    <ClCompile Include="..\..\main\security.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\proclist.cpp">
+    <ClCompile Include="..\..\main\volhlp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\fltbox.cpp">
+    <ClCompile Include="..\..\main\volumeflt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltsystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\filehlp.h">
+    <ClInclude Include="..\..\main\commport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\flt.h">
+    <ClInclude Include="..\..\main\eventqueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\main.h">
+    <ClInclude Include="..\..\main\excludes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\mm.h">
+    <ClInclude Include="..\..\main\fileflt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pch.h">
+    <ClInclude Include="..\..\main\filehlp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\security.h">
+    <ClInclude Include="..\..\main\flt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ver.h">
+    <ClInclude Include="..\..\main\fltbox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\volhlp.h">
+    <ClInclude Include="..\..\main\fltstore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\eventqueue.h">
+    <ClInclude Include="..\..\main\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\commport.h">
+    <ClInclude Include="..\..\main\mm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\excludes.h">
+    <ClInclude Include="..\..\main\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fileflt.h">
+    <ClInclude Include="..\..\main\proclist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\volumeflt.h">
+    <ClInclude Include="..\..\main\security.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fltstore.h">
+    <ClInclude Include="..\..\main\ver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\proclist.h">
+    <ClInclude Include="..\..\main\volhlp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\fltbox.h">
+    <ClInclude Include="..\..\main\volumeflt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fltsystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

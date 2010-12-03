@@ -50,6 +50,45 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\main\accessch.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\fltsystem\fltsystem.cpp" />
+    <ClCompile Include="..\..\main\commport.cpp" />
+    <ClCompile Include="..\..\main\eventqueue.cpp" />
+    <ClCompile Include="..\..\main\excludes.cpp" />
+    <ClCompile Include="..\..\main\fileflt.cpp" />
+    <ClCompile Include="..\..\main\filehlp.cpp" />
+    <ClCompile Include="..\..\main\flt.cpp" />
+    <ClCompile Include="..\..\main\fltbox.cpp" />
+    <ClCompile Include="..\..\main\fltstore.cpp" />
+    <ClCompile Include="..\..\main\main.cpp" />
+    <ClCompile Include="..\..\main\mm.cpp" />
+    <ClCompile Include="..\..\main\proclist.cpp" />
+    <ClCompile Include="..\..\main\security.cpp" />
+    <ClCompile Include="..\..\main\volhlp.cpp" />
+    <ClCompile Include="..\..\main\volumeflt.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\inc\fltsystem.h" />
+    <ClInclude Include="..\..\main\commport.h" />
+    <ClInclude Include="..\..\main\eventqueue.h" />
+    <ClInclude Include="..\..\main\excludes.h" />
+    <ClInclude Include="..\..\main\fileflt.h" />
+    <ClInclude Include="..\..\main\filehlp.h" />
+    <ClInclude Include="..\..\main\flt.h" />
+    <ClInclude Include="..\..\main\fltbox.h" />
+    <ClInclude Include="..\..\main\fltstore.h" />
+    <ClInclude Include="..\..\main\main.h" />
+    <ClInclude Include="..\..\main\mm.h" />
+    <ClInclude Include="..\..\main\pch.h" />
+    <ClInclude Include="..\..\main\proclist.h" />
+    <ClInclude Include="..\..\main\security.h" />
+    <ClInclude Include="..\..\main\ver.h" />
+    <ClInclude Include="..\..\main\volhlp.h" />
+    <ClInclude Include="..\..\main\volumeflt.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
@@ -225,40 +264,6 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\commport.cpp" />
-    <ClCompile Include="..\..\eventqueue.cpp" />
-    <ClCompile Include="..\..\excludes.cpp" />
-    <ClCompile Include="..\..\fileflt.cpp" />
-    <ClCompile Include="..\..\filehlp.cpp" />
-    <ClCompile Include="..\..\flt.cpp" />
-    <ClCompile Include="..\..\fltbox.cpp" />
-    <ClCompile Include="..\..\fltstore.cpp" />
-    <ClCompile Include="..\..\main.cpp" />
-    <ClCompile Include="..\..\mm.cpp" />
-    <ClCompile Include="..\..\proclist.cpp" />
-    <ClCompile Include="..\..\security.cpp" />
-    <ClCompile Include="..\..\volhlp.cpp" />
-    <ClCompile Include="..\..\volumeflt.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\commport.h" />
-    <ClInclude Include="..\..\eventqueue.h" />
-    <ClInclude Include="..\..\excludes.h" />
-    <ClInclude Include="..\..\fileflt.h" />
-    <ClInclude Include="..\..\filehlp.h" />
-    <ClInclude Include="..\..\flt.h" />
-    <ClInclude Include="..\..\fltbox.h" />
-    <ClInclude Include="..\..\fltstore.h" />
-    <ClInclude Include="..\..\main.h" />
-    <ClInclude Include="..\..\mm.h" />
-    <ClInclude Include="..\..\pch.h" />
-    <ClInclude Include="..\..\proclist.h" />
-    <ClInclude Include="..\..\security.h" />
-    <ClInclude Include="..\..\ver.h" />
-    <ClInclude Include="..\..\volhlp.h" />
-    <ClInclude Include="..\..\volumeflt.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
