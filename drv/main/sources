@@ -28,9 +28,6 @@ SOURCES= \
 		volhlp.cpp \
 		fileflt.cpp \
 		volumeflt.cpp \
-		flt.cpp \
-		fltstore.cpp \
-		fltbox.cpp \
 		eventqueue.cpp \
 		security.cpp \
 		excludes.cpp \
