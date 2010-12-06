@@ -1,5 +1,5 @@
-#ifndef __commport_h
-#define __commport_h
+#pragma once
+#include "../inc/fltsystem.h"
 
 // создание общего порта
 NTSTATUS
@@ -75,5 +75,3 @@ PortAskUser (
     __in PARAMS_MASK ParamsMask,
     __inout VERDICT* Verdict
     );
-
-#endif // __commport_h
