@@ -3,8 +3,6 @@
 #include "fltstore.h"
 #include "excludes.h"
 
-ULONG Aggregation::m_AllocTag = 'gaSA';
-
 ULONG FilteringSystem::m_AllocTag = 'sfSA';
 
 EX_PUSH_LOCK FilteringSystem::m_AccessLock;

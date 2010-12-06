@@ -7,8 +7,7 @@
 /// \todo check necessary headers
 #include "main.h"
 #include "../../inc/accessch.h"
-#include "flt.h"
-#include "fltstore.h"
+#include "../inc/fltsystem.h"
 #include "eventqueue.h"
 #include "commport.h"
 #include "proclist.h"
