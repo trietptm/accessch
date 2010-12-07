@@ -1,7 +1,7 @@
 #ifndef __security_h
 #define __security_h
 
-#include "pch.h"
+#include "../inc/commonkrnl.h"
 
 //////////////////////////////////////////////////////////////////////////
 // LUID

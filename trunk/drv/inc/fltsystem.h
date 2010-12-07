@@ -1,7 +1,7 @@
 #pragma once
 #include  "../../inc/filters.h"
 #include  "../inc/fltevents.h"
-
+#include  "../inc/fltstorage.h"
 
 class FilteringSystem
 {

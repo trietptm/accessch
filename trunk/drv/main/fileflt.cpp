@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "../inc/commonkrnl.h"
 #include "main.h"
 #include "../../inc/accessch.h"
 #include "filehlp.h"

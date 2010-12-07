@@ -1,4 +1,4 @@
-#include "pch.h"
+#include "../inc/commonkrnl.h"
 #include "excludes.h"
 
 HANDLE gAttachedProcess = NULL;

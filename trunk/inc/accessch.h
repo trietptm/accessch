@@ -129,47 +129,6 @@ typedef struct _NC_IOPREPARE
 // основная сложность при работе с фильтрами в хелпере, который позволяет
 // формировать сложные структуры в r3
 
-typedef enum FltOperation
-{
-    _fltop_equ      = 0x0000,
-    _fltop_and      = 0x0001,
-    _fltop_pattern  = 0x0002,
-};
-
-typedef struct _FILTERBOX_CONTROL
-{
-    GUID        m_Guid;
-    ULONG       m_BitCount;
-    ULONG       m_BitMask[1];
-} FILTERBOX_CONTROL, *PFILTERBOX_CONTROL;
-
-typedef struct _FILTER_PARAMETER
-{
-    ULONG                   m_Size;
-    ULONG                   m_Count;
-    union
-    {
-        UCHAR               m_Data[1];
-        FILTERBOX_CONTROL   m_Box[1];
-    };
-} FILTER_PARAMETER, *PFILTER_PARAMETER;
-
-#define ParamEntryFlags ULONG
-#define _PARAM_ENTRY_FLAG_NONE          0x0000
-#define _PARAM_ENTRY_FLAG_NEGATION      0x0001
-#define _PARAM_ENTRY_FLAG_BE_PRESENT    0x0002
-#define _PARAM_ENTRY_CASE_INSENSITIVE   0x0010
-
-typedef struct _PARAM_ENTRY
-{
-    Parameters          m_Id;
-    FltOperation        m_Operation;
-    ParamEntryFlags     m_Flags;        // _PARAM_ENTRY_FLAG_???
-    FILTER_PARAMETER    m_FltData;
-}PARAM_ENTRY, *PPARAM_ENTRY;
-
-#define _sizeof_param_entry ( sizeof( PARAM_ENTRY ) - sizeof( UCHAR ) )
-
 typedef struct _FILTER
 {
     Interceptors        m_Interceptor;
@@ -187,7 +146,7 @@ typedef struct _FILTER
     ULONG               m_RequestTimeout;       //msec
     PARAMS_MASK         m_WishMask;
     ULONG               m_ParamsCount;
-    PARAM_ENTRY         m_Params[1];
+    FltParam            m_Params[1];
 } FILTER, *PFILTER;
 
 typedef enum FltBoxOperation
@@ -203,7 +162,7 @@ typedef struct _FLTBOX
     {
         struct { 
             ULONG       m_ParamsCount;
-            PARAM_ENTRY m_Params[1];
+            FltParam    m_Params[1];
         } Items;
 
         ULONG           m_Index;

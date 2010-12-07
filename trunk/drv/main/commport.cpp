@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "../inc/commonkrnl.h"
+#include "../inc/memmgr.h"
 #include "../../inc/accessch.h"
 
 #include "main.h"
@@ -456,10 +457,10 @@ PortAllocateMessage (
 
     pMsg->m_EventId = QueuedItem->GetId();
     
-    pMsg->m_InterceptorId = Event->GetInterceptorId();
-    pMsg->m_OperationId = Event->GetOperationId();
+    pMsg->m_InterceptorId = ( Interceptors ) Event->GetInterceptorId();
+    pMsg->m_OperationId = ( DriverOperationId ) Event->GetOperationId();
     pMsg->m_FuncionMi = Event->GetMinor();
-    pMsg->m_OperationType = Event->GetOperationType();
+    pMsg->m_OperationType = ( OperationPoint ) Event->GetOperationType();
 
     pMsg->m_ParametersCount = params2user;
     

@@ -19,4 +19,6 @@ TARGETLIBS= \
 
 SOURCES= \
 	fltsystem.cpp \
+	fltstorage.cpp \
+	fltfilters.cpp \
 	fltsupport.cpp	

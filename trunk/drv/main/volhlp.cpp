@@ -1,6 +1,6 @@
 #include "volhlp.h"
 #include "../../../devctrl/inc/devctrlex.h"
-
+#include "../inc/memmgr.h"
 
 NTSTATUS
 QueryDeviceProperty (

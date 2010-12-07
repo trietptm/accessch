@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../inc/filters.h"
+
 typedef struct _AggregationItem
 {
     ULONG       m_FilterId;

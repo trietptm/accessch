@@ -1,7 +1,7 @@
 #ifndef __volhlp_h
 #define __volhlp_h
 
-#include "pch.h"
+#include "../inc/commonkrnl.h"
 
 #define _VOLUME_DESCRIPTION_LENGTH  0x20
 

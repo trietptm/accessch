@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma message(" ----- memmgr")
+
 #ifndef FREE_POOL
 #define FREE_POOL( _PoolPtr ) \
     if ( _PoolPtr ) \
