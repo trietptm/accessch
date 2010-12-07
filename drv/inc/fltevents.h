@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../inc/filters.h"
+#include "../../inc/fltcommon.h"
 
 typedef struct _AggregationItem
 {
