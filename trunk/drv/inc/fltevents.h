@@ -99,5 +99,3 @@ protected:
     ULONG   m_Minor;
     ULONG   m_OperationType;
 };
-
-#define PEventData EventData*

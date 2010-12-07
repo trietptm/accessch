@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../inc/fltcommon.h"
+#include "../inc/fltevents.h"
 
 class Filters;
 class FilterBoxList;
@@ -9,6 +10,9 @@ class FiltersStorage
 {
 public:
     static ULONG     m_AllocTag;
+    static RTL_AVL_COMPARE_ROUTINE Compare;
+    static RTL_AVL_ALLOCATE_ROUTINE Allocate;
+    static RTL_AVL_FREE_ROUTINE Free;
 
 public:
     FiltersStorage (
@@ -59,9 +63,13 @@ public:
         __in_opt BOOLEAN Activate
         );
 
-    static RTL_AVL_COMPARE_ROUTINE Compare;
-    static RTL_AVL_ALLOCATE_ROUTINE Allocate;
-    static RTL_AVL_FREE_ROUTINE Free;
+    __checkReturn
+    NTSTATUS
+    FilterEvent (
+        __in EventData* Event,
+        __in PVERDICT Verdict,
+        __in PPARAMS_MASK ParamsMask
+        );
   
 private:
     LONG
