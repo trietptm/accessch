@@ -1,7 +1,7 @@
 #ifndef __accesscheck_h
 #define __accesscheck_h
 
-#include "filters.h"
+#include "fltcommon.h"
 
 #define ACCESSCH_PORT_NAME          L"\\AccessCheckPort"
 #define ACCESSCH_MAX_CONNECTIONS    1

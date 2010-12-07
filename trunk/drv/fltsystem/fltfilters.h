@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../inc/filters.h"
+#include "../../inc/fltcommon.h"
 #include "fltbox.h"
 
 #define NumberOfBits 256
