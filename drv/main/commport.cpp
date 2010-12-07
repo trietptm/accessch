@@ -11,7 +11,7 @@
 typedef struct _PORT_CONTEXT
 {
     PFLT_PORT           m_Connection;
-    FilteringSystem*    m_pFltSystem;
+    FiltersStorage*     m_pFltStorage;
 }PORT_CONTEXT, *PPORT_CONTEXT;
 
 // ----------------------------------------------------------------------------
@@ -105,21 +105,19 @@ PortConnect (
         RtlZeroMemory( pPortContext, sizeof( PORT_CONTEXT ) );
 
         pPortContext->m_Connection = ClientPort;
-        pPortContext->m_pFltSystem = ( FilteringSystem* ) ExAllocatePoolWithTag (
+        pPortContext->m_pFltStorage = new (
             PagedPool,
-            sizeof( FilteringSystem ),
-            FilteringSystem::m_AllocTag
-            );
+            FiltersStorage::m_AllocTag
+            ) FiltersStorage;
 
-        if ( !pPortContext->m_pFltSystem )
+        if ( !pPortContext->m_pFltStorage )
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
             __leave;
         }
 
         /// \todo  revise single port connection
-        pPortContext->m_pFltSystem->FilteringSystem::FilteringSystem();
-        FilteringSystem::Attach( pPortContext->m_pFltSystem );
+        GlobalData.m_FilteringSystem->Attach( pPortContext->m_pFltStorage );
 
         GlobalData.m_ClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
@@ -133,11 +131,9 @@ PortConnect (
         {
             if ( pPortContext )
             {
-                FilteringSystem* pFltSystem = pPortContext->m_pFltSystem;
-                if ( pFltSystem )
+                if ( pPortContext->m_pFltStorage )
                 {
-                    pFltSystem->FilteringSystem::~FilteringSystem();
-                    FREE_POOL( pPortContext->m_pFltSystem );
+                    FREE_OBJECT( pPortContext->m_pFltStorage );
                 }
 
                 FREE_POOL( pPortContext );
@@ -157,7 +153,7 @@ PortDisconnect (
 
     ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
-    FilteringSystem::Detach( pPortContext->m_pFltSystem );
+    GlobalData.m_FilteringSystem->Detach( pPortContext->m_pFltStorage );
 
     ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
     GlobalData.m_ClientPort = NULL;
@@ -168,8 +164,7 @@ PortDisconnect (
 
     ExRundownCompleted( &GlobalData.m_RefClientPort );
 
-    pPortContext->m_pFltSystem->FilteringSystem::~FilteringSystem();
-    FREE_POOL( pPortContext->m_pFltSystem );
+    FREE_OBJECT( pPortContext->m_pFltStorage );
     FREE_POOL( pPortContext );
 }
 
@@ -204,6 +199,130 @@ PortPostEmptyMessages (
     }
 
     PortRelease( pPort );
+}
+
+__checkReturn
+NTSTATUS
+ProceedChainGeneric (
+    __in FiltersStorage* FltStorage,
+    __in PCHAIN_ENTRY Entry,
+    __out PULONG FilterId
+    )
+{
+    NTSTATUS status = FltStorage->AddFilterUnsafe (
+        Entry->m_Filter->m_Interceptor,
+        Entry->m_Filter->m_OperationId,
+        Entry->m_Filter->m_FunctionMi,
+        Entry->m_Filter->m_OperationType,
+        Entry->m_Filter->m_GroupId,
+        Entry->m_Filter->m_Verdict,
+        UlongToHandle( Entry->m_Filter->m_CleanupProcessId ),
+        Entry->m_Filter->m_RequestTimeout,
+        Entry->m_Filter->m_WishMask,
+        Entry->m_Filter->m_ParamsCount,
+        Entry->m_Filter->m_Params,
+        FilterId
+        );
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+ProceedChainBox (
+    __in FiltersStorage* FltStorage,
+    __in PCHAIN_ENTRY pEntry,
+    __out PULONG FilterId
+    )
+{
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    //PFLTBOX pBox = pEntry[0].m_Box;
+
+    //FilterBox* pFltBox = NULL;
+
+    //switch ( pBox->m_Operation )
+    //{
+    //case _fltbox_add:
+    //    status = m_BoxList.GetOrCreateBox( &pEntry->m_Box->m_Guid, &pFltBox );
+    //    if ( !NT_SUCCESS( status ) )
+    //    {
+    //        pFltBox = NULL;
+    //        break;
+    //    }
+    //    
+    //    if ( !pFltBox )
+    //    {
+    //        ASSERT( pFltBox );
+    //        status = STATUS_UNSUCCESSFUL;
+    //        
+    //        break;
+    //    }
+    //    
+    //    status = pFltBox->AddParams (
+    //        pEntry->m_Box->Items.m_ParamsCount,
+    //        pEntry->m_Box->Items.m_Params,
+    //        FilterId
+    //        );
+
+    //    break;
+
+    //default:
+    //    __debugbreak();
+    //}
+
+    //if ( pFltBox )
+    //{
+    //    pFltBox->Release();
+    //}
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
+ProceedChain (
+    __in FiltersStorage* FltStorage,
+    __in PFILTERS_CHAIN Chain,
+    __out_opt PULONG FilterId
+    )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+
+    ASSERT( ARGUMENT_PRESENT( Chain ) );
+
+    if ( Chain->m_Count != 1 )
+    {
+        __debugbreak();     // поправить возвращаемые типы
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    FltStorage->Lock();
+
+    PCHAIN_ENTRY pEntry = Chain->m_Entry;
+
+    for ( ULONG item = 0; item < Chain->m_Count; item++ )
+    {
+        switch( pEntry->m_Operation )
+        {
+        case _fltchain_add:
+            status = ProceedChainGeneric( FltStorage, pEntry, FilterId );
+            break;
+
+        case _fltchain_del:
+            __debugbreak();
+
+            break;
+
+        case _fltbox_create:
+            status = ProceedChainBox( FltStorage, pEntry, FilterId );
+
+            break;
+        }
+    }
+
+    FltStorage->UnLock();
+
+    return status;
 }
 
 __checkReturn
@@ -251,7 +370,7 @@ PortMessageNotify (
         switch( pCommand->m_Command )
         {
         case ntfcom_Activate:
-            status =  pPortContext->m_pFltSystem->ChangeState( TRUE );
+            status =  pPortContext->m_pFltStorage->ChangeState( TRUE );
             if ( !NT_SUCCESS( status ) )
             {
                 // nct
@@ -259,7 +378,7 @@ PortMessageNotify (
             break;
 
         case ntfcom_Pause:
-            status = pPortContext->m_pFltSystem->ChangeState( FALSE );
+            status = pPortContext->m_pFltStorage->ChangeState( FALSE );
             if ( !NT_SUCCESS( status ) )
             {
                 // nct
@@ -314,9 +433,10 @@ PortMessageNotify (
                     );
 
                 ULONG FilterId;
-                status = pPortContext->m_pFltSystem->ProceedChain (
+
+                status = ProceedChain (
+                    pPortContext->m_pFltStorage,
                     pChain,
-                    size,
                     &FilterId
                     );
 

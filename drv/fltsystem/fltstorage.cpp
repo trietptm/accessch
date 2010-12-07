@@ -41,7 +41,77 @@ FiltersStorage::FiltersStorage (
 FiltersStorage::~FiltersStorage (
     )
 {
+    DeleteAllFilters();
     FltDeletePushLock( &m_AccessLock );
+}
+
+void
+FiltersStorage::Lock (
+    )
+{
+    FltAcquirePushLockExclusive( &m_AccessLock );
+}
+
+void
+FiltersStorage::UnLock (
+    )
+{
+    FltReleasePushLock( &m_AccessLock );
+}
+
+__checkReturn
+NTSTATUS
+FiltersStorage::AddFilterUnsafe (
+    __in ULONG Interceptor,
+    __in ULONG OperationId,
+    __in ULONG FunctionMi,
+    __in ULONG OperationType,
+    __in UCHAR GroupId,
+    __in VERDICT Verdict,
+    __in HANDLE ProcessId,
+    __in_opt ULONG RequestTimeout,
+    __in PARAMS_MASK WishMask,
+    __in_opt ULONG ParamsCount,
+    __in_opt PFltParam Params,
+    __out_opt PULONG FilterId
+    )
+{
+    Filters* pFilters = GetOrCreateFiltersByp (
+        Interceptor,
+        OperationId,
+        FunctionMi,
+        OperationType
+        );
+
+    if ( !pFilters )
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    ULONG filterId = GetNextFilterid();
+
+    NTSTATUS status = pFilters->AddFilter (
+        GroupId,
+        Verdict,
+        ProcessId,
+        RequestTimeout,
+        WishMask,
+        ParamsCount,
+        Params,
+        m_BoxList,
+        filterId
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        if ( FilterId )
+        {
+            *FilterId = filterId;
+        }
+    }
+
+    return status;
+        
 }
 
 RTL_GENERIC_COMPARE_RESULTS
@@ -182,8 +252,7 @@ FiltersStorage::CleanupFiltersByPidp (
 
         if ( pItem->m_Filters->IsEmpty() )
         {
-            pItem->m_Filters->Filters::~Filters();
-            FREE_POOL( pItem->m_Filters );
+            FREE_OBJECT( pItem->m_Filters );
 
             RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
 
@@ -316,16 +385,7 @@ FiltersStorage::GetOrCreateFiltersByp (
     {
         if ( newElement )
         {
-            pItem->m_Filters = (Filters*) ExAllocatePoolWithTag (
-                PagedPool,
-                sizeof( Filters ),
-                m_AllocTag
-                );
-        
-            if ( pItem->m_Filters )
-            {
-                pItem->m_Filters->Filters::Filters();
-            }
+            pItem->m_Filters = new( PagedPool, m_AllocTag ) Filters;
         }
 
         pFilters = pItem->m_Filters;
@@ -338,8 +398,7 @@ FiltersStorage::GetOrCreateFiltersByp (
         {
             if ( newElement )
             {
-                pFilters->Filters::~Filters();
-                FREE_POOL( pFilters );
+                FREE_OBJECT( pFilters );
                 pItem->m_Filters = NULL;
             }
             
