@@ -15,10 +15,12 @@ public:
     __checkReturn
     NTSTATUS
     Attach (
+        __in FiltersStorage* FltStorage
         );
 
     void
     Detach (
+        __in FiltersStorage* FltStorage
         );
 
     __checkReturn
@@ -33,5 +35,3 @@ private:
     EX_PUSH_LOCK        m_AccessLock;
     LIST_ENTRY          m_List;
 };
-
-#define PFilteringSystem FilteringSystem* 

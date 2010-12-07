@@ -1,4 +1,5 @@
 #include "../inc/commonkrnl.h"
+#include "../inc/memmgr.h"
 #include "../inc/fltevents.h"
 
 ULONG Aggregation::m_AllocTag = 'gaSA';
@@ -10,7 +11,7 @@ Aggregation::Aggregation (
     m_Items = NULL;
 }
     
-Aggregation::::~Aggregation (
+Aggregation::~Aggregation (
     )
 {
     if ( m_Items )
@@ -112,7 +113,7 @@ EventData::EventData (
 
 };
 
-~EventData()
+EventData::~EventData()
 {
 
 }
@@ -146,7 +147,6 @@ EventData::GetOperationType (
 }
 
 __checkReturn
-virtual
 NTSTATUS
 EventData::QueryParameter (
     __in_opt ULONG ParameterId,
@@ -164,7 +164,6 @@ EventData::QueryParameter (
 }
 
 __checkReturn
-virtual
 NTSTATUS
 EventData::ObjectRequest (
     __in ULONG Command,

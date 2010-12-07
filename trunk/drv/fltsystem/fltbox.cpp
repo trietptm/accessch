@@ -1,5 +1,5 @@
 #include "../inc/commonkrnl.h"
-#include "flt.h"
+#include "../inc/memmgr.h"
 #include "fltbox.h"
 
 ULONG FilterBox::m_AllocTag = 'bfSA';
@@ -9,7 +9,7 @@ typedef struct _BoxFilterItem
     static ULONG    m_AllocTag;
     LIST_ENTRY      m_List;
     ULONG           m_Position;
-    PARAM_ENTRY     m_Data;
+    FltData         m_Data;
 } BoxFilterItem, *PBoxFilterItem;
 
 ULONG BoxFilterItem::m_AllocTag = 'ibSA';
@@ -88,7 +88,7 @@ FilterBox::AddParams (
 
     PBoxFilterItem fltitem = ( PBoxFilterItem ) ExAllocatePoolWithTag (
         PagedPool,
-        sizeof( BoxFilterItem ) + Params->m_FltData.m_Size,
+        sizeof( BoxFilterItem ) + Params->m_Data.m_Size,
         BoxFilterItem::m_AllocTag
         );
 
@@ -103,7 +103,7 @@ FilterBox::AddParams (
     RtlCopyMemory (
         &fltitem->m_Data,
         Params,  
-        sizeof( PARAM_ENTRY ) + Params->m_FltData.m_Size
+        sizeof( FltData ) + Params->m_Data.m_Size
         );
 
     InsertHeadList( &m_Items, &fltitem->m_List );

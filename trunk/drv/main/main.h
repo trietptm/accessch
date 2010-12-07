@@ -12,7 +12,7 @@ typedef struct _Globals
     EX_RUNDOWN_REF          m_RefClientPort;
     PFLT_PORT               m_ClientPort;
 
-    PFilteringSystem        m_FilteringSystem;
+    FilteringSystem*        m_FilteringSystem;
 }Globals, *PGlobals;
 
 extern Globals GlobalData;

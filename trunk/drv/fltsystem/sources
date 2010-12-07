@@ -21,4 +21,6 @@ SOURCES= \
 	fltsystem.cpp \
 	fltstorage.cpp \
 	fltfilters.cpp \
+	fltevents.cpp \
+	fltbox.cpp \
 	fltsupport.cpp	

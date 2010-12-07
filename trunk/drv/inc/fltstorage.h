@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../inc/fltcommon.h"
+
 class Filters;
 class FilterBoxList;
 
@@ -16,6 +18,29 @@ public:
         );
 
     void
+    Lock();
+
+    void
+    UnLock();
+
+    __checkReturn
+    NTSTATUS
+    AddFilterUnsafe (
+        __in ULONG Interceptor,
+        __in ULONG OperationId,
+        __in ULONG FunctionMi,
+        __in ULONG OperationType,
+        __in UCHAR GroupId,
+        __in VERDICT Verdict,
+        __in HANDLE ProcessId,
+        __in_opt ULONG RequestTimeout,
+        __in PARAMS_MASK WishMask,
+        __in_opt ULONG ParamsCount,
+        __in_opt PFltParam Params,
+        __out_opt PULONG FilterId
+        );
+  
+    void
     DeleteAllFilters (
         );
 
@@ -24,9 +49,6 @@ public:
         __in HANDLE ProcessId,
         __in PVOID Context
         );
-
-    LONG
-    GetNextFilterid();
 
     BOOLEAN
     IsActive();
@@ -42,6 +64,9 @@ public:
     static RTL_AVL_FREE_ROUTINE Free;
   
 private:
+    LONG
+    GetNextFilterid();
+
     void
     CleanupFiltersByPidp (
         __in HANDLE ProcessId
