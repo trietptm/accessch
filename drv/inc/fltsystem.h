@@ -26,7 +26,7 @@ public:
     __checkReturn
     NTSTATUS
     FilterEvent (
-        __in PEventData event,
+        __in EventData* Event,
         __in PVERDICT Verdict,
         __in PPARAMS_MASK ParamsMask
         );

@@ -21,6 +21,82 @@ typedef struct _FiltersItem
 
 //////////////////////////////////////////////////////////////////////////
 
+RTL_GENERIC_COMPARE_RESULTS
+NTAPI
+FiltersStorage::Compare (
+    __in struct _RTL_AVL_TABLE *Table,
+    __in PVOID FirstStruct,
+    __in PVOID SecondStruct
+    )
+{
+    UNREFERENCED_PARAMETER( Table );
+
+    RTL_GENERIC_COMPARE_RESULTS result;
+
+    PFiltersItem Struct1 = ( PFiltersItem ) FirstStruct;
+    PFiltersItem Struct2 = ( PFiltersItem ) SecondStruct;
+    ULONG comparesize = FIELD_OFFSET( FiltersItem, m_Filters );
+
+    int ires = memcmp (
+        Struct1,
+        Struct2,
+        comparesize
+        );
+
+    switch ( ires )
+    {
+    case 0:
+        result = GenericEqual;
+        break;
+
+    case 1:
+        result = GenericGreaterThan;
+        break;
+
+    case -1:
+        result = GenericLessThan;
+        break;
+
+    default:
+        __debugbreak();
+        break;
+    }
+
+    return result;
+}
+
+PVOID
+NTAPI
+FiltersStorage::Allocate (
+    __in struct _RTL_AVL_TABLE *Table,
+    __in CLONG ByteSize
+    )
+{
+    UNREFERENCED_PARAMETER( Table );
+
+    PVOID ptr = ExAllocatePoolWithTag (
+        PagedPool,
+        ByteSize,
+        m_AllocTag
+        );
+    
+    return ptr;
+}
+
+void
+NTAPI
+FiltersStorage::Free (
+    __in struct _RTL_AVL_TABLE *Table,
+    __in __drv_freesMem(Mem) __post_invalid PVOID Buffer
+    )
+{
+    UNREFERENCED_PARAMETER( Table );
+
+    FREE_POOL( Buffer );
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 FiltersStorage::FiltersStorage (
     )
 {
@@ -110,82 +186,10 @@ FiltersStorage::AddFilterUnsafe (
         }
     }
 
+    pFilters->Release();
+
     return status;
         
-}
-
-RTL_GENERIC_COMPARE_RESULTS
-NTAPI
-FiltersStorage::Compare (
-    __in struct _RTL_AVL_TABLE *Table,
-    __in PVOID FirstStruct,
-    __in PVOID SecondStruct
-    )
-{
-    UNREFERENCED_PARAMETER( Table );
-
-    RTL_GENERIC_COMPARE_RESULTS result;
-
-    PFiltersItem Struct1 = ( PFiltersItem ) FirstStruct;
-    PFiltersItem Struct2 = ( PFiltersItem ) SecondStruct;
-    ULONG comparesize = FIELD_OFFSET( FiltersItem, m_Filters );
-
-    int ires = memcmp (
-        Struct1,
-        Struct2,
-        comparesize
-        );
-
-    switch ( ires )
-    {
-    case 0:
-        result = GenericEqual;
-        break;
-
-    case 1:
-        result = GenericGreaterThan;
-        break;
-
-    case -1:
-        result = GenericLessThan;
-        break;
-
-    default:
-        __debugbreak();
-        break;
-    }
-
-    return result;
-}
-
-PVOID
-NTAPI
-FiltersStorage::Allocate (
-    __in struct _RTL_AVL_TABLE *Table,
-    __in CLONG ByteSize
-    )
-{
-    UNREFERENCED_PARAMETER( Table );
-
-    PVOID ptr = ExAllocatePoolWithTag (
-        PagedPool,
-        ByteSize,
-        m_AllocTag
-        );
-    
-    return ptr;
-}
-
-void
-NTAPI
-FiltersStorage::Free (
-    __in struct _RTL_AVL_TABLE *Table,
-    __in __drv_freesMem(Mem) __post_invalid PVOID Buffer
-    )
-{
-    UNREFERENCED_PARAMETER( Table );
-
-    FREE_POOL( Buffer );
 }
 
 void
@@ -308,6 +312,36 @@ FiltersStorage::ChangeState (
     {
         FiltersStorage::m_Flags = _FT_FLAGS_PAUSED;
     }
+
+    return STATUS_SUCCESS;
+}
+
+__checkReturn
+NTSTATUS
+FiltersStorage::FilterEvent (
+    __in EventData* Event,
+    __in PVERDICT Verdict,
+    __in PPARAMS_MASK ParamsMask
+    )
+{
+    Filters* pFilter = GetFiltersByp (
+        Event->GetInterceptorId(),
+        Event->GetOperationId(),
+        Event->GetMinor(),
+        Event->GetOperationType()
+        );
+
+    if ( !pFilter )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
+    *Verdict = pFilter->GetVerdict (
+        Event,
+        ParamsMask
+        );
+
+    pFilter->Release();
 
     return STATUS_SUCCESS;
 }

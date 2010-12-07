@@ -84,14 +84,39 @@ FilteringSystem::Detach (
 __checkReturn
 NTSTATUS
 FilteringSystem::FilterEvent (
-    __in PEventData Event,
+    __in EventData* Event,
     __in PVERDICT Verdict,
     __in PPARAMS_MASK ParamsMask
     )
 {
-    UNREFERENCED_PARAMETER( Event );
-    UNREFERENCED_PARAMETER( Verdict );
-    UNREFERENCED_PARAMETER( ParamsMask );
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-    return STATUS_NOT_IMPLEMENTED;
+    PFiltersStorageItem pItem = NULL;
+
+    FltAcquirePushLockShared( &m_AccessLock );
+
+    if ( !IsListEmpty( &m_List ) )
+    {
+        PLIST_ENTRY Flink;
+
+        Flink = m_List.Flink;
+
+        while ( Flink != &m_List )
+        {
+            pItem = CONTAINING_RECORD( Flink, FiltersStorageItem, m_List );
+            Flink = Flink->Flink;
+
+            status = pItem->m_Item->FilterEvent (
+                Event,
+                Verdict,
+                ParamsMask
+                );
+
+            break;
+        }
+    }
+
+    FltReleasePushLock( &m_AccessLock );
+
+    return status;
 }
