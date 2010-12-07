@@ -7,6 +7,7 @@ PDBPATH=$(TARGETPATH)
 
 #!ENDIF
 
+TARGET_LIBS_DIR=..\..\out\$(BUILD_ALT_DIR)\libs\$(TARGET_DIRECTORY)
 
 TARGETTYPE=DRIVER
 DRIVERTYPE=FS
@@ -17,7 +18,9 @@ TARGETLIBS= \
 		$(TARGETLIBS) \
 		$(IFSKIT_LIB_PATH)\fltMgr.lib \
 		$(IFSKIT_LIB_PATH)\iointex.lib \
-		$(IFSKIT_LIB_PATH)\ntstrsafe.lib
+		$(IFSKIT_LIB_PATH)\ntstrsafe.lib \
+		$(TARGET_LIBS_DIR)\memmgr.lib \
+		$(TARGET_LIBS_DIR)\fltsystem.lib
 
 
 SOURCES= \

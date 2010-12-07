@@ -2,7 +2,7 @@ TARGETNAME=fltsystem
 
 #!IF "$(DDK_TARGET_OS)"!="Win7"
 
-TARGETPATH=..\..\out\$(BUILD_ALT_DIR)
+TARGETPATH=..\..\out\$(BUILD_ALT_DIR)\libs
 PDBPATH=$(TARGETPATH)
 
 #!ENDIF

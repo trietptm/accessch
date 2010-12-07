@@ -212,13 +212,21 @@ DriverEntry (
     ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
     ExRundownCompleted( &GlobalData.m_RefClientPort );
 
-    FilteringSystem::Initialize();
     ProcList::Initialize();
     QueuedItem::Initialize();
 
-
     __try
     {
+        GlobalData.m_FilteringSystem = new (
+            PagedPool,
+            FilteringSystem::m_AllocTag
+            ) FilteringSystem;
+
+        if ( !GlobalData.m_FilteringSystem )
+        {
+            __leave;
+        }
+
 #if ( NTDDI_VERSION < NTDDI_WIN6 )
         status = GetPreviousModeOffset();
         if ( !NT_SUCCESS( status ) )
@@ -258,6 +266,10 @@ DriverEntry (
     {
         if ( !NT_SUCCESS( status ) )
         {
+            if ( GlobalData.m_FilteringSystem )
+            {
+                FREE_OBJECT( GlobalData.m_FilteringSystem );
+            }
             if ( GlobalData.m_Port )
             {
                 FltCloseCommunicationPort( GlobalData.m_Port );
@@ -290,8 +302,8 @@ Unload (
     FltUnregisterFilter( GlobalData.m_Filter );
 
     QueuedItem::Destroy();
+    FREE_OBJECT( GlobalData.m_FilteringSystem );
     ProcList::Destroy();
-    FilteringSystem::Destroy();
 
     return STATUS_SUCCESS;
 }
@@ -469,7 +481,11 @@ InstanceSetup (
             );
 
         PARAMS_MASK params2user;
-        status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
+        status = GlobalData.m_FilteringSystem->FilterEvent (
+            &event,
+            &Verdict,
+            &params2user
+            );
 
         if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
         {
@@ -548,7 +564,11 @@ PreCreate (
             );
 
         PARAMS_MASK params2user;
-        NTSTATUS status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
+        NTSTATUS status = GlobalData.m_FilteringSystem->FilterEvent (
+            &event,
+            &Verdict,
+            &params2user
+            );
 
         if ( NT_SUCCESS( status ) )
         {
@@ -679,7 +699,11 @@ PostCreate (
             );
 
         PARAMS_MASK params2user;
-        status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
+        status = GlobalData.m_FilteringSystem->FilterEvent (
+            &event,
+            &Verdict,
+            &params2user
+            );
 
         if ( NT_SUCCESS( status ) )
         {
@@ -779,7 +803,11 @@ PreCleanup (
             );
 
         PARAMS_MASK params2user;
-        status = FilteringSystem::FilterEvent( &event, &Verdict, &params2user );
+        status = GlobalData.m_FilteringSystem->FilterEvent (
+            &event,
+            &Verdict,
+            &params2user
+            );
 
         if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
         {

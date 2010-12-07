@@ -3,7 +3,6 @@
 #include "fltstore.h"
 #include "excludes.h"
 
-ULONG FilteringSystem::m_AllocTag = 'sfSA';
 
 EX_PUSH_LOCK FilteringSystem::m_AccessLock;
 LIST_ENTRY FilteringSystem::m_FltObjects;
