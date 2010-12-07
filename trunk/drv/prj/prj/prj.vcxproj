@@ -60,9 +60,6 @@
     <ClCompile Include="..\..\main\excludes.cpp" />
     <ClCompile Include="..\..\main\fileflt.cpp" />
     <ClCompile Include="..\..\main\filehlp.cpp" />
-    <ClCompile Include="..\..\main\flt.cpp" />
-    <ClCompile Include="..\..\main\fltbox.cpp" />
-    <ClCompile Include="..\..\main\fltstore.cpp" />
     <ClCompile Include="..\..\main\main.cpp" />
     <ClCompile Include="..\..\main\mm.cpp" />
     <ClCompile Include="..\..\main\proclist.cpp" />
@@ -77,9 +74,6 @@
     <ClInclude Include="..\..\main\excludes.h" />
     <ClInclude Include="..\..\main\fileflt.h" />
     <ClInclude Include="..\..\main\filehlp.h" />
-    <ClInclude Include="..\..\main\flt.h" />
-    <ClInclude Include="..\..\main\fltbox.h" />
-    <ClInclude Include="..\..\main\fltstore.h" />
     <ClInclude Include="..\..\main\main.h" />
     <ClInclude Include="..\..\main\mm.h" />
     <ClInclude Include="..\..\main\pch.h" />

@@ -61,12 +61,6 @@ typedef enum Parameters
     PARAMETER_MAXIMUM               = 63
 } *PParameters;
 
-#define PARAMS_MASK __int64
-
-#define Id2Bit( _id ) ( (PARAMS_MASK) 1 << _id )
-
-#define _PARAMS_COUNT ( sizeof( PARAMS_MASK ) * 8 )
-
 #include <pshpack8.h>
 
 // send message communication  

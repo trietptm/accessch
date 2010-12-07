@@ -25,4 +25,4 @@ SetPreviousMode (
 
 #endif // ( NTDDI_VERSION < NTDDI_WIN6 )
 
-#include "mm.h"
+#include "../inc/memmgr.h"

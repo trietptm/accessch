@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "../inc/fltsystem.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -10,6 +11,8 @@ typedef struct _Globals
     PFLT_PORT               m_Port;
     EX_RUNDOWN_REF          m_RefClientPort;
     PFLT_PORT               m_ClientPort;
+
+    PFilteringSystem        m_FilteringSystem;
 }Globals, *PGlobals;
 
 extern Globals GlobalData;
