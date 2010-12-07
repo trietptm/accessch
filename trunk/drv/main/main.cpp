@@ -547,11 +547,6 @@ PreCreate (
         *CompletionContext = NULL;
         fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
-        if ( !FilteringSystem::IsExistFilters() )
-        {
-            __leave;
-        }
-
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext event (
             Data,
@@ -655,11 +650,6 @@ PostCreate (
         NTSTATUS status;
 
         if ( IsSkipPostCreate( Data, FltObjects, Flags ) )
-        {
-            __leave;
-        }
-
-        if ( !FilteringSystem::IsExistFilters() )
         {
             __leave;
         }
@@ -769,11 +759,6 @@ PreCleanup (
     
     __try
     {
-        if ( !FilteringSystem::IsExistFilters() )
-        {
-            __leave;
-        }
-
         status = GetStreamHandleContext (
             FltObjects,
             &pStreamHandleContext
@@ -901,11 +886,6 @@ PostWrite (
 
     __try
     {
-        if ( !FilteringSystem::IsExistFilters() )
-        {
-            __leave;
-        }
-
         NTSTATUS status = GenerateStreamContext (
             GlobalData.m_Filter,
             FltObjects,
