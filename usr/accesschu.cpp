@@ -194,18 +194,18 @@ CreateExtensionsBox (
     pBox->m_Operation = _fltbox_add;
     pBox->Items.m_ParamsCount = 1;
 
-    PPARAM_ENTRY pEntry = pBox->Items.m_Params;
+    PFltParam pEntry = pBox->Items.m_Params;
 
-    pEntry->m_Id = PARAMETER_FILE_NAME;
-    pEntry->m_Operation = _fltop_pattern;
-    pEntry->m_Flags = _PARAM_ENTRY_CASE_INSENSITIVE;
-    pEntry->m_FltData.m_Count = 0;
-    pEntry->m_FltData.m_Size = lstrlen( Pattern ) * sizeof( WCHAR );
-    PWCHAR pPattern = (PWCHAR) pEntry->m_FltData.m_Data;
+    pEntry->m_ParameterId = PARAMETER_FILE_NAME;
+    pEntry->m_Operation = FltOp_pattern;
+    pEntry->m_Flags = FltFlags_CaseInsensitive;
+    pEntry->m_Data.m_Count = 0;
+    pEntry->m_Data.m_Size = lstrlen( Pattern ) * sizeof( WCHAR );
+    PWCHAR pPattern = (PWCHAR) pEntry->m_Data.m_Data;
     StringCbCopy( pPattern, MAX_PATH, Pattern );
 
     ULONG requestsize = (ULONG) ( ( char* ) pPattern - buffer ) 
-        + pEntry->m_FltData.m_Size;
+        + pEntry->m_Data.m_Size;
 
     DWORD retsize;
     hResult = FilterSendMessage (
@@ -258,25 +258,25 @@ CreateFilter_PostCreate (
         | Id2Bit( PARAMETER_DESIRED_ACCESS );
 
     //first param
-    PPARAM_ENTRY pEntry = pFilter->m_Params;
-    pEntry->m_Id = PARAMETER_DESIRED_ACCESS;
-    pEntry->m_Operation = _fltop_and;
-    pEntry->m_FltData.m_Size = sizeof( ACCESS_MASK );
-    pEntry->m_FltData.m_Count = 1;
-    ACCESS_MASK *pMask = (ACCESS_MASK*) pEntry->m_FltData.m_Data;
+    PFltParam pEntry = pFilter->m_Params;
+    pEntry->m_ParameterId = PARAMETER_DESIRED_ACCESS;
+    pEntry->m_Operation = FltOp_and;
+    pEntry->m_Data.m_Size = sizeof( ACCESS_MASK );
+    pEntry->m_Data.m_Count = 1;
+    ACCESS_MASK *pMask = (ACCESS_MASK*) pEntry->m_Data.m_Data;
     *pMask = FILE_READ_DATA | FILE_EXECUTE;
 
     // second param
-    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+    pEntry = ( PFltParam ) Add2Ptr( 
         pEntry,
-        _sizeof_param_entry + pEntry->m_FltData.m_Size
+        sizeof( FltParam ) + pEntry->m_Data.m_Size
         );
-    pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
-    pEntry->m_Operation = _fltop_and;
-    pEntry->m_FltData.m_Size = sizeof( ULONG );
-    pEntry->m_FltData.m_Count = 1;
-    pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
-    PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
+    pEntry->m_ParameterId = PARAMETER_OBJECT_STREAM_FLAGS;
+    pEntry->m_Operation = FltOp_and;
+    pEntry->m_Data.m_Size = sizeof( ULONG );
+    pEntry->m_Data.m_Count = 1;
+    pEntry->m_Flags = FltFlags_Negation;
+    PULONG pFlags = (PULONG) pEntry->m_Data.m_Data;
     *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1;
 
     /*
@@ -289,52 +289,52 @@ CreateFilter_PostCreate (
     */
     
     //// forth param
-    //pEntry = (PPARAM_ENTRY) Add2Ptr( 
+    //pEntry = ( PFltParam ) Add2Ptr( 
     //    pEntry,
-    //    sizeof( PARAM_ENTRY ) + pEntry->m_FltData.m_Size
+    //    sizeof( PARAM_ENTRY ) + pEntry->m_Data.m_Size
     //    );
-    //pEntry->m_Id = PARAMETER_CREATE_MODE;
+    //pEntry->m_ParameterId = PARAMETER_CREATE_MODE;
     //pEntry->m_Operation = _fltop_equ;
     //pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
-    //pEntry->m_FltData.m_Count = 4;
-    //pEntry->m_FltData.m_Size = sizeof( ULONG ) * pEntry->m_FltData.m_Count;
-    //PULONG pMode = (PULONG) pEntry->m_FltData.m_Data;
+    //pEntry->m_Data.m_Count = 4;
+    //pEntry->m_Data.m_Size = sizeof( ULONG ) * pEntry->m_Data.m_Count;
+    //PULONG pMode = (PULONG) pEntry->m_Data.m_Data;
     //*pMode = FILE_SUPERSEDE;
     //*(pMode + 1) = FILE_CREATE;
     //*(pMode + 2) = FILE_OVERWRITE;
     //*(pMode + 3) = FILE_OVERWRITE_IF;
 
     // third
-    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+    pEntry = ( PFltParam ) Add2Ptr( 
         pEntry,
-        _sizeof_param_entry + pEntry->m_FltData.m_Size
+        sizeof( FltParam ) + pEntry->m_Data.m_Size
         );
-    pEntry->m_Id = PARAMETER_RESULT_INFORMATION;
-    pEntry->m_Operation = _fltop_equ;
-    pEntry->m_FltData.m_Size = sizeof( ULONG );
-    pEntry->m_FltData.m_Count = 1;
-    PULONG pInformation = (PULONG) pEntry->m_FltData.m_Data;
+    pEntry->m_ParameterId = PARAMETER_RESULT_INFORMATION;
+    pEntry->m_Operation = FltOp_equ;
+    pEntry->m_Data.m_Size = sizeof( ULONG );
+    pEntry->m_Data.m_Count = 1;
+    PULONG pInformation = (PULONG) pEntry->m_Data.m_Data;
     *pInformation = FILE_OPENED;
      
     // forth
-    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+    pEntry = ( PFltParam ) Add2Ptr( 
         pEntry,
-        _sizeof_param_entry + pEntry->m_FltData.m_Size
+        sizeof( FltParam ) + pEntry->m_Data.m_Size
         );
-    pEntry->m_Id = PARAMETER_EXT_BOX_FILTERS;
-    pEntry->m_Operation = _fltop_equ;
-    pEntry->m_FltData.m_Size = sizeof( FILTERBOX_CONTROL );
-    pEntry->m_FltData.m_Count = 1;
-    pEntry->m_FltData.m_Box[0].m_Guid = gBoxGuid;
+    pEntry->m_ParameterId = PARAMETER_EXT_BOX_FILTERS;
+    pEntry->m_Operation = FltOp_equ;
+    pEntry->m_Data.m_Size = sizeof( FltBoxControl );
+    pEntry->m_Data.m_Count = 1;
+    pEntry->m_Data.m_Box[0].m_Guid = gBoxGuid;
 
     // understand that next lines wrong
-    pEntry->m_FltData.m_Box[0].m_BitCount = sizeof( gbBitMask ) * 8;
-    pEntry->m_FltData.m_Box[0].m_BitMask[0] = gbBitMask;
+    pEntry->m_Data.m_Box[0].m_BitCount = sizeof( gbBitMask ) * 8;
+    pEntry->m_Data.m_Box[0].m_BitMask[0] = gbBitMask;
     
     // result size
     PVOID lastptr = Add2Ptr( 
         pEntry,
-        _sizeof_param_entry + pEntry->m_FltData.m_Size
+        sizeof( FltParam ) + pEntry->m_Data.m_Size
         );
 
     ULONG requestsize = (ULONG) ( ( char* ) lastptr - buffer ) + sizeof( ULONG );
@@ -388,26 +388,26 @@ CreateFilter_PreCleanup (
         | Id2Bit( PARAMETER_OBJECT_STREAM_FLAGS );
 
     // first param
-    PPARAM_ENTRY pEntry = pFilter->m_Params;
-    pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
-    pEntry->m_Operation = _fltop_and;
-    pEntry->m_FltData.m_Size = sizeof( ULONG );
-    pEntry->m_FltData.m_Count = 1;
-    pEntry->m_Flags = _PARAM_ENTRY_FLAG_NEGATION;
-    PULONG pFlags = (PULONG) pEntry->m_FltData.m_Data;
+    PFltParam pEntry = pFilter->m_Params;
+    pEntry->m_ParameterId = PARAMETER_OBJECT_STREAM_FLAGS;
+    pEntry->m_Operation = FltOp_and;
+    pEntry->m_Data.m_Size = sizeof( ULONG );
+    pEntry->m_Data.m_Count = 1;
+    pEntry->m_Flags = FltFlags_Negation;
+    PULONG pFlags = (PULONG) pEntry->m_Data.m_Data;
     *pFlags = _STREAM_FLAGS_DIRECTORY | _STREAM_FLAGS_CASHE1 | _STREAM_FLAGS_DELONCLOSE;
 
     // second param
-    pEntry = (PPARAM_ENTRY) Add2Ptr( 
+    pEntry = ( PFltParam ) Add2Ptr( 
         pEntry,
-        _sizeof_param_entry + pEntry->m_FltData.m_Size
+        sizeof( FltParam ) + pEntry->m_Data.m_Size
         );
-    pEntry->m_Id = PARAMETER_OBJECT_STREAM_FLAGS;
-    pEntry->m_Operation = _fltop_and;
-    pEntry->m_FltData.m_Size = sizeof( ULONG );
-    pEntry->m_FltData.m_Count = 1;
+    pEntry->m_ParameterId = PARAMETER_OBJECT_STREAM_FLAGS;
+    pEntry->m_Operation = FltOp_and;
+    pEntry->m_Data.m_Size = sizeof( ULONG );
+    pEntry->m_Data.m_Count = 1;
     pEntry->m_Flags = 0;
-    pFlags = (PULONG) pEntry->m_FltData.m_Data;
+    pFlags = (PULONG) pEntry->m_Data.m_Data;
     *pFlags = _STREAM_FLAGS_MODIFIED;
 
     // result size

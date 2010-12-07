@@ -1,4 +1,6 @@
-#include "pch.h"
+#include "../inc/commonkrnl.h"
+#include "../inc/memmgr.h"
+
 #include "proclist.h"
 
 ULONG           ProcList::m_AllocTag = 'lpSA';

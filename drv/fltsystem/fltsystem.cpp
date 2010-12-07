@@ -1,5 +1,6 @@
 #include "../inc/commonkrnl.h"
 #include "../inc/fltsystem.h"
+#include "fltbox.h"
 
 ULONG FilteringSystem::m_AllocTag = 'sfSA';
  

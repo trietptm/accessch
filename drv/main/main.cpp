@@ -5,6 +5,8 @@
 //!
 
 /// \todo check necessary headers
+#include "../inc/commonkrnl.h"
+#include "../inc/memmgr.h"
 #include "main.h"
 #include "../../inc/accessch.h"
 #include "../inc/fltsystem.h"

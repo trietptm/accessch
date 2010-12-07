@@ -1,4 +1,5 @@
 #include "security.h"
+#include "../inc/memmgr.h"
 
 __checkReturn
 NTSTATUS
