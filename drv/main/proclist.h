@@ -1,7 +1,7 @@
 #ifndef __proclist_h
 #define __proclist_h
 
-typedef void ( *_tpProcessExitCb )( HANDLE ProcessId, PVOID Opaque );
+#include "../inc/processinfo.h"
 
 class ProcList
 {

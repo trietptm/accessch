@@ -23,6 +23,10 @@ public:
         __in FiltersStorage* FltStorage
         );
 
+    BOOLEAN
+    IsFiltersExist (
+        );
+
     __checkReturn
     NTSTATUS
     FilterEvent (

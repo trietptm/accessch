@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="FilteringSystem">
+      <UniqueIdentifier>{c8df1e99-970a-4fae-bf2e-697caa340bf8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\main\accessch.rc">
@@ -38,9 +41,6 @@
     <ClCompile Include="..\..\main\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\main\mm.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\main\proclist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -53,8 +53,20 @@
     <ClCompile Include="..\..\main\volumeflt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltbox.cpp">
+      <Filter>FilteringSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltevents.cpp">
+      <Filter>FilteringSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltfilters.cpp">
+      <Filter>FilteringSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltstorage.cpp">
+      <Filter>FilteringSystem</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>FilteringSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -100,5 +112,19 @@
     <ClInclude Include="..\..\inc\fltsystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\fltsystem\fltbox.h">
+      <Filter>FilteringSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fltsystem\fltfilters.h">
+      <Filter>FilteringSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fltevents.h">
+      <Filter>FilteringSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fltstorage.h">
+      <Filter>FilteringSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\memmgr.h" />
+    <ClInclude Include="..\..\inc\commonkrnl.h" />
   </ItemGroup>
 </Project>

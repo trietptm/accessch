@@ -2,6 +2,7 @@
 
 #include "../../inc/fltcommon.h"
 #include "../inc/fltevents.h"
+#include "../inc/processinfo.h"
 
 class Filters;
 class FilterBoxList;
@@ -13,6 +14,13 @@ public:
     static RTL_AVL_COMPARE_ROUTINE Compare;
     static RTL_AVL_ALLOCATE_ROUTINE Allocate;
     static RTL_AVL_FREE_ROUTINE Free;
+
+    static
+    void
+    ExitProcessCb (
+        HANDLE ProcessId,
+        PVOID Opaque
+        );
 
 public:
     FiltersStorage (
@@ -55,12 +63,6 @@ public:
   
     void
     DeleteAllFilters (
-        );
-
-    void
-    CleanupFiltersByPid (
-        __in HANDLE ProcessId,
-        __in PVOID Context
         );
 
     BOOLEAN
