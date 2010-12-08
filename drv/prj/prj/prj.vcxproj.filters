@@ -16,6 +16,12 @@
     <Filter Include="FilteringSystem">
       <UniqueIdentifier>{c8df1e99-970a-4fae-bf2e-697caa340bf8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FilteringSystem\Header Files">
+      <UniqueIdentifier>{7e4c2529-39af-4a31-be79-588013c53ffa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FilteringSystem\Source Files">
+      <UniqueIdentifier>{c6bde905-6d43-4c79-9bcc-360c7b5076ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\main\accessch.rc">
@@ -54,19 +60,22 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltbox.cpp">
-      <Filter>FilteringSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\fltsystem\fltevents.cpp">
-      <Filter>FilteringSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\fltsystem\fltfilters.cpp">
-      <Filter>FilteringSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\fltsystem\fltstorage.cpp">
-      <Filter>FilteringSystem</Filter>
+      <Filter>FilteringSystem\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp">
-      <Filter>FilteringSystem</Filter>
+      <Filter>FilteringSystem\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltchecks.cpp">
+      <Filter>FilteringSystem\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltevents.cpp">
+      <Filter>FilteringSystem\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltfilters.cpp">
+      <Filter>FilteringSystem\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\fltsystem\fltstorage.cpp">
+      <Filter>FilteringSystem\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,12 +97,6 @@
     <ClInclude Include="..\..\main\main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\main\mm.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\main\pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\main\proclist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -113,18 +116,25 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fltsystem\fltbox.h">
-      <Filter>FilteringSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\fltsystem\fltfilters.h">
-      <Filter>FilteringSystem</Filter>
+      <Filter>FilteringSystem\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\fltevents.h">
-      <Filter>FilteringSystem</Filter>
+      <Filter>FilteringSystem\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\fltsystem\fltfilters.h">
+      <Filter>FilteringSystem\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\fltstorage.h">
-      <Filter>FilteringSystem</Filter>
+      <Filter>FilteringSystem\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\memmgr.h" />
-    <ClInclude Include="..\..\inc\commonkrnl.h" />
+    <ClInclude Include="..\..\fltsystem\fltchecks.h">
+      <Filter>FilteringSystem\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\commonkrnl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\memmgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

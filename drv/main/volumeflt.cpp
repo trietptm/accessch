@@ -86,7 +86,7 @@ VolumeInterceptorContext::QueryParameter (
 __checkReturn
 NTSTATUS
 VolumeInterceptorContext::ObjectRequest (
-    __in NOTIFY_ID Command,
+    __in ULONG Command,
     __out_opt PVOID OutputBuffer,
     __inout_opt PULONG OutputBufferSize
     )

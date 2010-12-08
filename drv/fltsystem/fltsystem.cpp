@@ -1,6 +1,8 @@
 #include "../inc/commonkrnl.h"
 #include "../inc/memmgr.h"
 #include "../inc/fltsystem.h"
+#include "../inc/excludes.h"
+#include "../../inc/accessch.h"
 #include "fltbox.h"
 
 ULONG FilteringSystem::m_AllocTag = 'sfSA';
@@ -101,6 +103,25 @@ FilteringSystem::FilterEvent (
     __in PPARAMS_MASK ParamsMask
     )
 {
+    PHANDLE phProcess = NULL;
+    ULONG hProcessSize;
+    
+    NTSTATUS status = Event->QueryParameter (
+        PARAMETER_REQUESTOR_PROCESS_ID,
+        ( PVOID*) &phProcess,
+        &hProcessSize
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( IsInvisibleProcess( *phProcess ) )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
     NTSTATUS statusRet = STATUS_NOT_FOUND;
 
     FltAcquirePushLockShared( &m_AccessLock );
@@ -118,7 +139,7 @@ FilteringSystem::FilterEvent (
             pItem = CONTAINING_RECORD( Flink, FiltersStorageItem, m_List );
             Flink = Flink->Flink;
 
-            NTSTATUS status = pItem->m_Item->FilterEvent (
+            status = pItem->m_Item->FilterEvent (
                 Event,
                 Verdict,
                 ParamsMask
