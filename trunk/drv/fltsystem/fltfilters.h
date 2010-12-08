@@ -99,24 +99,6 @@ private:
         );
 
     NTSTATUS
-    CheckEntryUnsafe (
-        __in ParamCheckEntry* Entry,
-        __in EventData *Event
-        );
-
-    NTSTATUS
-    CheckGenericUnsafe (
-        __in ParamCheckEntry* Entry,
-        __in EventData *Event
-        );
-
-    NTSTATUS
-    CheckContainerUnsafe (
-        __in ParamCheckEntry* Entry,
-        __in EventData *Event
-        );
-
-    NTSTATUS
     CheckParamsList (
         __in EventData *Event,
         __in PULONG Unmatched,

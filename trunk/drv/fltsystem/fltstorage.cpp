@@ -37,14 +37,28 @@ FiltersStorage::FiltersStorage (
     m_Flags = _FT_FLAGS_PAUSED;
     m_FilterIdCounter = 0;
     m_BoxList = NULL;
+
+    RegisterExitProcessCb( ExitProcessCb, this );
 }
 
 FiltersStorage::~FiltersStorage (
     )
 {
+    UnregisterExitProcessCb( ExitProcessCb );
+
     DeleteAllFilters();
     delete m_BoxList;
     FltDeletePushLock( &m_AccessLock );
+}
+
+void
+FiltersStorage::ExitProcessCb (
+    HANDLE ProcessId,
+    PVOID Opaque
+    )
+{
+    FiltersStorage* pThis = ( FiltersStorage* ) Opaque;
+    pThis->CleanupFiltersByPidp( ProcessId );
 }
 
 RTL_GENERIC_COMPARE_RESULTS
@@ -262,17 +276,6 @@ FiltersStorage::DeleteAllFilters (
     m_FilterIdCounter = 0;
 
     FltReleasePushLock( &m_AccessLock );
-}
-
-void
-FiltersStorage::CleanupFiltersByPid (
-    __in HANDLE ProcessId,
-    __in PVOID Opaque
-    )
-{
-    FiltersStorage* pThis = ( FiltersStorage* ) Opaque;
-    
-    pThis->CleanupFiltersByPidp( ProcessId );
 }
 
 __checkReturn

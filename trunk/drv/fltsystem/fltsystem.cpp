@@ -81,6 +81,18 @@ FilteringSystem::Detach (
     FltReleasePushLock( &m_AccessLock );
 }
 
+BOOLEAN
+FilteringSystem::IsFiltersExist (
+    )
+{
+    if ( IsListEmpty( &m_List ) )
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 __checkReturn
 NTSTATUS
 FilteringSystem::FilterEvent (
@@ -112,11 +124,12 @@ FilteringSystem::FilterEvent (
                 ParamsMask
                 );
 
+            /// \todo multiple clients
             if ( NT_SUCCESS( status ) )
             {
-                break;
-                
                 statusRet = STATUS_SUCCESS;
+                
+                break;
             }
         }
     }

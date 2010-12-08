@@ -472,28 +472,31 @@ InstanceSetup (
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        VolumeInterceptorContext event (
-            FltObjects,
-            pInstanceCtx,
-            pVolumeContext,
-            VOLUME_MINIFILTER,
-            OP_VOLUME_ATTACH,
-            0,
-            PostProcessing
-            );
-
-        PARAMS_MASK params2user;
-        status = GlobalData.m_FilteringSystem->FilterEvent (
-            &event,
-            &Verdict,
-            &params2user
-            );
-
-        if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
+        if ( GlobalData.m_FilteringSystem->IsFiltersExist() )
         {
-            status = PortAskUser( &event, params2user, &Verdict );
-            if ( NT_SUCCESS( status ) )
+            VolumeInterceptorContext event (
+                FltObjects,
+                pInstanceCtx,
+                pVolumeContext,
+                VOLUME_MINIFILTER,
+                OP_VOLUME_ATTACH,
+                0,
+                PostProcessing
+                );
+
+            PARAMS_MASK params2user;
+            status = GlobalData.m_FilteringSystem->FilterEvent (
+                &event,
+                &Verdict,
+                &params2user
+                );
+
+            if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
             {
+                status = PortAskUser( &event, params2user, &Verdict );
+                if ( NT_SUCCESS( status ) )
+                {
+                }
             }
         }
 
@@ -549,7 +552,13 @@ PreCreate (
         *CompletionContext = NULL;
         fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
+        if ( !GlobalData.m_FilteringSystem->IsFiltersExist() )
+        {
+            __leave;
+        }
+
         VERDICT Verdict = VERDICT_NOT_FILTERED;
+
         FileInterceptorContext event (
             Data,
             FltObjects,
@@ -679,6 +688,11 @@ PostCreate (
             __leave;
         }
 
+        if ( !GlobalData.m_FilteringSystem->IsFiltersExist() )
+        {
+            __leave;
+        }
+
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         FileInterceptorContext event (
             Data,
@@ -774,6 +788,11 @@ PreCleanup (
         }
 
         if ( FlagOn( pStreamHandleContext->m_Flags, _STREAM_H_FLAGS_ECPPREF ) )
+        {
+            __leave;
+        }
+
+        if ( !GlobalData.m_FilteringSystem->IsFiltersExist() )
         {
             __leave;
         }
@@ -909,3 +928,24 @@ PostWrite (
     return FLT_POSTOP_FINISHED_PROCESSING;
 }
 
+NTSTATUS
+RegisterExitProcessCb (
+    __in _tpProcessExitCb CbFunc,
+    __in_opt PVOID Opaque
+    )
+{
+    NTSTATUS status = ProcList::RegisterExitProcessCb (
+        CbFunc,
+        Opaque
+        );
+
+    return status;
+}
+
+void
+UnregisterExitProcessCb ( 
+    __in _tpProcessExitCb CbFunc
+    )
+{
+    ProcList::UnregisterExitProcessCb( CbFunc );
+}

@@ -1,6 +1,7 @@
 #include "../inc/commonkrnl.h"
 #include "../inc/memmgr.h"
 #include "fltfilters.h"
+#include "fltchecks.h"
 
 ULONG Filters::m_AllocTag = 'ifSA';
 
@@ -16,83 +17,6 @@ struct FilterEntry
 };
 
 //////////////////////////////////////////////////////////////////////////
-typedef struct _FltCheckData
-{
-    ULONG               m_DataSize;
-    ULONG               m_Count;
-    UCHAR               m_Data[1];
-} FltCheckData;
-
-#define PosListItemType  ULONG
-
-enum CheckEntryType
-{
-    CheckEntryInvalid   = 0,
-    CheckEntryGeneric   = 1,
-    CheckEntryBox       = 2
-};
-
-class ParamCheckEntry
-{
-public:
-    ParamCheckEntry();
-    ~ParamCheckEntry();
-
-public:
-    LIST_ENTRY          m_List;
-    ULONG               m_Flags;    // _PARAM_ENTRY_FLAG_XXX
-    ULONG               m_PosCount;
-    PosListItemType*    m_FilterPosList;
-    
-    CheckEntryType      m_Type;
-    union
-    {
-        struct {
-            ULONG               m_Parameter;
-            FltOperation        m_Operation;
-            FltCheckData        m_Data;
-        } Generic;
-
-        struct {
-            FilterBox*          m_Box;
-            PRTL_BITMAP         m_Affecting;
-        } Container;
-    };
-};
-
-ParamCheckEntry::ParamCheckEntry (
-    )
-{
-    m_FilterPosList = NULL;
-    m_Type = CheckEntryInvalid;
-}
-
-ParamCheckEntry::~ParamCheckEntry (
-    )
-{
-    FREE_POOL( m_FilterPosList );
-
-    switch ( m_Type )
-    {
-    case CheckEntryInvalid:
-        break;
-
-    case CheckEntryGeneric:
-        break;
-
-    case CheckEntryBox:
-        Container.m_Box->Release();
-        FREE_POOL( Container.m_Affecting );
-        break;
-
-    default:
-        {
-            __debugbreak();
-        }
-    }
-}
-//////////////////////////////////////////////////////////////////////////
-
 
 Filters::Filters (
     )
@@ -144,8 +68,7 @@ Filters::~Filters (
             
             Flink = Flink->Flink;
 
-            pEntry->ParamCheckEntry::~ParamCheckEntry();
-            FREE_POOL( pEntry );
+            FREE_OBJECT( pEntry );
         }
     }
     
@@ -183,162 +106,6 @@ Filters::IsEmpty (
     }
 
     return TRUE;
-}
-
-__checkReturn
-NTSTATUS
-Filters::CheckEntryUnsafe (
-    __in ParamCheckEntry* Entry,
-    __in EventData *Event
-    )
-{
-    NTSTATUS status = STATUS_NOT_IMPLEMENTED;
-
-    switch ( Entry->m_Type )
-    {
-    case CheckEntryGeneric:
-        status = CheckGenericUnsafe( Entry, Event );
-        break;
-
-    case CheckEntryBox:
-        status = CheckContainerUnsafe( Entry, Event );
-        break;
-
-    default:
-        __debugbreak();
-        return STATUS_NOT_IMPLEMENTED;
-    }
-
-    switch ( status )
-    {
-    case STATUS_SUCCESS:
-    case STATUS_UNSUCCESSFUL:
-        if ( FlagOn( Entry->m_Flags, FltFlags_Negation ) )
-        {
-            if ( NT_SUCCESS( status ) )
-            {
-                status = STATUS_UNSUCCESSFUL;
-            }
-            else
-            {
-                status = STATUS_SUCCESS;
-            }
-        }
-        break;
-
-    default:
-        break;
-    }
-
-    return status;
-}
-
-__checkReturn
-__drv_valueIs( STATUS_SUCCESS; STATUS_UNSUCCESSFUL; STATUS_NOT_FOUND )
-NTSTATUS
-Filters::CheckGenericUnsafe (
-    __in ParamCheckEntry* Entry,
-    __in EventData *Event
-    )
-{
-    PVOID pData;
-    ULONG datasize;
-    NTSTATUS status = Event->QueryParameter (
-        Entry->Generic.m_Parameter,
-        &pData,
-        &datasize
-        );
-
-    if ( !NT_SUCCESS( status ) )
-    {
-        if ( FlagOn( Entry->m_Flags, FltFlags_BePresent ) )
-        {
-            return STATUS_NOT_FOUND;
-        }
-        
-        return STATUS_SUCCESS;
-    }
-    
-    status = STATUS_UNSUCCESSFUL;
-
-    PVOID ptr = Entry->Generic.m_Data.m_Data;
-
-    ULONG item;
-    switch( Entry->Generic.m_Operation )
-    {
-    case FltOp_equ:
-        if ( datasize
-            != 
-            Entry->Generic.m_Data.m_DataSize / Entry->Generic.m_Data.m_Count )
-        {
-            break;
-        }
-        
-        for ( item = 0; item < Entry->Generic.m_Data.m_Count; item++ )
-        {
-            if ( datasize == RtlCompareMemory (
-                ptr,
-                pData,
-                datasize
-                ) )
-            {
-                status = STATUS_SUCCESS;    
-                break;
-            }
-
-            ptr = Add2Ptr( ptr, datasize );
-        }
-
-        break;
-
-    case FltOp_and:
-        ASSERT( Entry->Generic.m_Data.m_Count == 1 );
-
-        if ( datasize
-            !=
-            Entry->Generic.m_Data.m_DataSize / Entry->Generic.m_Data.m_Count )
-        {
-            break;
-        }
-
-        if ( datasize == sizeof( ULONG ) )
-        {
-            PULONG pu1 = (PULONG) ptr;
-            PULONG pu2 = (PULONG) pData;
-            if ( *pu1 & *pu2 )
-            {
-                status = STATUS_SUCCESS;
-                break;
-            }
-        }
-        else
-        {
-            __debugbreak(); //not impelemented
-        }
-
-        break;
-    
-    default:
-        break;
-    }
-
-    return status;
-}
-
-__checkReturn
-__drv_valueIs( STATUS_SUCCESS; STATUS_UNSUCCESSFUL; STATUS_NOT_FOUND )
-NTSTATUS
-Filters::CheckContainerUnsafe (
-    __in ParamCheckEntry* Entry,
-    __in EventData *Event
-    )
-{
-    NTSTATUS status = Entry->Container.m_Box->MatchEvent (
-        Event,
-        Entry->Container.m_Affecting
-        );
-
-    return status;
 }
 
 NTSTATUS
@@ -389,7 +156,7 @@ Filters::CheckParamsList (
         }
 
         // check data
-        NTSTATUS status = CheckEntryUnsafe( pEntry, Event );
+        NTSTATUS status = CheckEntry( pEntry, Event );
         
         if ( NT_SUCCESS( status ) )
         {
@@ -566,12 +333,12 @@ Filters::TryToFindExisting (
                 ||
                 pEntry->m_Flags != ParamEntry->m_Flags
                 ||
-                pEntry->Generic.m_Data.m_DataSize != ParamEntry->m_Data.m_Size
+                pEntry->Generic.m_CheckData->m_DataSize != ParamEntry->m_Data.m_Size
                 ||
-                pEntry->Generic.m_Data.m_DataSize != RtlCompareMemory (
-                    pEntry->Generic.m_Data.m_Data,
+                pEntry->Generic.m_CheckData->m_DataSize != RtlCompareMemory (
+                    pEntry->Generic.m_CheckData->m_Data,
                     ParamEntry->m_Data.m_Data,
-                    pEntry->Generic.m_Data.m_DataSize
+                    pEntry->Generic.m_CheckData->m_DataSize
                     )
                 )
             {
@@ -740,14 +507,17 @@ Filters::AddParameterWithFilterPos (
 
             pEntry->Generic.m_Operation = ParamEntry->m_Operation;
             pEntry->Generic.m_Parameter = ParamEntry->m_ParameterId;
-            pEntry->Generic.m_Data.m_DataSize = ParamEntry->m_Data.m_Size;
-            pEntry->Generic.m_Data.m_Count = ParamEntry->m_Data.m_Count;
-
-            RtlCopyMemory (
-                pEntry->Generic.m_Data.m_Data,
-                ParamEntry->m_Data.m_Data,
-                ParamEntry->m_Data.m_Size
+            
+            status = pEntry->Attach (
+                ParamEntry->m_Data.m_Size,
+                ParamEntry->m_Data.m_Count,
+                ParamEntry->m_Data.m_Data
                 );
+
+            if ( !NT_SUCCESS( status ) )
+            {
+                __leave;
+            }
         }
 
         InsertTailList( &m_ParamsCheckList, &pEntry->m_List );
@@ -758,8 +528,7 @@ Filters::AddParameterWithFilterPos (
         {
             if ( pEntry )
             {
-                pEntry->ParamCheckEntry::~ParamCheckEntry();
-                FREE_POOL( pEntry );
+                FREE_OBJECT( pEntry );
             }
         }
     }

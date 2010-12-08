@@ -54,6 +54,10 @@
     <ResourceCompile Include="..\..\main\accessch.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\fltsystem\fltbox.cpp" />
+    <ClCompile Include="..\..\fltsystem\fltevents.cpp" />
+    <ClCompile Include="..\..\fltsystem\fltfilters.cpp" />
+    <ClCompile Include="..\..\fltsystem\fltstorage.cpp" />
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp" />
     <ClCompile Include="..\..\main\commport.cpp" />
     <ClCompile Include="..\..\main\eventqueue.cpp" />
@@ -61,14 +65,19 @@
     <ClCompile Include="..\..\main\fileflt.cpp" />
     <ClCompile Include="..\..\main\filehlp.cpp" />
     <ClCompile Include="..\..\main\main.cpp" />
-    <ClCompile Include="..\..\main\mm.cpp" />
     <ClCompile Include="..\..\main\proclist.cpp" />
     <ClCompile Include="..\..\main\security.cpp" />
     <ClCompile Include="..\..\main\volhlp.cpp" />
     <ClCompile Include="..\..\main\volumeflt.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\fltsystem\fltbox.h" />
+    <ClInclude Include="..\..\fltsystem\fltfilters.h" />
+    <ClInclude Include="..\..\inc\commonkrnl.h" />
+    <ClInclude Include="..\..\inc\fltevents.h" />
+    <ClInclude Include="..\..\inc\fltstorage.h" />
     <ClInclude Include="..\..\inc\fltsystem.h" />
+    <ClInclude Include="..\..\inc\memmgr.h" />
     <ClInclude Include="..\..\main\commport.h" />
     <ClInclude Include="..\..\main\eventqueue.h" />
     <ClInclude Include="..\..\main\excludes.h" />
