@@ -236,44 +236,23 @@ ProceedChainBox (
     )
 {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
-    //PFLTBOX pBox = pEntry[0].m_Box;
+    PFLTBOX pBox = pEntry[0].m_Box;
 
-    //FilterBox* pFltBox = NULL;
+    switch ( pBox->m_Operation )
+    {
+    case _fltbox_add:
+        status = FltStorage->CreateBoxUnsafe (
+            &pBox->m_Guid,
+            pBox->Items.m_ParamsCount,
+            pBox->Items.m_Params,
+            FilterId
+            );
+        
+        break;
 
-    //switch ( pBox->m_Operation )
-    //{
-    //case _fltbox_add:
-    //    status = m_BoxList.GetOrCreateBox( &pEntry->m_Box->m_Guid, &pFltBox );
-    //    if ( !NT_SUCCESS( status ) )
-    //    {
-    //        pFltBox = NULL;
-    //        break;
-    //    }
-    //    
-    //    if ( !pFltBox )
-    //    {
-    //        ASSERT( pFltBox );
-    //        status = STATUS_UNSUCCESSFUL;
-    //        
-    //        break;
-    //    }
-    //    
-    //    status = pFltBox->AddParams (
-    //        pEntry->m_Box->Items.m_ParamsCount,
-    //        pEntry->m_Box->Items.m_Params,
-    //        FilterId
-    //        );
-
-    //    break;
-
-    //default:
-    //    __debugbreak();
-    //}
-
-    //if ( pFltBox )
-    //{
-    //    pFltBox->Release();
-    //}
+    default:
+        __debugbreak();
+    }
 
     return status;
 }

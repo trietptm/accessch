@@ -41,7 +41,16 @@ public:
         __in PARAMS_MASK WishMask,
         __in_opt ULONG ParamsCount,
         __in_opt PFltParam Params,
-        __out_opt PULONG FilterId
+        __out PULONG FilterId
+        );
+
+    __checkReturn
+    NTSTATUS
+    CreateBoxUnsafe (
+        __in LPGUID Guid,
+        __in ULONG ParamsCount,
+        __in_opt PFltParam Params,
+        __out PULONG FilterId
         );
   
     void
@@ -75,6 +84,11 @@ private:
     LONG
     GetNextFilterid();
 
+    __checkReturn
+    NTSTATUS
+    CreateBoxControlp (
+        );
+
     void
     CleanupFiltersByPidp (
         __in HANDLE ProcessId
@@ -91,7 +105,7 @@ private:
     
     __checkReturn
     Filters*
-    GetOrCreateFiltersByp (
+    GetOrCreateFiltersByUnsafep (
         __in ULONG Interceptor,
         __in ULONG Operation,
         __in_opt ULONG Minor,

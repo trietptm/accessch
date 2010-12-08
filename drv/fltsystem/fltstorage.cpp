@@ -21,6 +21,32 @@ typedef struct _FiltersItem
 
 //////////////////////////////////////////////////////////////////////////
 
+FiltersStorage::FiltersStorage (
+    )
+{
+    FltInitializePushLock( &m_AccessLock );
+
+    RtlInitializeGenericTableAvl (
+        &m_Tree,
+        FiltersStorage::Compare,
+        FiltersStorage::Allocate,
+        FiltersStorage::Free,
+        NULL
+        );
+
+    m_Flags = _FT_FLAGS_PAUSED;
+    m_FilterIdCounter = 0;
+    m_BoxList = NULL;
+}
+
+FiltersStorage::~FiltersStorage (
+    )
+{
+    DeleteAllFilters();
+    delete m_BoxList;
+    FltDeletePushLock( &m_AccessLock );
+}
+
 RTL_GENERIC_COMPARE_RESULTS
 NTAPI
 FiltersStorage::Compare (
@@ -95,32 +121,6 @@ FiltersStorage::Free (
     FREE_POOL( Buffer );
 }
 
-//////////////////////////////////////////////////////////////////////////
-
-FiltersStorage::FiltersStorage (
-    )
-{
-    FltInitializePushLock( &m_AccessLock );
-
-    RtlInitializeGenericTableAvl (
-        &m_Tree,
-        FiltersStorage::Compare,
-        FiltersStorage::Allocate,
-        FiltersStorage::Free,
-        NULL
-        );
-
-    m_Flags = _FT_FLAGS_PAUSED;
-    m_FilterIdCounter = 0;
-}
-
-FiltersStorage::~FiltersStorage (
-    )
-{
-    DeleteAllFilters();
-    FltDeletePushLock( &m_AccessLock );
-}
-
 void
 FiltersStorage::Lock (
     )
@@ -149,10 +149,18 @@ FiltersStorage::AddFilterUnsafe (
     __in PARAMS_MASK WishMask,
     __in_opt ULONG ParamsCount,
     __in_opt PFltParam Params,
-    __out_opt PULONG FilterId
+    __out PULONG FilterId
     )
 {
-    Filters* pFilters = GetOrCreateFiltersByp (
+    ASSERT( FilterId );
+    NTSTATUS status = CreateBoxControlp();
+    
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    Filters* pFilters = GetOrCreateFiltersByUnsafep (
         Interceptor,
         OperationId,
         FunctionMi,
@@ -166,7 +174,7 @@ FiltersStorage::AddFilterUnsafe (
 
     ULONG filterId = GetNextFilterid();
 
-    NTSTATUS status = pFilters->AddFilter (
+    status = pFilters->AddFilter (
         GroupId,
         Verdict,
         ProcessId,
@@ -180,16 +188,50 @@ FiltersStorage::AddFilterUnsafe (
 
     if ( NT_SUCCESS( status ) )
     {
-        if ( FilterId )
-        {
-            *FilterId = filterId;
-        }
+        *FilterId = filterId;
     }
 
     pFilters->Release();
 
     return status;
-        
+}
+
+__checkReturn
+NTSTATUS
+FiltersStorage::CreateBoxUnsafe (
+    __in LPGUID Guid,
+    __in ULONG ParamsCount,
+    __in_opt PFltParam Params,
+    __out PULONG FilterId
+    )
+{
+    ASSERT( Guid );
+    ASSERT( FilterId );
+
+    NTSTATUS status = CreateBoxControlp();
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    PFilterBox pBox = NULL;
+    status = m_BoxList->GetOrCreateBox( Guid, &pBox );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    status = pBox->AddParams( ParamsCount, Params, FilterId );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    pBox->Release();
+
+    return status;
 }
 
 void
@@ -231,6 +273,25 @@ FiltersStorage::CleanupFiltersByPid (
     FiltersStorage* pThis = ( FiltersStorage* ) Opaque;
     
     pThis->CleanupFiltersByPidp( ProcessId );
+}
+
+__checkReturn
+NTSTATUS
+FiltersStorage::CreateBoxControlp (
+    )
+{
+    if ( m_BoxList )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    m_BoxList = new( PagedPool, m_AllocTag ) FilterBoxList;
+    if ( m_BoxList )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_INSUFFICIENT_RESOURCES;
 }
 
 void
@@ -389,15 +450,13 @@ FiltersStorage::GetFiltersByp (
 
 __checkReturn
 Filters*
-FiltersStorage::GetOrCreateFiltersByp (
+FiltersStorage::GetOrCreateFiltersByUnsafep (
     __in ULONG Interceptor,
     __in ULONG Operation,
     __in_opt ULONG Minor,
     __in ULONG OperationType
     )
 {
-    Filters* pFilters = NULL;
-
     FiltersItem item;
     item.m_Interceptor = Interceptor;
     item.m_Operation = Operation;
@@ -406,8 +465,6 @@ FiltersStorage::GetOrCreateFiltersByp (
     
     BOOLEAN newElement = FALSE;
     
-    FltAcquirePushLockExclusive( &m_AccessLock );
-
     PFiltersItem pItem = ( PFiltersItem ) RtlInsertElementGenericTableAvl (
         &m_Tree,
         &item,
@@ -415,32 +472,31 @@ FiltersStorage::GetOrCreateFiltersByp (
         &newElement
         );
     
+    if ( pItem && newElement )
+    {
+        pItem->m_Filters = new( PagedPool, m_AllocTag ) Filters;
+
+        if ( !pItem->m_Filters )
+        {
+            __debugbreak(); //nct
+
+            RtlDeleteElementGenericTableAvl (
+                &m_Tree,
+                &item
+                );
+            
+            pItem = NULL;
+        }
+    }
+
     if ( pItem )
     {
-        if ( newElement )
+        NTSTATUS status = pItem->m_Filters->AddRef();
+        if ( NT_SUCCESS( status ) )
         {
-            pItem->m_Filters = new( PagedPool, m_AllocTag ) Filters;
-        }
-
-        pFilters = pItem->m_Filters;
-    }
-
-    if ( pFilters )
-    {
-        NTSTATUS status = pFilters->AddRef();
-        if ( !NT_SUCCESS( status ) )
-        {
-            if ( newElement )
-            {
-                FREE_OBJECT( pFilters );
-                pItem->m_Filters = NULL;
-            }
-            
-            pFilters = NULL;
+            return pItem->m_Filters;
         }
     }
 
-    FltReleasePushLock( &m_AccessLock );
-
-    return pFilters;
+    return NULL;
 }

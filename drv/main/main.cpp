@@ -99,15 +99,15 @@ Globals GlobalData;
 
 const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
     { FLT_INSTANCE_CONTEXT, 0, ContextCleanup, 
-        sizeof(InstanceContext), 'siSA', NULL, NULL, NULL },
+        sizeof( InstanceContext ), 'siSA', NULL, NULL, NULL },
     
     { FLT_STREAM_CONTEXT, 0, ContextCleanup,
-        sizeof(StreamContext), 'csSA', NULL, NULL, NULL },
+        sizeof( StreamContext ), 'csSA', NULL, NULL, NULL },
     
     { FLT_STREAMHANDLE_CONTEXT,  0, ContextCleanup,
-        sizeof(StreamHandleContext), 'chSA', NULL, NULL, NULL },
+        sizeof( StreamHandleContext ), 'chSA', NULL, NULL, NULL },
     
-    { FLT_VOLUME_CONTEXT, 0, ContextCleanup, sizeof(VolumeContext),
+    { FLT_VOLUME_CONTEXT, 0, ContextCleanup, sizeof( VolumeContext ),
         'cvSA', NULL, NULL, NULL} ,
     
     { FLT_CONTEXT_END }

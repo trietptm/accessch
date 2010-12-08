@@ -89,9 +89,7 @@ FilteringSystem::FilterEvent (
     __in PPARAMS_MASK ParamsMask
     )
 {
-    NTSTATUS status = STATUS_UNSUCCESSFUL;
-
-    PFiltersStorageItem pItem = NULL;
+    NTSTATUS statusRet = STATUS_NOT_FOUND;
 
     FltAcquirePushLockShared( &m_AccessLock );
 
@@ -101,22 +99,29 @@ FilteringSystem::FilterEvent (
 
         Flink = m_List.Flink;
 
+        PFiltersStorageItem pItem = NULL;
+
         while ( Flink != &m_List )
         {
             pItem = CONTAINING_RECORD( Flink, FiltersStorageItem, m_List );
             Flink = Flink->Flink;
 
-            status = pItem->m_Item->FilterEvent (
+            NTSTATUS status = pItem->m_Item->FilterEvent (
                 Event,
                 Verdict,
                 ParamsMask
                 );
 
-            break;
+            if ( NT_SUCCESS( status ) )
+            {
+                break;
+                
+                statusRet = STATUS_SUCCESS;
+            }
         }
     }
 
     FltReleasePushLock( &m_AccessLock );
 
-    return status;
+    return statusRet;
 }
