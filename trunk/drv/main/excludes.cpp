@@ -1,5 +1,5 @@
 #include "../inc/commonkrnl.h"
-#include "excludes.h"
+#include "../inc/excludes.h"
 
 HANDLE gAttachedProcess = NULL;
 

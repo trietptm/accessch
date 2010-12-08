@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fltsystem\fltbox.cpp" />
+    <ClCompile Include="..\..\fltsystem\fltchecks.cpp" />
     <ClCompile Include="..\..\fltsystem\fltevents.cpp" />
     <ClCompile Include="..\..\fltsystem\fltfilters.cpp" />
     <ClCompile Include="..\..\fltsystem\fltstorage.cpp" />
@@ -72,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fltsystem\fltbox.h" />
+    <ClInclude Include="..\..\fltsystem\fltchecks.h" />
     <ClInclude Include="..\..\fltsystem\fltfilters.h" />
     <ClInclude Include="..\..\inc\commonkrnl.h" />
     <ClInclude Include="..\..\inc\fltevents.h" />
@@ -84,8 +86,6 @@
     <ClInclude Include="..\..\main\fileflt.h" />
     <ClInclude Include="..\..\main\filehlp.h" />
     <ClInclude Include="..\..\main\main.h" />
-    <ClInclude Include="..\..\main\mm.h" />
-    <ClInclude Include="..\..\main\pch.h" />
     <ClInclude Include="..\..\main\proclist.h" />
     <ClInclude Include="..\..\main\security.h" />
     <ClInclude Include="..\..\main\ver.h" />

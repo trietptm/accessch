@@ -4,7 +4,7 @@
 
 #include "main.h"
 #include "eventqueue.h"
-#include "excludes.h"
+#include "../inc/excludes.h"
 
 #include "commport.h"
 

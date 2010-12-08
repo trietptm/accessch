@@ -161,9 +161,12 @@ FilterBox::MatchEvent (
     __in PRTL_BITMAP Affecting
     )
 {
-    __debugbreak();
+    if ( IsListEmpty( &m_Items ) )
+    {
+        return STATUS_SUCCESS;
+    }
 
-    NTSTATUS status = STATUS_NOT_FOUND;
+    NTSTATUS status = STATUS_SUCCESS;
     
     PBoxFilterItem pEntry = NULL;
 
@@ -177,6 +180,16 @@ FilterBox::MatchEvent (
             );
 
         Flink = Flink->Flink;
+        
+        if ( pEntry->m_Position > Affecting->SizeOfBitMap )
+        {
+            continue;
+        }
+
+        if ( !RtlCheckBit( Affecting, Affecting->SizeOfBitMap ) )
+        {
+            continue;
+        }
 
         status = CheckEntry( pEntry->m_Param, Event );
         if ( !NT_SUCCESS( status ) )
