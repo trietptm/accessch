@@ -9,7 +9,7 @@ typedef struct _BoxFilterItem
     static ULONG    m_AllocTag;
     LIST_ENTRY      m_List;
     ULONG           m_Position;
-    FltData         m_Data;
+    FltParam        m_Param;
 } BoxFilterItem, *PBoxFilterItem;
 
 ULONG BoxFilterItem::m_AllocTag = 'ibSA';
@@ -81,7 +81,7 @@ FilterBox::AddParams (
         return STATUS_INVALID_PARAMETER;
     }
 
-    if ( ParamsCount != 1 )
+    if ( ParamsCount != 1 ) /// \todo fix allocation size next lines when switch to multiple params
     {
         return STATUS_NOT_SUPPORTED;
     }
@@ -101,9 +101,9 @@ FilterBox::AddParams (
     *Position = fltitem->m_Position;
 
     RtlCopyMemory (
-        &fltitem->m_Data,
+        &fltitem->m_Param,
         Params,  
-        sizeof( FltData ) + Params->m_Data.m_Size
+        sizeof( FltParam ) + Params->m_Data.m_Size
         );
 
     InsertHeadList( &m_Items, &fltitem->m_List );

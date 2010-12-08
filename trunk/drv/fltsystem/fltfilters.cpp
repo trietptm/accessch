@@ -913,7 +913,7 @@ Filters::AddParamsUnsafe (
 
         params = ( PFltParam ) Add2Ptr (
             params,
-            sizeof( sizeof( FltParam ) ) + params->m_Data.m_Size
+            sizeof( FltParam ) + params->m_Data.m_Size
             );
     }
     

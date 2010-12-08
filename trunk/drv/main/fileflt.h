@@ -23,7 +23,7 @@ public:
     virtual
     NTSTATUS
     QueryParameter (
-        __in_opt Parameters ParameterId,
+        __in_opt ULONG ParameterId,
         __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PVOID* Data,
         __deref_out_opt PULONG DataSize
         );
