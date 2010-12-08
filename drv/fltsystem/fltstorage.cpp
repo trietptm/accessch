@@ -385,24 +385,24 @@ FiltersStorage::FilterEvent (
     __in PPARAMS_MASK ParamsMask
     )
 {
-    Filters* pFilter = GetFiltersByp (
+    Filters* pFilters = GetFiltersByp (
         Event->GetInterceptorId(),
         Event->GetOperationId(),
         Event->GetMinor(),
         Event->GetOperationType()
         );
 
-    if ( !pFilter )
+    if ( !pFilters )
     {
         return STATUS_NOT_FOUND;
     }
 
-    *Verdict = pFilter->GetVerdict (
+    *Verdict = pFilters->GetVerdict (
         Event,
         ParamsMask
         );
 
-    pFilter->Release();
+    pFilters->Release();
 
     return STATUS_SUCCESS;
 }
