@@ -1,0 +1,25 @@
+TARGETNAME=filemgr
+
+#!IF "$(DDK_TARGET_OS)"!="Win7"
+
+TARGETPATH=..\..\out\$(BUILD_ALT_DIR)\libs
+PDBPATH=$(TARGETPATH)
+
+#!ENDIF
+
+
+TARGETTYPE=DRIVER_LIBRARY
+LINKER_FLAGS=$(LINKER_FLAGS) /SECTION:.rsrc,!D /NOLOGO /integritycheck
+RCOPTIONS=/v /dRC_BUILD_OPT="$(BUILD_ALT_DIR)"
+
+TARGETLIBS= \
+		$(TARGETLIBS) \
+		$(IFSKIT_LIB_PATH)\ntstrsafe.lib
+
+
+SOURCES= \
+	filemgr.cpp \
+	fileflt.cpp \
+	filehlp.cpp \
+	volumeflt.cpp \
+	volhlp.cpp
