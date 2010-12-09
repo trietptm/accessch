@@ -1,6 +1,8 @@
 #include "../inc/commonkrnl.h"
-#include "main.h"
+#include "../inc/osspec.h"
 #include "../../inc/accessch.h"
+
+#include "main.h"
 
 #include "filehlp.h"
 #include "security.h"

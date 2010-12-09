@@ -20,6 +20,7 @@ TARGETLIBS= \
 		$(IFSKIT_LIB_PATH)\iointex.lib \
 		$(IFSKIT_LIB_PATH)\ntstrsafe.lib \
 		$(TARGET_LIBS_DIR)\memmgr.lib \
+		$(TARGET_LIBS_DIR)\osspec.lib \
 		$(TARGET_LIBS_DIR)\fltsystem.lib
 
 

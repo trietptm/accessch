@@ -1,4 +1,5 @@
 #include "../inc/commonkrnl.h"
+#include "../inc/osspec.h"
 #include "main.h"
 #include "../../inc/accessch.h"
 #include "filehlp.h"
@@ -148,14 +149,12 @@ FileInterceptorContext::CreateSectionForData (
         NULL
         );
 
-#if ( NTDDI_VERSION < NTDDI_WIN6 )
     KPROCESSOR_MODE prevmode = ExGetPreviousMode();
 
     if ( prevmode == UserMode )
     {
         SetPreviousMode( KernelMode );
     }
-#endif // ( NTDDI_VERSION < NTDDI_WIN6 )
 
     NTSTATUS status = FsRtlCreateSectionForDataScan (
         &m_Section,
@@ -170,12 +169,10 @@ FileInterceptorContext::CreateSectionForData (
         0
         );
 
-#if ( NTDDI_VERSION < NTDDI_WIN6 )
     if ( prevmode == UserMode )
     {
         SetPreviousMode( UserMode );
     }
-#endif // ( NTDDI_VERSION < NTDDI_WIN6 )
 
     if ( NT_SUCCESS( status ) )
     {
