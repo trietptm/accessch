@@ -1,8 +1,6 @@
 #ifndef __security_h
 #define __security_h
 
-#include "../inc/commonkrnl.h"
-
 //////////////////////////////////////////////////////////////////////////
 // LUID
 __checkReturn
