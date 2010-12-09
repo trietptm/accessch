@@ -3,4 +3,5 @@ DIRS= \
 	memmgr \
 	osspec \
 	filemgr \
+	channel \
 	main

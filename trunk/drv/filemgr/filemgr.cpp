@@ -1,6 +1,7 @@
 #include "../inc/commonkrnl.h"
 #include "../inc/memmgr.h"
 #include "../inc/osspec.h"
+#include "../inc/channel.h"
 #include "filestructs.h"
 
 #include "volhlp.h"
@@ -317,7 +318,7 @@ InstanceSetup (
 
             if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
             {
-                status = PortAskUser( &event, params2user, &Verdict );
+                status = ChannelAskUser( &event, params2user, &Verdict );
                 if ( NT_SUCCESS( status ) )
                 {
                 }
@@ -404,7 +405,7 @@ PreCreate (
         {
             if ( FlagOn( Verdict, VERDICT_ASK ) )
             {
-                status = PortAskUser( &event, params2user, &Verdict );
+                status = ChannelAskUser( &event, params2user, &Verdict );
                 if ( NT_SUCCESS( status ) )
                 {
                     // nothing todo
@@ -539,7 +540,7 @@ PostCreate (
         {
             if ( FlagOn( Verdict, VERDICT_ASK ) )
             {
-               status = PortAskUser( &event, params2user, &Verdict );
+               status = ChannelAskUser( &event, params2user, &Verdict );
                 if ( NT_SUCCESS( status ) )
                 {
                     // nothing todo
@@ -641,7 +642,7 @@ PreCleanup (
 
         if ( NT_SUCCESS( status ) && FlagOn( Verdict, VERDICT_ASK ) )
         {
-            status = PortAskUser( &event, params2user, &Verdict );
+            status = ChannelAskUser( &event, params2user, &Verdict );
             if ( NT_SUCCESS( status ) )
             {
                 if (

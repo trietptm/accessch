@@ -9,13 +9,12 @@
 #include "../inc/memmgr.h"
 #include "../inc/filemgr.h"
 #include "../inc/fltsystem.h"
+#include "../inc/channel.h"
 
 #include "../../inc/accessch.h"
 
 #include "main.h"
 
-#include "eventqueue.h"
-#include "commport.h"
 #include "proclist.h"
 
 Globals GlobalData;
