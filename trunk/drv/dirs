@@ -1,4 +1,5 @@
 DIRS= \
 	fltsystem \
 	memmgr \
+	osspec \
 	main

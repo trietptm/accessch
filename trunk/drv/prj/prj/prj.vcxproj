@@ -70,6 +70,7 @@
     <ClCompile Include="..\..\main\security.cpp" />
     <ClCompile Include="..\..\main\volhlp.cpp" />
     <ClCompile Include="..\..\main\volumeflt.cpp" />
+    <ClCompile Include="..\..\osspec\osspec.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fltsystem\fltbox.h" />
@@ -80,6 +81,7 @@
     <ClInclude Include="..\..\inc\fltstorage.h" />
     <ClInclude Include="..\..\inc\fltsystem.h" />
     <ClInclude Include="..\..\inc\memmgr.h" />
+    <ClInclude Include="..\..\inc\osspec.h" />
     <ClInclude Include="..\..\main\commport.h" />
     <ClInclude Include="..\..\main\eventqueue.h" />
     <ClInclude Include="..\..\main\excludes.h" />
