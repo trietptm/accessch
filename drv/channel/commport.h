@@ -1,5 +1,6 @@
 #pragma once
 #include "../inc/fltsystem.h"
+#include "eventqueue.h"
 
 // создание общего порта
 NTSTATUS

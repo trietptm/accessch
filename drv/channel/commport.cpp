@@ -2,11 +2,11 @@
 #include "../inc/memmgr.h"
 #include "../../inc/accessch.h"
 
-#include "main.h"
-#include "eventqueue.h"
 #include "../inc/excludes.h"
 
 #include "commport.h"
+
+PFLT_PORT gClientPort = NULL;
 
 typedef struct _PORT_CONTEXT
 {
@@ -84,7 +84,7 @@ PortConnect (
 
     __try
     {
-        if ( GlobalData.m_ClientPort )
+        if ( gClientPort )
         {
             status = STATUS_ALREADY_REGISTERED;
             __leave;
@@ -119,7 +119,7 @@ PortConnect (
         /// \todo  revise single port connection
         GlobalData.m_FilteringSystem->Attach( pPortContext->m_pFltStorage );
 
-        GlobalData.m_ClientPort = ClientPort;
+        gClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
         ExReInitializeRundownProtection( &GlobalData.m_RefClientPort );
 
@@ -156,7 +156,7 @@ PortDisconnect (
     GlobalData.m_FilteringSystem->Detach( pPortContext->m_pFltStorage );
 
     ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
-    GlobalData.m_ClientPort = NULL;
+    gClientPort = NULL;
 
     FltCloseClientPort( GlobalData.m_Filter, &pPortContext->m_Connection );
 
@@ -467,7 +467,7 @@ PortQueryConnected (
 
     if ( Port )
     {
-        *Port = GlobalData.m_ClientPort;
+        *Port = gClientPort;
         ASSERT( *Port );
     }
    

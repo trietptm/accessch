@@ -1,5 +1,17 @@
-#include "security.h"
+#include "../inc/commonkrnl.h"
 #include "../inc/memmgr.h"
+#include "security.h"
+
+void
+SecurityFreeSid (
+    __deref_out_opt PSID* Sid
+    )
+{
+    if ( !*Sid )
+        return;
+
+    FREE_POOL( *Sid );
+}
 
 __checkReturn
 NTSTATUS
@@ -166,15 +178,4 @@ SecurityGetSid (
     }
 
     return status;
-}
-
-void
-SecurityFreeSid (
-    __deref_out_opt PSID* Sid
-    )
-{
-    if ( !*Sid )
-        return;
-
-    FREE_POOL( *Sid );
 }
