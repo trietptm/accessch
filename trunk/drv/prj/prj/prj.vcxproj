@@ -60,39 +60,21 @@
     <ClCompile Include="..\..\fltsystem\fltfilters.cpp" />
     <ClCompile Include="..\..\fltsystem\fltstorage.cpp" />
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp" />
-    <ClCompile Include="..\..\main\commport.cpp" />
-    <ClCompile Include="..\..\main\eventqueue.cpp" />
-    <ClCompile Include="..\..\main\excludes.cpp" />
-    <ClCompile Include="..\..\main\fileflt.cpp" />
-    <ClCompile Include="..\..\main\filehlp.cpp" />
-    <ClCompile Include="..\..\main\main.cpp" />
-    <ClCompile Include="..\..\main\proclist.cpp" />
-    <ClCompile Include="..\..\main\security.cpp" />
-    <ClCompile Include="..\..\main\volhlp.cpp" />
-    <ClCompile Include="..\..\main\volumeflt.cpp" />
-    <ClCompile Include="..\..\osspec\osspec.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fltsystem\fltbox.h" />
     <ClInclude Include="..\..\fltsystem\fltchecks.h" />
     <ClInclude Include="..\..\fltsystem\fltfilters.h" />
     <ClInclude Include="..\..\inc\commonkrnl.h" />
+    <ClInclude Include="..\..\inc\excludes.h" />
+    <ClInclude Include="..\..\inc\filemgr.h" />
     <ClInclude Include="..\..\inc\fltevents.h" />
     <ClInclude Include="..\..\inc\fltstorage.h" />
     <ClInclude Include="..\..\inc\fltsystem.h" />
     <ClInclude Include="..\..\inc\memmgr.h" />
     <ClInclude Include="..\..\inc\osspec.h" />
-    <ClInclude Include="..\..\main\commport.h" />
-    <ClInclude Include="..\..\main\eventqueue.h" />
-    <ClInclude Include="..\..\main\excludes.h" />
-    <ClInclude Include="..\..\main\fileflt.h" />
-    <ClInclude Include="..\..\main\filehlp.h" />
-    <ClInclude Include="..\..\main\main.h" />
-    <ClInclude Include="..\..\main\proclist.h" />
-    <ClInclude Include="..\..\main\security.h" />
-    <ClInclude Include="..\..\main\ver.h" />
-    <ClInclude Include="..\..\main\volhlp.h" />
-    <ClInclude Include="..\..\main\volumeflt.h" />
+    <ClInclude Include="..\..\inc\processinfo.h" />
+    <ClInclude Include="..\..\inc\security.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}</ProjectGuid>
