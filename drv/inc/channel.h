@@ -7,6 +7,10 @@ NTSTATUS
 ChannelInitPort (
     );
 
+void
+ChannelDestroyPort (
+    );
+
 __checkReturn
 NTSTATUS
 ChannelAskUser (

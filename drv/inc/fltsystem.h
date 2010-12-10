@@ -39,3 +39,7 @@ private:
     EX_PUSH_LOCK        m_AccessLock;
     LIST_ENTRY          m_List;
 };
+
+FilteringSystem*
+GetFltSystem (
+    );

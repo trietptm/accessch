@@ -22,6 +22,9 @@
     <Filter Include="FilteringSystem\Source Files">
       <UniqueIdentifier>{c6bde905-6d43-4c79-9bcc-360c7b5076ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Channel">
+      <UniqueIdentifier>{73618d3e-8442-4c65-8e2a-cd365338fbc4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\main\accessch.rc">
@@ -46,6 +49,27 @@
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltstorage.cpp">
       <Filter>FilteringSystem\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\main\excludes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\main\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\main\proclist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\main\security.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\channel\channel.cpp">
+      <Filter>Channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\channel\commport.cpp">
+      <Filter>Channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\channel\eventqueue.cpp">
+      <Filter>Channel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,5 +112,24 @@
     <ClInclude Include="..\..\inc\security.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\main\main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\main\proclist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\main\ver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\channel\commport.h">
+      <Filter>Channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\channel\eventqueue.h">
+      <Filter>Channel</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\main\makefile" />
+    <None Include="..\..\main\sources" />
   </ItemGroup>
 </Project>
