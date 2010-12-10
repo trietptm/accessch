@@ -9,6 +9,7 @@
 #include "../inc/memmgr.h"
 #include "../inc/filemgr.h"
 #include "../inc/fltsystem.h"
+#include "../inc/osspec.h"
 #include "../inc/channel.h"
 
 #include "../../inc/accessch.h"
@@ -28,13 +29,12 @@ extern "C"
         );
 }
 
+void
 NTAPI
 DriverUnload (
     )
 {
-    FltCloseCommunicationPort( GlobalData.m_Port );
-
-    QueuedItem::Destroy();
+    ChannelDestroyPort();
     FREE_OBJECT( GlobalData.m_FilteringSystem );
     ProcList::Destroy();
 }
@@ -53,12 +53,7 @@ DriverEntry (
 
     GlobalData.m_FilterDriverObject = DriverObject;
     
-    ExInitializeRundownProtection( &GlobalData.m_RefClientPort );
-    ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
-    ExRundownCompleted( &GlobalData.m_RefClientPort );
-
     ProcList::Initialize();
-    QueuedItem::Initialize();
 
     __try
     {
@@ -88,14 +83,13 @@ DriverEntry (
             __leave;
         }
 
-        status = PortCreate( FileMgrGetFltFilter(), &GlobalData.m_Port );
+        status = ChannelInitPort();
         if ( !NT_SUCCESS( status ) )
         {
-            GlobalData.m_Port = NULL;
             __leave;
         }
 
-        status = FileMgrStart( );
+        status = FileMgrStart();
         if ( !NT_SUCCESS( status ) )
         {
             __leave;
@@ -107,22 +101,11 @@ DriverEntry (
     {
         if ( !NT_SUCCESS( status ) )
         {
-            if ( GlobalData.m_FilteringSystem )
-            {
-                FREE_OBJECT( GlobalData.m_FilteringSystem );
-            }
-            if ( GlobalData.m_Port )
-            {
-                FltCloseCommunicationPort( GlobalData.m_Port );
-            }
+            FREE_OBJECT( GlobalData.m_FilteringSystem );
 
-            if ( GlobalData.m_Filter )
-            {
-                FltUnregisterFilter( GlobalData.m_Filter );
-            }
+            ChannelDestroyPort();
 
             ProcList::Destroy();
-            QueuedItem::Destroy();
         }
     }
 
@@ -149,4 +132,11 @@ UnregisterExitProcessCb (
     )
 {
     ProcList::UnregisterExitProcessCb( CbFunc );
+}
+
+FilteringSystem*
+GetFltSystem (
+    )
+{
+    return GlobalData.m_FilteringSystem;
 }

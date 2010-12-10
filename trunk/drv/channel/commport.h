@@ -2,6 +2,10 @@
 #include "../inc/fltsystem.h"
 #include "eventqueue.h"
 
+extern PFLT_PORT gPort;
+extern EX_RUNDOWN_REF gRefClientPort;
+extern PFLT_PORT gClientPort;
+
 // создание общего порта
 NTSTATUS
 PortCreate (

@@ -2,11 +2,10 @@
 #include "../inc/memmgr.h"
 #include "../../inc/accessch.h"
 
+#include "../inc/filemgr.h"
 #include "../inc/excludes.h"
 
 #include "commport.h"
-
-PFLT_PORT gClientPort = NULL;
 
 typedef struct _PORT_CONTEXT
 {
@@ -117,11 +116,11 @@ PortConnect (
         }
 
         /// \todo  revise single port connection
-        GlobalData.m_FilteringSystem->Attach( pPortContext->m_pFltStorage );
+        GetFltSystem()->Attach( pPortContext->m_pFltStorage );
 
         gClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
-        ExReInitializeRundownProtection( &GlobalData.m_RefClientPort );
+        ExReInitializeRundownProtection( &gRefClientPort );
 
         *ConnectionCookie = pPortContext;
     }
@@ -153,16 +152,16 @@ PortDisconnect (
 
     ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
-    GlobalData.m_FilteringSystem->Detach( pPortContext->m_pFltStorage );
+    GetFltSystem()->Detach( pPortContext->m_pFltStorage );
 
-    ExWaitForRundownProtectionRelease( &GlobalData.m_RefClientPort );
+    ExWaitForRundownProtectionRelease( &gRefClientPort );
     gClientPort = NULL;
 
-    FltCloseClientPort( GlobalData.m_Filter, &pPortContext->m_Connection );
+    FltCloseClientPort( FileMgrGetFltFilter(), &pPortContext->m_Connection );
 
     UnregisterInvisibleProcess( PsGetCurrentProcessId() );
 
-    ExRundownCompleted( &GlobalData.m_RefClientPort );
+    ExRundownCompleted( &gRefClientPort );
 
     FREE_OBJECT( pPortContext->m_pFltStorage );
     FREE_POOL( pPortContext );
@@ -188,7 +187,7 @@ PortPostEmptyMessages (
         LARGE_INTEGER timeout = { 1, 0 };
         
         FltSendMessage (
-            GlobalData.m_Filter,
+            FileMgrGetFltFilter(),
             &pPort,
             NULL,
             0,
@@ -460,7 +459,7 @@ PortQueryConnected (
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PFLT_PORT* Port
     )
 {
-    if ( !ExAcquireRundownProtection( &GlobalData.m_RefClientPort ) )
+    if ( !ExAcquireRundownProtection( &gRefClientPort ) )
     {
         return STATUS_UNSUCCESSFUL;
     }
@@ -481,7 +480,7 @@ PortRelease (
 {
     UNREFERENCED_PARAMETER( Port );
 
-    ExReleaseRundownProtection( &GlobalData.m_RefClientPort );
+    ExReleaseRundownProtection( &gRefClientPort );
 }
 
 __checkReturn
@@ -674,7 +673,7 @@ PortAskUser (
         }
 
         status = FltSendMessage (
-            GlobalData.m_Filter,
+            FileMgrGetFltFilter(),
             &pPort,
             pMessage,
             MessageSize,

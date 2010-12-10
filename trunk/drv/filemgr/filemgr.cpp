@@ -14,7 +14,6 @@
 
 PFLT_FILTER         gFileFilter = NULL;
 _tpOnOnload         gUnloadCb = NULL;
-FilteringSystem*    gFltSystem = NULL;
 
 NTSTATUS
 FLTAPI
@@ -297,7 +296,7 @@ InstanceSetup (
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        if ( gFltSystem->IsFiltersExist() )
+        if ( GetFltSystem()->IsFiltersExist() )
         {
             VolumeInterceptorContext event (
                 FltObjects,
@@ -310,7 +309,7 @@ InstanceSetup (
                 );
 
             PARAMS_MASK params2user;
-            status = gFltSystem->FilterEvent (
+            status = GetFltSystem()->FilterEvent (
                 &event,
                 &Verdict,
                 &params2user
@@ -377,7 +376,7 @@ PreCreate (
         *CompletionContext = NULL;
         fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
-        if ( !gFltSystem->IsFiltersExist() )
+        if ( !GetFltSystem()->IsFiltersExist() )
         {
             __leave;
         }
@@ -395,7 +394,7 @@ PreCreate (
             );
 
         PARAMS_MASK params2user;
-        NTSTATUS status = gFltSystem->FilterEvent (
+        NTSTATUS status = GetFltSystem()->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -513,7 +512,7 @@ PostCreate (
             __leave;
         }
 
-        if ( !gFltSystem->IsFiltersExist() )
+        if ( !GetFltSystem()->IsFiltersExist() )
         {
             __leave;
         }
@@ -530,7 +529,7 @@ PostCreate (
             );
 
         PARAMS_MASK params2user;
-        status = gFltSystem->FilterEvent (
+        status = GetFltSystem()->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -617,7 +616,7 @@ PreCleanup (
             __leave;
         }
 
-        if ( !gFltSystem->IsFiltersExist() )
+        if ( !GetFltSystem()->IsFiltersExist() )
         {
             __leave;
         }
@@ -634,7 +633,7 @@ PreCleanup (
             );
 
         PARAMS_MASK params2user;
-        status = gFltSystem->FilterEvent (
+        status = GetFltSystem()->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -758,8 +757,7 @@ __checkReturn
 NTSTATUS
 FileMgrInit (
     __in PDRIVER_OBJECT DriverObject,
-    __in _tpOnOnload UnloadCb,
-    __in FilteringSystem* FltSystem
+    __in _tpOnOnload UnloadCb
     )
 {
     gUnloadCb = UnloadCb;

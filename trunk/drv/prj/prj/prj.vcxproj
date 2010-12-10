@@ -54,14 +54,23 @@
     <ResourceCompile Include="..\..\main\accessch.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\channel\channel.cpp" />
+    <ClCompile Include="..\..\channel\commport.cpp" />
+    <ClCompile Include="..\..\channel\eventqueue.cpp" />
     <ClCompile Include="..\..\fltsystem\fltbox.cpp" />
     <ClCompile Include="..\..\fltsystem\fltchecks.cpp" />
     <ClCompile Include="..\..\fltsystem\fltevents.cpp" />
     <ClCompile Include="..\..\fltsystem\fltfilters.cpp" />
     <ClCompile Include="..\..\fltsystem\fltstorage.cpp" />
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp" />
+    <ClCompile Include="..\..\main\excludes.cpp" />
+    <ClCompile Include="..\..\main\main.cpp" />
+    <ClCompile Include="..\..\main\proclist.cpp" />
+    <ClCompile Include="..\..\main\security.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\channel\commport.h" />
+    <ClInclude Include="..\..\channel\eventqueue.h" />
     <ClInclude Include="..\..\fltsystem\fltbox.h" />
     <ClInclude Include="..\..\fltsystem\fltchecks.h" />
     <ClInclude Include="..\..\fltsystem\fltfilters.h" />
@@ -75,6 +84,13 @@
     <ClInclude Include="..\..\inc\osspec.h" />
     <ClInclude Include="..\..\inc\processinfo.h" />
     <ClInclude Include="..\..\inc\security.h" />
+    <ClInclude Include="..\..\main\main.h" />
+    <ClInclude Include="..\..\main\proclist.h" />
+    <ClInclude Include="..\..\main\ver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\main\makefile" />
+    <None Include="..\..\main\sources" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4DDC1CD3-9766-4A45-861C-1F3046E2E5FC}</ProjectGuid>
