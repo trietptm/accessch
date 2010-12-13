@@ -112,31 +112,15 @@ DriverEntry (
     return status;
 }
 
-NTSTATUS
-RegisterExitProcessCb (
-    __in _tpProcessExitCb CbFunc,
-    __in_opt PVOID Opaque
-    )
-{
-    NTSTATUS status = ProcList::RegisterExitProcessCb (
-        CbFunc,
-        Opaque
-        );
-
-    return status;
-}
-
-void
-UnregisterExitProcessCb ( 
-    __in _tpProcessExitCb CbFunc
-    )
-{
-    ProcList::UnregisterExitProcessCb( CbFunc );
-}
-
 FilteringSystem*
 GetFltSystem (
     )
 {
-    return GlobalData.m_FilteringSystem;
+    NTSTATUS status = GlobalData.m_FilteringSystem->AddRef();
+    if ( NT_SUCCESS( status ) )
+    {
+        return GlobalData.m_FilteringSystem;
+    }
+    
+    return NULL;
 }

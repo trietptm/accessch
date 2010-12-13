@@ -83,7 +83,7 @@ PortConnect (
 
     __try
     {
-        if ( gClientPort )
+        if ( gPort.m_ClientPort )
         {
             status = STATUS_ALREADY_REGISTERED;
             __leave;
@@ -116,11 +116,11 @@ PortConnect (
         }
 
         /// \todo  revise single port connection
-        GetFltSystem()->Attach( pPortContext->m_pFltStorage );
+        gPort.m_FltSystem->Attach( pPortContext->m_pFltStorage );
 
-        gClientPort = ClientPort;
+        gPort.m_ClientPort = ClientPort;
         RegisterInvisibleProcess( PsGetCurrentProcessId() );
-        ExReInitializeRundownProtection( &gRefClientPort );
+        ExReInitializeRundownProtection( &gPort.m_RefClientPort );
 
         *ConnectionCookie = pPortContext;
     }
@@ -152,16 +152,16 @@ PortDisconnect (
 
     ASSERT( ARGUMENT_PRESENT( pPortContext ) );
 
-    GetFltSystem()->Detach( pPortContext->m_pFltStorage );
+    gPort.m_FltSystem->Detach( pPortContext->m_pFltStorage );
 
-    ExWaitForRundownProtectionRelease( &gRefClientPort );
-    gClientPort = NULL;
+    ExWaitForRundownProtectionRelease( &gPort.m_RefClientPort );
+    gPort.m_ClientPort = NULL;
 
     FltCloseClientPort( FileMgrGetFltFilter(), &pPortContext->m_Connection );
 
     UnregisterInvisibleProcess( PsGetCurrentProcessId() );
 
-    ExRundownCompleted( &gRefClientPort );
+    ExRundownCompleted( &gPort.m_RefClientPort );
 
     FREE_OBJECT( pPortContext->m_pFltStorage );
     FREE_POOL( pPortContext );
@@ -459,14 +459,14 @@ PortQueryConnected (
     __drv_when(return==0, __deref_out_opt __drv_valueIs(!=0)) PFLT_PORT* Port
     )
 {
-    if ( !ExAcquireRundownProtection( &gRefClientPort ) )
+    if ( !ExAcquireRundownProtection( &gPort.m_RefClientPort ) )
     {
         return STATUS_UNSUCCESSFUL;
     }
 
     if ( Port )
     {
-        *Port = gClientPort;
+        *Port = gPort.m_ClientPort;
         ASSERT( *Port );
     }
    
@@ -480,7 +480,7 @@ PortRelease (
 {
     UNREFERENCED_PARAMETER( Port );
 
-    ExReleaseRundownProtection( &gRefClientPort );
+    ExReleaseRundownProtection( &gPort.m_RefClientPort );
 }
 
 __checkReturn

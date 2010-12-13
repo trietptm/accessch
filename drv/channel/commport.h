@@ -2,9 +2,15 @@
 #include "../inc/fltsystem.h"
 #include "eventqueue.h"
 
-extern PFLT_PORT gPort;
-extern EX_RUNDOWN_REF gRefClientPort;
-extern PFLT_PORT gClientPort;
+typedef struct _PortGlobals
+{
+    PFLT_PORT           m_Port;
+    EX_RUNDOWN_REF      m_RefClientPort;
+    PFLT_PORT           m_ClientPort;
+    FilteringSystem*    m_FltSystem;
+} PortGlobals;
+
+extern PortGlobals gPort;
 
 // создание общего порта
 NTSTATUS

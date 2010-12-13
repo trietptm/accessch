@@ -3,9 +3,7 @@
 #include "../inc/filemgr.h"
 #include "commport.h" 
 
-PFLT_PORT           gPort = NULL;
-EX_RUNDOWN_REF      gRefClientPort;
-PFLT_PORT           gClientPort = NULL;
+PortGlobals gPort = { 0 };
 
 __checkReturn
 NTSTATUS
@@ -14,20 +12,21 @@ ChannelInitPort (
 {
     QueuedItem::Initialize();
 
-    ExInitializeRundownProtection( &gRefClientPort );
-    ExWaitForRundownProtectionRelease( &gRefClientPort );
-    ExRundownCompleted( &gRefClientPort );
+    gPort.m_FltSystem = GetFltSystem();
+    ASSERT( gPort.m_FltSystem );
 
-    /// \todo reference filtering system
+    ExInitializeRundownProtection( &gPort.m_RefClientPort );
+    ExWaitForRundownProtectionRelease( &gPort.m_RefClientPort );
+    ExRundownCompleted( &gPort.m_RefClientPort );
 
     NTSTATUS status = PortCreate (
         FileMgrGetFltFilter(),
-        &gPort
+        &gPort.m_Port
         );
 
     if ( !NT_SUCCESS( status ) )
     {
-        gPort = NULL;
+        gPort.m_Port = NULL;
     }
 
     return status;
@@ -37,14 +36,13 @@ void
 ChannelDestroyPort (
     )
 {
-    /// \todo dereference filtering system
-
-    if ( gPort )
+    if ( gPort.m_Port )
     {
-        FltCloseCommunicationPort( gPort );
+        FltCloseCommunicationPort( gPort.m_Port );
     }
 
     QueuedItem::Destroy();
+    gPort.m_FltSystem->Release();
 }
 
 __checkReturn

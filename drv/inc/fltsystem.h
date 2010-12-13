@@ -14,6 +14,15 @@ public:
 
     __checkReturn
     NTSTATUS
+    AddRef (
+        );
+
+    void
+    Release (
+        );
+
+    __checkReturn
+    NTSTATUS
     Attach (
         __in FiltersStorage* FltStorage
         );
@@ -38,6 +47,7 @@ public:
 private:
     EX_PUSH_LOCK        m_AccessLock;
     LIST_ENTRY          m_List;
+    LONG                m_RefCount;
 };
 
 FilteringSystem*

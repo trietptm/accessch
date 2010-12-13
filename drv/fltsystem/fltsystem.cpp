@@ -18,11 +18,30 @@ FilteringSystem::FilteringSystem (
 {
     FltInitializePushLock( &m_AccessLock );
     InitializeListHead( &m_List );
+    m_RefCount = 0;
 }
 
 FilteringSystem::~FilteringSystem (
     )
 {
+    ASSERT( !m_RefCount );
+}
+
+__checkReturn
+NTSTATUS
+FilteringSystem::AddRef (
+    )
+{
+    InterlockedIncrement( &m_RefCount );
+    
+    return STATUS_SUCCESS;
+}
+
+void
+FilteringSystem::Release (
+    )
+{
+    InterlockedDecrement( &m_RefCount );
 }
 
 NTSTATUS
