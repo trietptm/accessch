@@ -70,6 +70,104 @@ ParamCheckEntry::Attach (
     return STATUS_SUCCESS;
 }
 
+BOOLEAN
+CheckMask (
+	PWCHAR PatternStart,
+	PWCHAR PatternEnd,
+	PWCHAR StringStart,
+	PWCHAR StringEnd
+	)
+{
+	PWCHAR asterisk_ptr = NULL;
+
+	while ( PatternStart <= PatternEnd && StringStart <= StringEnd )
+	{
+		if ( '*' == *PatternStart )
+		{
+			long ask_cnt = 0;
+			asterisk_ptr = PatternStart;
+
+			while (
+                PatternStart <= PatternEnd
+				&&
+                ( *PatternStart == '?' || *PatternStart == '*' )
+                )
+            {
+                if ( *PatternStart++ == '?' )
+                {
+                    ask_cnt++;
+                }
+            }
+
+			if ( PatternStart > PatternEnd )
+			{
+				if ( !ask_cnt ) 
+                {
+                    return TRUE;
+                }
+
+				if ( ( StringEnd - StringStart ) < ask_cnt )
+                {
+                    return FALSE;
+                }
+
+				return TRUE;
+			}
+			else
+			{
+				StringStart += ask_cnt;
+
+                while ( StringStart <= StringEnd && *StringStart != *PatternStart )
+                {
+                    StringStart++;
+                }
+
+				if ( StringStart > StringEnd )
+				{
+                    return FALSE;
+                }
+			}
+		}
+		else
+		{
+            if ( '?' != *PatternStart && *StringStart != *PatternStart )
+		    {
+                if ( !asterisk_ptr )
+                {
+                    return FALSE;
+                }
+
+			    PatternStart = asterisk_ptr;
+
+                continue;
+		    }
+        }
+
+		StringStart++;
+		PatternStart++;
+	}
+
+	if ( PatternStart > PatternEnd && StringStart <= StringEnd )
+    {
+        return FALSE;
+    }
+
+	if ( PatternStart <= PatternEnd && StringStart > StringEnd )
+	{
+		while ( PatternStart <= PatternEnd && *PatternStart == '*' )
+        {
+           PatternStart++;
+        }
+
+		if ( PatternStart <= PatternEnd )
+		{
+            return FALSE;
+        }
+	}
+
+	return TRUE;
+}
+
 __checkReturn
 __drv_valueIs( STATUS_SUCCESS; STATUS_UNSUCCESSFUL; STATUS_NOT_FOUND )
 NTSTATUS
