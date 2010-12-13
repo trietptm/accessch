@@ -1,5 +1,8 @@
 #include "../inc/commonkrnl.h"
+#include "../inc/filemgr.h"
+
 #include "../../inc/accessch.h"
+
 #include "filestructs.h"
 #include "volhlp.h"
 #include "volumeflt.h"

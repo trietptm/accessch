@@ -1,5 +1,7 @@
 #include "../inc/commonkrnl.h"
 #include "../inc/osspec.h"
+#include "../inc/filemgr.h"
+
 #include "../../inc/accessch.h"
 
 #include "filestructs.h"

@@ -2,20 +2,16 @@
 #include "../inc/memmgr.h"
 #include "../inc/osspec.h"
 #include "../inc/channel.h"
+#include "../inc/filemgr.h"
+
 #include "filestructs.h"
 
 #include "volhlp.h"
 #include "volumeflt.h"
-
 #include "filehlp.h"
 #include "fileflt.h"
 
-#include "../inc/filemgr.h"
-
-PFLT_FILTER         gFileFilter = NULL;
-_tpOnOnload         gUnloadCb = NULL;
-
-FilteringSystem*    gFltSystem = NULL;
+FileMgrGlobals gFileMgr = { 0 };
 
 NTSTATUS
 FLTAPI
@@ -129,14 +125,14 @@ Unload (
         /// \todo checks during Unload
         //return STATUS_FLT_DO_NOT_DETACH;
     }
+    
+    gFileMgr.m_FltSystem->Release();
+    gFileMgr.m_FltSystem = NULL;
 
-    gFltSystem->Release();
-    gFltSystem = NULL;
+    gFileMgr.m_UnloadCb();
 
-    gUnloadCb();
-
-    FltUnregisterFilter( gFileFilter );
-    gFileFilter = NULL;
+    FltUnregisterFilter( gFileMgr.m_FileFilter );
+    gFileMgr.m_FileFilter = NULL;
 
     return STATUS_SUCCESS;
 }
@@ -242,7 +238,7 @@ InstanceSetup (
 
     UNREFERENCED_PARAMETER( Flags );
 
-    ASSERT( FltObjects->Filter == gFileFilter );
+    ASSERT( FltObjects->Filter == gFileMgr.m_FileFilter );
 
     if (FLT_FSTYPE_RAW == VolumeFilesystemType)
     {
@@ -257,7 +253,7 @@ InstanceSetup (
     __try
     {
         status = FltAllocateContext (
-            gFileFilter,
+            gFileMgr.m_FileFilter,
             FLT_INSTANCE_CONTEXT,
             sizeof( InstanceContext ),
             NonPagedPool,
@@ -273,7 +269,7 @@ InstanceSetup (
         RtlZeroMemory( pInstanceCtx, sizeof( InstanceContext ) );
 
         status = FltAllocateContext (
-            gFileFilter,
+            gFileMgr.m_FileFilter,
             FLT_VOLUME_CONTEXT,
             sizeof( VolumeContext ),
             NonPagedPool,
@@ -301,7 +297,7 @@ InstanceSetup (
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        if ( gFltSystem->IsFiltersExist() )
+        if ( gFileMgr.m_FltSystem->IsFiltersExist() )
         {
             VolumeInterceptorContext event (
                 FltObjects,
@@ -314,7 +310,7 @@ InstanceSetup (
                 );
 
             PARAMS_MASK params2user;
-            status = gFltSystem->FilterEvent (
+            status = gFileMgr.m_FltSystem->FilterEvent (
                 &event,
                 &Verdict,
                 &params2user
@@ -381,7 +377,7 @@ PreCreate (
         *CompletionContext = NULL;
         fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
-        if ( !gFltSystem->IsFiltersExist() )
+        if ( !gFileMgr.m_FltSystem->IsFiltersExist() )
         {
             __leave;
         }
@@ -399,7 +395,7 @@ PreCreate (
             );
 
         PARAMS_MASK params2user;
-        NTSTATUS status = gFltSystem->FilterEvent (
+        NTSTATUS status = gFileMgr.m_FltSystem->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -495,7 +491,7 @@ PostCreate (
         }
 
         status = GenerateStreamHandleContext (
-            gFileFilter,
+            gFileMgr.m_FileFilter,
             FltObjects,
             &pStreamHandleContext
             );
@@ -507,7 +503,7 @@ PostCreate (
             __leave;
         }
 
-        if ( IsPrefetchEcpPresent( gFileFilter, Data ) )
+        if ( IsPrefetchEcpPresent( gFileMgr.m_FileFilter, Data ) )
         {
             SetFlag (
                 pStreamHandleContext->m_Flags,
@@ -517,7 +513,7 @@ PostCreate (
             __leave;
         }
 
-        if ( !gFltSystem->IsFiltersExist() )
+        if ( !gFileMgr.m_FltSystem->IsFiltersExist() )
         {
             __leave;
         }
@@ -534,7 +530,7 @@ PostCreate (
             );
 
         PARAMS_MASK params2user;
-        status = gFltSystem->FilterEvent (
+        status = gFileMgr.m_FltSystem->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -621,7 +617,7 @@ PreCleanup (
             __leave;
         }
 
-        if ( !gFltSystem->IsFiltersExist() )
+        if ( !gFileMgr.m_FltSystem->IsFiltersExist() )
         {
             __leave;
         }
@@ -638,7 +634,7 @@ PreCleanup (
             );
 
         PARAMS_MASK params2user;
-        status = gFltSystem->FilterEvent (
+        status = gFileMgr.m_FltSystem->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -737,7 +733,7 @@ PostWrite (
     __try
     {
         NTSTATUS status = GenerateStreamContext (
-            gFileFilter,
+            gFileMgr.m_FileFilter,
             FltObjects,
             &pStreamContext
             );
@@ -765,15 +761,15 @@ FileMgrInit (
     __in _tpOnOnload UnloadCb
     )
 {
-    gFltSystem = GetFltSystem();
-    ASSERT( gFltSystem );
+    gFileMgr.m_FltSystem = GetFltSystem();
+    ASSERT( gFileMgr.m_FltSystem );
 
-    gUnloadCb = UnloadCb;
+    gFileMgr.m_UnloadCb = UnloadCb;
 
     NTSTATUS status = FltRegisterFilter (
         DriverObject,
         (PFLT_REGISTRATION) &filterRegistration,
-        &gFileFilter
+        &gFileMgr.m_FileFilter
         );
 
     return status;
@@ -784,7 +780,7 @@ NTSTATUS
 FileMgrStart (
     )
 {
-   NTSTATUS status = FltStartFiltering( gFileFilter );
+   NTSTATUS status = FltStartFiltering( gFileMgr.m_FileFilter );
 
    return status;
 }
@@ -793,5 +789,5 @@ PFLT_FILTER
 FileMgrGetFltFilter (
     )
 {
-    return gFileFilter;
+    return gFileMgr.m_FileFilter;
 }
