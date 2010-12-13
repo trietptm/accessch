@@ -20,4 +20,11 @@ typedef struct _StreamHandleContext
     LONG                    m_Flags;
 } StreamHandleContext, *PStreamHandleContext;
 
-extern PFLT_FILTER gFileFilter;
+typedef struct _FileMgrGlobals
+{
+    PFLT_FILTER         m_FileFilter;
+    _tpOnOnload         m_UnloadCb;
+    FilteringSystem*    m_FltSystem;
+} FileMgrGlobals;
+
+extern FileMgrGlobals gFileMgr;

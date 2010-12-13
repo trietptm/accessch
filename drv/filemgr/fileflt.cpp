@@ -1,7 +1,11 @@
 #include "../inc/commonkrnl.h"
 #include "../inc/osspec.h"
 #include "../inc/security.h"
+#include "../inc/fltsystem.h"
+#include "../inc/filemgr.h"
+
 #include "../../inc/accessch.h"
+
 #include "filestructs.h"
 #include "filehlp.h"
 #include "fileflt.h"
@@ -110,7 +114,7 @@ FileInterceptorContext::CheckAccessToVolumeContext (
     }
 
     NTSTATUS status = FltGetVolumeContext (
-        gFileFilter,
+        gFileMgr.m_FileFilter,
         m_FltObjects->Volume, 
         (PFLT_CONTEXT*) &m_VolumeCtx
         );
