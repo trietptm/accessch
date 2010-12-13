@@ -13,17 +13,32 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="FilteringSystem">
+    <Filter Include="Source Files\Channel">
+      <UniqueIdentifier>{73618d3e-8442-4c65-8e2a-cd365338fbc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FilteringSystem">
       <UniqueIdentifier>{c8df1e99-970a-4fae-bf2e-697caa340bf8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="FilteringSystem\Header Files">
+    <Filter Include="Source Files\FilteringSystem\Header Files">
       <UniqueIdentifier>{7e4c2529-39af-4a31-be79-588013c53ffa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="FilteringSystem\Source Files">
+    <Filter Include="Source Files\FilteringSystem\Source Files">
       <UniqueIdentifier>{c6bde905-6d43-4c79-9bcc-360c7b5076ab}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Channel">
-      <UniqueIdentifier>{73618d3e-8442-4c65-8e2a-cd365338fbc4}</UniqueIdentifier>
+    <Filter Include="Source Files\FileMgr">
+      <UniqueIdentifier>{d9ea7dc8-b8c8-4cd9-89ee-b05b6e3e0925}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FileMgr\Source Files">
+      <UniqueIdentifier>{f7714609-968e-4ec9-946a-a75bd2e98d18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FileMgr\Header Files">
+      <UniqueIdentifier>{75f9307c-59c9-41e1-b17f-8ce4b1547dad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Memmgr">
+      <UniqueIdentifier>{75c191ee-0e78-42a4-b8fa-122eb168d68d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Osspec">
+      <UniqueIdentifier>{0a5f8446-9431-4d2d-b389-1ebd8903306e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -33,22 +48,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\fltsystem\fltbox.cpp">
-      <Filter>FilteringSystem\Source Files</Filter>
+      <Filter>Source Files\FilteringSystem\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp">
-      <Filter>FilteringSystem\Source Files</Filter>
+      <Filter>Source Files\FilteringSystem\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltchecks.cpp">
-      <Filter>FilteringSystem\Source Files</Filter>
+      <Filter>Source Files\FilteringSystem\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltevents.cpp">
-      <Filter>FilteringSystem\Source Files</Filter>
+      <Filter>Source Files\FilteringSystem\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltfilters.cpp">
-      <Filter>FilteringSystem\Source Files</Filter>
+      <Filter>Source Files\FilteringSystem\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\fltsystem\fltstorage.cpp">
-      <Filter>FilteringSystem\Source Files</Filter>
+      <Filter>Source Files\FilteringSystem\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\main\excludes.cpp">
       <Filter>Source Files</Filter>
@@ -63,30 +78,45 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\channel\channel.cpp">
-      <Filter>Channel</Filter>
+      <Filter>Source Files\Channel</Filter>
     </ClCompile>
     <ClCompile Include="..\..\channel\commport.cpp">
-      <Filter>Channel</Filter>
+      <Filter>Source Files\Channel</Filter>
     </ClCompile>
     <ClCompile Include="..\..\channel\eventqueue.cpp">
-      <Filter>Channel</Filter>
+      <Filter>Source Files\Channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\filemgr\fileflt.cpp">
+      <Filter>Source Files\FileMgr\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\filemgr\filehlp.cpp">
+      <Filter>Source Files\FileMgr\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\filemgr\filemgr.cpp">
+      <Filter>Source Files\FileMgr\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\filemgr\volhlp.cpp">
+      <Filter>Source Files\FileMgr\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\filemgr\volumeflt.cpp">
+      <Filter>Source Files\FileMgr\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\osspec\osspec.cpp">
+      <Filter>Source Files\Osspec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\memmgr\memmgr.cpp">
+      <Filter>Source Files\Memmgr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fltsystem\fltbox.h">
-      <Filter>FilteringSystem\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\fltevents.h">
-      <Filter>FilteringSystem\Header Files</Filter>
+      <Filter>Source Files\FilteringSystem\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fltsystem\fltfilters.h">
-      <Filter>FilteringSystem\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\fltstorage.h">
-      <Filter>FilteringSystem\Header Files</Filter>
+      <Filter>Source Files\FilteringSystem\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\fltsystem\fltchecks.h">
-      <Filter>FilteringSystem\Header Files</Filter>
+      <Filter>Source Files\FilteringSystem\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\commonkrnl.h">
       <Filter>Header Files</Filter>
@@ -122,10 +152,34 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\channel\commport.h">
-      <Filter>Channel</Filter>
+      <Filter>Source Files\Channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\channel\eventqueue.h">
-      <Filter>Channel</Filter>
+      <Filter>Source Files\Channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\channel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fltevents.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fltstorage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filemgr\fileflt.h">
+      <Filter>Source Files\FileMgr\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filemgr\filehlp.h">
+      <Filter>Source Files\FileMgr\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filemgr\filestructs.h">
+      <Filter>Source Files\FileMgr\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filemgr\volhlp.h">
+      <Filter>Source Files\FileMgr\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filemgr\volumeflt.h">
+      <Filter>Source Files\FileMgr\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

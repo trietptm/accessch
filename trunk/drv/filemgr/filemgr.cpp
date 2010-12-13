@@ -15,6 +15,8 @@
 PFLT_FILTER         gFileFilter = NULL;
 _tpOnOnload         gUnloadCb = NULL;
 
+FilteringSystem*    gFltSystem = NULL;
+
 NTSTATUS
 FLTAPI
 Unload (
@@ -127,6 +129,9 @@ Unload (
         /// \todo checks during Unload
         //return STATUS_FLT_DO_NOT_DETACH;
     }
+
+    gFltSystem->Release();
+    gFltSystem = NULL;
 
     gUnloadCb();
 
@@ -296,7 +301,7 @@ InstanceSetup (
         ASSERT( VolumeDeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM );
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        if ( GetFltSystem()->IsFiltersExist() )
+        if ( gFltSystem->IsFiltersExist() )
         {
             VolumeInterceptorContext event (
                 FltObjects,
@@ -309,7 +314,7 @@ InstanceSetup (
                 );
 
             PARAMS_MASK params2user;
-            status = GetFltSystem()->FilterEvent (
+            status = gFltSystem->FilterEvent (
                 &event,
                 &Verdict,
                 &params2user
@@ -376,7 +381,7 @@ PreCreate (
         *CompletionContext = NULL;
         fltStatus = FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
-        if ( !GetFltSystem()->IsFiltersExist() )
+        if ( !gFltSystem->IsFiltersExist() )
         {
             __leave;
         }
@@ -394,7 +399,7 @@ PreCreate (
             );
 
         PARAMS_MASK params2user;
-        NTSTATUS status = GetFltSystem()->FilterEvent (
+        NTSTATUS status = gFltSystem->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -512,7 +517,7 @@ PostCreate (
             __leave;
         }
 
-        if ( !GetFltSystem()->IsFiltersExist() )
+        if ( !gFltSystem->IsFiltersExist() )
         {
             __leave;
         }
@@ -529,7 +534,7 @@ PostCreate (
             );
 
         PARAMS_MASK params2user;
-        status = GetFltSystem()->FilterEvent (
+        status = gFltSystem->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -616,7 +621,7 @@ PreCleanup (
             __leave;
         }
 
-        if ( !GetFltSystem()->IsFiltersExist() )
+        if ( !gFltSystem->IsFiltersExist() )
         {
             __leave;
         }
@@ -633,7 +638,7 @@ PreCleanup (
             );
 
         PARAMS_MASK params2user;
-        status = GetFltSystem()->FilterEvent (
+        status = gFltSystem->FilterEvent (
             &event,
             &Verdict,
             &params2user
@@ -760,6 +765,9 @@ FileMgrInit (
     __in _tpOnOnload UnloadCb
     )
 {
+    gFltSystem = GetFltSystem();
+    ASSERT( gFltSystem );
+
     gUnloadCb = UnloadCb;
 
     NTSTATUS status = FltRegisterFilter (
