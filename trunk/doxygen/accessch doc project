@@ -590,7 +590,8 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = E:/OpenSource/accessch/drv
+INPUT                  = E:/OpenSource/accessch/drv \
+                         E:\OpenSource\accessch\inc
 
 # This tag can be used to specify the character encoding of the source files 
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is 
@@ -598,7 +599,7 @@ INPUT                  = E:/OpenSource/accessch/drv
 # into libc) for the transcoding. See http://www.gnu.org/software/libiconv for 
 # the list of possible encodings.
 
-INPUT_ENCODING         = UTF-8
+INPUT_ENCODING         = CP1251
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
