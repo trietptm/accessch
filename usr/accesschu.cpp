@@ -221,6 +221,47 @@ CreateExtensionsBox (
 }
 
 HRESULT
+ReleaseExtensionBox (
+    __in PCOMMUNICATIONS CommPort
+    )
+{
+    assert( CommPort );
+
+    HRESULT hResult = E_FAIL;
+
+    char buffer[0x1000];
+
+    ZeroMemory( buffer, sizeof( buffer) );
+
+    PNOTIFY_COMMAND pCommand = (PNOTIFY_COMMAND) buffer;
+    pCommand->m_Command = ntfcom_FiltersChain;
+
+    PFILTERS_CHAIN pChain = (PFILTERS_CHAIN) pCommand->m_Data;
+
+    pChain->m_Count = 1;
+    pChain->m_Entry[0].m_Operation = _fltbox_release;
+
+    PFLTBOX pBox = pChain->m_Entry[0].m_Box;
+    RtlCopyMemory( &pBox->m_Guid, &gBoxGuid, sizeof( GUID ) );
+    pBox->m_Operation = _fltbox_none;
+    pBox->Items.m_ParamsCount = 0;
+
+    ULONG requestsize = (ULONG) ( ( char* ) &pBox->Items - buffer );
+
+    DWORD retsize;
+    hResult = FilterSendMessage (
+        CommPort->m_hPort,
+        pCommand,
+        requestsize,
+        NULL,
+        0,
+        &retsize
+        );
+
+    return hResult;
+}
+
+HRESULT
 CreateFilter_PostCreate (
     __in PCOMMUNICATIONS CommPort
     )
@@ -462,7 +503,11 @@ CreateFilters (
     {
         hResult = CreateFilter_PreCleanup( CommPort );
     }
-    
+
+    hResult = ReleaseExtensionBox( CommPort );
+
+    assert( SUCCEEDED( hResult ) );
+
     return hResult;
 }
 

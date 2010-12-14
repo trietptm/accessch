@@ -151,7 +151,8 @@ typedef struct _FILTER
 
 typedef enum FltBoxOperation
 {
-    _fltbox_add         = 0,
+    _fltbox_none        = 0,
+    _fltbox_add         = 1,
 };
 
 typedef struct _FLTBOX
@@ -174,6 +175,7 @@ typedef enum ChainOperation
     _fltchain_add       = 0,
     _fltchain_del       = 1,
     _fltbox_create      = 2,
+    _fltbox_release     = 3,
 };
 
 typedef struct _CHAIN_ENTRY
