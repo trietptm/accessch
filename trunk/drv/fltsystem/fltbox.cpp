@@ -161,6 +161,8 @@ FilterBox::MatchEvent (
     __in PRTL_BITMAP Affecting
     )
 {
+    /// \todo добавить параметр - какие уже элементы проверялись и с каким результатом \
+    // для оптимизации при продолжении сканирования по списку параметров
     if ( IsListEmpty( &m_Items ) )
     {
         return STATUS_SUCCESS;
