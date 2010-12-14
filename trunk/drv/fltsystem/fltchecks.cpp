@@ -70,26 +70,27 @@ ParamCheckEntry::Attach (
     return STATUS_SUCCESS;
 }
 
-BOOLEAN
+__checkReturn
+NTSTATUS
 CheckMask (
-	PWCHAR PatternStart,
-	PWCHAR PatternEnd,
-	PWCHAR StringStart,
-	PWCHAR StringEnd
-	)
+    PWCHAR PatternStart,
+    PWCHAR PatternEnd,
+    PWCHAR StringStart,
+    PWCHAR StringEnd
+    )
 {
-	PWCHAR asterisk_ptr = NULL;
+    PWCHAR asterisk_ptr = NULL;
 
-	while ( PatternStart <= PatternEnd && StringStart <= StringEnd )
-	{
-		if ( '*' == *PatternStart )
-		{
-			long ask_cnt = 0;
-			asterisk_ptr = PatternStart;
+    while ( PatternStart <= PatternEnd && StringStart <= StringEnd )
+    {
+        if ( '*' == *PatternStart )
+        {
+            long ask_cnt = 0;
+            asterisk_ptr = PatternStart;
 
-			while (
+            while (
                 PatternStart <= PatternEnd
-				&&
+                &&
                 ( *PatternStart == '?' || *PatternStart == '*' )
                 )
             {
@@ -99,73 +100,73 @@ CheckMask (
                 }
             }
 
-			if ( PatternStart > PatternEnd )
-			{
-				if ( !ask_cnt ) 
+            if ( PatternStart > PatternEnd )
+            {
+                if ( !ask_cnt ) 
                 {
-                    return TRUE;
+                    return STATUS_SUCCESS;
                 }
 
-				if ( ( StringEnd - StringStart ) < ask_cnt )
+                if ( ( StringEnd - StringStart ) < ask_cnt )
                 {
-                    return FALSE;
+                    return STATUS_UNSUCCESSFUL;
                 }
 
-				return TRUE;
-			}
-			else
-			{
-				StringStart += ask_cnt;
+                return STATUS_SUCCESS;
+            }
+            else
+            {
+                StringStart += ask_cnt;
 
                 while ( StringStart <= StringEnd && *StringStart != *PatternStart )
                 {
                     StringStart++;
                 }
 
-				if ( StringStart > StringEnd )
-				{
-                    return FALSE;
+                if ( StringStart > StringEnd )
+                {
+                    return STATUS_UNSUCCESSFUL;
                 }
-			}
-		}
-		else
-		{
+            }
+        }
+        else
+        {
             if ( '?' != *PatternStart && *StringStart != *PatternStart )
-		    {
+            {
                 if ( !asterisk_ptr )
                 {
-                    return FALSE;
+                    return STATUS_UNSUCCESSFUL;
                 }
 
-			    PatternStart = asterisk_ptr;
+                PatternStart = asterisk_ptr;
 
                 continue;
-		    }
+            }
         }
 
-		StringStart++;
-		PatternStart++;
-	}
-
-	if ( PatternStart > PatternEnd && StringStart <= StringEnd )
-    {
-        return FALSE;
+        StringStart++;
+        PatternStart++;
     }
 
-	if ( PatternStart <= PatternEnd && StringStart > StringEnd )
-	{
-		while ( PatternStart <= PatternEnd && *PatternStart == '*' )
+    if ( PatternStart > PatternEnd && StringStart <= StringEnd )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if ( PatternStart <= PatternEnd && StringStart > StringEnd )
+    {
+        while ( PatternStart <= PatternEnd && *PatternStart == '*' )
         {
            PatternStart++;
         }
 
-		if ( PatternStart <= PatternEnd )
-		{
-            return FALSE;
+        if ( PatternStart <= PatternEnd )
+        {
+            return STATUS_UNSUCCESSFUL;
         }
-	}
+    }
 
-	return TRUE;
+    return STATUS_SUCCESS;
 }
 
 __checkReturn
@@ -196,7 +197,9 @@ CheckGeneric (
     
     status = STATUS_UNSUCCESSFUL;
 
-    PVOID ptr = Entry->Generic.m_CheckData->m_Data;
+    FltCheckData* pCheck = Entry->Generic.m_CheckData;
+
+    PVOID ptr = pCheck->m_Data;
 
     ULONG item;
     switch( Entry->Generic.m_Operation )
@@ -204,12 +207,12 @@ CheckGeneric (
     case FltOp_equ:
         if ( datasize
             != 
-            Entry->Generic.m_CheckData->m_DataSize / Entry->Generic.m_CheckData->m_Count )
+            pCheck->m_DataSize / pCheck->m_Count )
         {
             break;
         }
         
-        for ( item = 0; item < Entry->Generic.m_CheckData->m_Count; item++ )
+        for ( item = 0; item < pCheck->m_Count; item++ )
         {
             if ( datasize == RtlCompareMemory (
                 ptr,
@@ -227,11 +230,11 @@ CheckGeneric (
         break;
 
     case FltOp_and:
-        ASSERT( Entry->Generic.m_CheckData->m_Count == 1 );
+        ASSERT( pCheck->m_Count == 1 );
 
         if ( datasize
             !=
-            Entry->Generic.m_CheckData->m_DataSize / Entry->Generic.m_CheckData->m_Count )
+            pCheck->m_DataSize / pCheck->m_Count )
         {
             break;
         }
@@ -254,7 +257,30 @@ CheckGeneric (
         break;
 
     case FltOp_pattern:
-        status = STATUS_SUCCESS;
+        {
+            /// \todo upper cased string have to be acquired as QueryParameter with UPPER_CASE flag
+
+            UNICODE_STRING ussrc;
+            RtlInitEmptyUnicodeString( &ussrc, ( PWCHAR ) pData, (USHORT) datasize );
+            ussrc.Length = ussrc.MaximumLength;
+
+            UNICODE_STRING usdest;
+            RtlInitEmptyUnicodeString( &usdest, NULL, 0 );
+
+            status = RtlUpcaseUnicodeString( &usdest, &ussrc, TRUE );
+
+            if ( NT_SUCCESS( status ) )
+            {
+                status = CheckMask (
+                    ( PWCHAR ) pCheck->m_Data,
+                    ( PWCHAR ) Add2Ptr( pCheck->m_Data, pCheck->m_DataSize - sizeof( WCHAR ) ),
+                    ( PWCHAR ) usdest.Buffer,
+                    ( PWCHAR ) Add2Ptr( usdest.Buffer, datasize - sizeof( WCHAR ) )
+                    );
+
+                RtlFreeUnicodeString( &usdest );
+            }
+        }
         break;
     
     default:
