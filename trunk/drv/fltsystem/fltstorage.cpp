@@ -287,7 +287,7 @@ FiltersStorage::CreateBoxControlp (
         return STATUS_SUCCESS;
     }
 
-    m_BoxList = new( PagedPool, m_AllocTag ) FilterBoxList;
+    m_BoxList = new ( PagedPool, m_AllocTag ) FilterBoxList;
     if ( m_BoxList )
     {
         return STATUS_SUCCESS;
