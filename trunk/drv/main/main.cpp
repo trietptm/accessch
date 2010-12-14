@@ -18,6 +18,12 @@
 
 #include "proclist.h"
 
+typedef struct _Globals
+{
+    PDRIVER_OBJECT          m_FilterDriverObject;
+    FilteringSystem*        m_FilteringSystem;
+}Globals, *PGlobals;
+
 Globals GlobalData;
 
 extern "C"

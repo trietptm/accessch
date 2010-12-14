@@ -142,9 +142,6 @@
     <ClInclude Include="..\..\inc\security.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\main\main.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\main\proclist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
