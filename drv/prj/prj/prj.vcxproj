@@ -97,7 +97,6 @@
     <ClInclude Include="..\..\inc\osspec.h" />
     <ClInclude Include="..\..\inc\processinfo.h" />
     <ClInclude Include="..\..\inc\security.h" />
-    <ClInclude Include="..\..\main\main.h" />
     <ClInclude Include="..\..\main\proclist.h" />
     <ClInclude Include="..\..\main\ver.h" />
   </ItemGroup>
