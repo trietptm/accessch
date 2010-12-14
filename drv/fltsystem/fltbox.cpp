@@ -183,16 +183,17 @@ FilterBox::MatchEvent (
         
         if ( pEntry->m_Position > Affecting->SizeOfBitMap )
         {
+            __debugbreak(); //nct
             continue;
         }
 
-        if ( !RtlCheckBit( Affecting, Affecting->SizeOfBitMap ) )
+        if ( !RtlCheckBit( Affecting, pEntry->m_Position ) )
         {
             continue;
         }
 
         status = CheckEntry( pEntry->m_Param, Event );
-        if ( !NT_SUCCESS( status ) )
+        if ( NT_SUCCESS( status ) )
         {
             break;
         }
