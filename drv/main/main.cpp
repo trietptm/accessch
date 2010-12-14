@@ -14,8 +14,6 @@
 
 #include "../../inc/accessch.h"
 
-#include "main.h"
-
 #include "proclist.h"
 
 typedef struct _Globals

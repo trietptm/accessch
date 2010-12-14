@@ -1,7 +1,6 @@
 #include "../inc/commonkrnl.h"
 #include "../inc/memmgr.h"
 #include "../inc/fltstorage.h"
-#include "fltbox.h"
 #include "fltfilters.h"
 
 ULONG FiltersStorage::m_AllocTag = 'sfSA';
