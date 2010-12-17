@@ -107,7 +107,7 @@ PortConnect (
         pPortContext->m_pFltStorage = new (
             PagedPool,
             FiltersStorage::m_AllocTag
-            ) FiltersStorage;
+            ) FiltersStorage ( gPort.m_ProcessHelper );
 
         if ( !pPortContext->m_pFltStorage )
         {

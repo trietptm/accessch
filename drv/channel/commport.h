@@ -8,6 +8,7 @@ typedef struct _PortGlobals
     EX_RUNDOWN_REF      m_RefClientPort;
     PFLT_PORT           m_ClientPort;
     FilteringSystem*    m_FltSystem;
+    ProcessHelper*      m_ProcessHelper;
 } PortGlobals;
 
 extern PortGlobals gPort;

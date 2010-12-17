@@ -1,10 +1,14 @@
 #pragma once
 
 #include "../inc/fltevents.h"
+#include "../inc/fltsystem.h"
+#include "../inc/processhelper.h"
 
 __checkReturn
 NTSTATUS
 ChannelInitPort (
+    __in ProcessHelper* ProcessHlp,
+    __in FilteringSystem* FltSystem
     );
 
 void

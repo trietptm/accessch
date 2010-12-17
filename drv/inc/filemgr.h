@@ -8,7 +8,8 @@ __checkReturn
 NTSTATUS
 FileMgrInit (
     __in PDRIVER_OBJECT DriverObject,
-    __in _tpOnOnload UnloadCb
+    __in _tpOnOnload UnloadCb,
+    __in FilteringSystem* FltSystem
     );
 
 __checkReturn

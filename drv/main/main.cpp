@@ -11,15 +11,15 @@
 #include "../inc/fltsystem.h"
 #include "../inc/osspec.h"
 #include "../inc/channel.h"
+#include "../inc/processhelper.h"
 
 #include "../../inc/accessch.h"
-
-#include "proclist.h"
 
 typedef struct _Globals
 {
     PDRIVER_OBJECT          m_FilterDriverObject;
     FilteringSystem*        m_FilteringSystem;
+    ProcessHelper*          m_ProcessHelper;
 }Globals, *PGlobals;
 
 Globals GlobalData;
@@ -40,7 +40,7 @@ DriverUnload (
 {
     ChannelDestroyPort();
     FREE_OBJECT( GlobalData.m_FilteringSystem );
-    ProcList::Destroy();
+    FREE_OBJECT( GlobalData.m_ProcessHelper );
 }
 
 NTSTATUS
@@ -57,10 +57,25 @@ DriverEntry (
 
     GlobalData.m_FilterDriverObject = DriverObject;
     
-    ProcList::Initialize();
-
     __try
     {
+        status = GetPreviousModeOffset();
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        GlobalData.m_ProcessHelper = new (
+            PagedPool,
+            ProcessHelper::m_AllocTag
+            ) ProcessHelper;
+
+        if ( !GlobalData.m_ProcessHelper )
+        {
+            status = STATUS_UNSUCCESSFUL;
+            __leave;
+        }
+
         GlobalData.m_FilteringSystem = new (
             PagedPool,
             FilteringSystem::m_AllocTag
@@ -68,18 +83,14 @@ DriverEntry (
 
         if ( !GlobalData.m_FilteringSystem )
         {
-            __leave;
-        }
-
-        status = GetPreviousModeOffset();
-        if ( !NT_SUCCESS( status ) )
-        {
+            status = STATUS_UNSUCCESSFUL;
             __leave;
         }
 
         status = FileMgrInit (
             DriverObject,
-            DriverUnload
+            DriverUnload,
+            GlobalData.m_FilteringSystem
             );
 
         if ( !NT_SUCCESS( status ) )
@@ -87,7 +98,11 @@ DriverEntry (
             __leave;
         }
 
-        status = ChannelInitPort();
+        status = ChannelInitPort (
+            GlobalData.m_ProcessHelper,
+            GlobalData.m_FilteringSystem
+            );
+
         if ( !NT_SUCCESS( status ) )
         {
             __leave;
@@ -109,22 +124,27 @@ DriverEntry (
 
             ChannelDestroyPort();
 
-            ProcList::Destroy();
+            FREE_OBJECT( GlobalData.m_ProcessHelper );
         }
     }
 
     return status;
 }
 
-FilteringSystem*
-GetFltSystem (
+void
+RegisterProcess (
+    HANDLE ProcessId
     )
 {
-    NTSTATUS status = GlobalData.m_FilteringSystem->AddRef();
-    if ( NT_SUCCESS( status ) )
-    {
-        return GlobalData.m_FilteringSystem;
-    }
-    
-    return NULL;
+    NTSTATUS status = GlobalData.m_ProcessHelper->RegisterProcessItem( ProcessId );
+
+    ASSERT( NT_SUCCESS( status ) );
+}
+
+void
+UnregisterProcess (
+    HANDLE ProcessId
+    )
+{
+    GlobalData.m_ProcessHelper->UnregisterProcessItem( ProcessId );
 }

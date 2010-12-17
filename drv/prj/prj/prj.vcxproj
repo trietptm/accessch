@@ -70,7 +70,7 @@
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp" />
     <ClCompile Include="..\..\main\excludes.cpp" />
     <ClCompile Include="..\..\main\main.cpp" />
-    <ClCompile Include="..\..\main\proclist.cpp" />
+    <ClCompile Include="..\..\main\processhelper.cpp" />
     <ClCompile Include="..\..\main\security.cpp" />
     <ClCompile Include="..\..\memmgr\memmgr.cpp" />
     <ClCompile Include="..\..\osspec\osspec.cpp" />
@@ -95,9 +95,8 @@
     <ClInclude Include="..\..\inc\fltsystem.h" />
     <ClInclude Include="..\..\inc\memmgr.h" />
     <ClInclude Include="..\..\inc\osspec.h" />
-    <ClInclude Include="..\..\inc\processinfo.h" />
+    <ClInclude Include="..\..\inc\processhelper.h" />
     <ClInclude Include="..\..\inc\security.h" />
-    <ClInclude Include="..\..\main\proclist.h" />
     <ClInclude Include="..\..\main\ver.h" />
   </ItemGroup>
   <ItemGroup>
