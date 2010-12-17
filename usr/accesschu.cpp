@@ -1112,14 +1112,12 @@ main (
             }
         }
 
-        Sleep ( 2000 ); /// \todo - use event to synchronize - wait thread's ready state
-
         Nc_Command( &Comm, ntfcom_Activate );
 
         // just wait
         MessageBox( NULL, L"stop?", L"RTP prototype", NULL );
         
-        Nc_Command( &Comm, ntfcom_Pause );
+        Nc_Command( &Comm, ntfcom_Pause ); /// \todo move this to another thread
     }
     __finally
     {
