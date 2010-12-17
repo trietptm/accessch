@@ -120,11 +120,8 @@ DriverEntry (
     {
         if ( !NT_SUCCESS( status ) )
         {
-            FREE_OBJECT( GlobalData.m_FilteringSystem );
-
-            ChannelDestroyPort();
-
-            FREE_OBJECT( GlobalData.m_ProcessHelper );
+            __debugbreak(); //nct
+            DriverUnload();
         }
     }
 
