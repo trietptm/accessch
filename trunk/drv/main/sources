@@ -15,20 +15,20 @@ LINKER_FLAGS=$(LINKER_FLAGS) /SECTION:.rsrc,!D /NOLOGO /integritycheck
 RCOPTIONS=/v /dRC_BUILD_OPT="$(BUILD_ALT_DIR)"
 
 TARGETLIBS= \
-		$(TARGETLIBS) \
-		$(IFSKIT_LIB_PATH)\fltMgr.lib \
-		$(IFSKIT_LIB_PATH)\iointex.lib \
-		$(IFSKIT_LIB_PATH)\ntstrsafe.lib \
-		$(TARGET_LIBS_DIR)\memmgr.lib \
-		$(TARGET_LIBS_DIR)\osspec.lib \
-		$(TARGET_LIBS_DIR)\fltsystem.lib \
-		$(TARGET_LIBS_DIR)\filemgr.lib \
-		$(TARGET_LIBS_DIR)\channel.lib \
-		$(TARGET_LIBS_DIR)\processhelper.lib \
-		$(TARGET_LIBS_DIR)\osspec.lib 
+        $(TARGETLIBS) \
+        $(IFSKIT_LIB_PATH)\fltMgr.lib \
+        $(IFSKIT_LIB_PATH)\iointex.lib \
+        $(IFSKIT_LIB_PATH)\ntstrsafe.lib \
+        $(TARGET_LIBS_DIR)\memmgr.lib \
+        $(TARGET_LIBS_DIR)\osspec.lib \
+        $(TARGET_LIBS_DIR)\fltsystem.lib \
+        $(TARGET_LIBS_DIR)\filemgr.lib \
+        $(TARGET_LIBS_DIR)\channel.lib \
+        $(TARGET_LIBS_DIR)\processhelper.lib \
+        $(TARGET_LIBS_DIR)\osspec.lib 
 
 SOURCES= \
-		main.cpp \
-		security.cpp \
-		excludes.cpp \
-		accessch.rc
+        main.cpp \
+        security.cpp \
+        excludes.cpp \
+        accessch.rc

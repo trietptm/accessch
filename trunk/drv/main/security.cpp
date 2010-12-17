@@ -179,3 +179,49 @@ SecurityGetSid (
 
     return status;
 }
+
+__checkReturn
+NTSTATUS
+Security_CaptureContext (
+    __in PETHREAD OrigTh,
+    __in PSECURITY_CLIENT_CONTEXT SecurityContext
+    )
+{
+    SECURITY_QUALITY_OF_SERVICE SecurityQos;
+
+    SecurityQos.Length = sizeof( SECURITY_QUALITY_OF_SERVICE );
+    SecurityQos.ImpersonationLevel = SecurityImpersonation;
+    SecurityQos.ContextTrackingMode = SECURITY_DYNAMIC_TRACKING;
+    SecurityQos.EffectiveOnly = FALSE;
+
+    NTSTATUS status = SeCreateClientSecurity (
+        OrigTh,
+        &SecurityQos,
+        FALSE,
+        SecurityContext
+        );
+
+    return status;
+}
+
+void
+Security_ReleaseContext (
+    __in PSECURITY_CLIENT_CONTEXT SecurityContext
+    )
+{
+    ASSERT( SecurityContext );
+
+    SeDeleteClientSecurity( SecurityContext );
+}
+
+__checkReturn
+NTSTATUS
+Security_ImpersonateClient (
+    __in PSECURITY_CLIENT_CONTEXT SecurityContext,
+    __in_opt PETHREAD ServerThread
+    )
+{
+    NTSTATUS status = SeImpersonateClientEx( SecurityContext, ServerThread );
+
+    return status;
+}
