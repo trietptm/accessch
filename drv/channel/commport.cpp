@@ -103,6 +103,12 @@ PortConnect (
 
         RtlZeroMemory( pPortContext, sizeof( PORT_CONTEXT ) );
 
+        status = gPort.m_ProcessHelper->AddRef();
+        if ( !NT_SUCCESS( status ) )
+        {
+             __leave;
+        }
+
         pPortContext->m_Connection = ClientPort;
         pPortContext->m_pFltStorage = new (
             PagedPool,
@@ -111,6 +117,7 @@ PortConnect (
 
         if ( !pPortContext->m_pFltStorage )
         {
+            gPort.m_ProcessHelper->Release(); /// \todo addref make inside new()
             status = STATUS_INSUFFICIENT_RESOURCES;
             __leave;
         }
