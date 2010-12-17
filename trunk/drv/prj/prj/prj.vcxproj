@@ -70,10 +70,10 @@
     <ClCompile Include="..\..\fltsystem\fltsystem.cpp" />
     <ClCompile Include="..\..\main\excludes.cpp" />
     <ClCompile Include="..\..\main\main.cpp" />
-    <ClCompile Include="..\..\main\processhelper.cpp" />
     <ClCompile Include="..\..\main\security.cpp" />
     <ClCompile Include="..\..\memmgr\memmgr.cpp" />
     <ClCompile Include="..\..\osspec\osspec.cpp" />
+    <ClCompile Include="..\..\processhelper\processhelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\channel\commport.h" />
