@@ -48,6 +48,7 @@ FiltersStorage::~FiltersStorage (
     )
 {
     m_ProcessHelper->UnregisterExitProcessCb( ExitProcessCb );
+    m_ProcessHelper->Release();
 
     DeleteAllFilters();
     delete m_BoxList;
