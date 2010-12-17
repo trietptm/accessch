@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../inc/fltevents.h"
-#include "../inc/processinfo.h"
+#include "../inc/processhelper.h"
 
 class Filters;
 class FilterBoxList;
@@ -23,6 +23,7 @@ public:
 
 public:
     FiltersStorage (
+        __in ProcessHelper* ProcessHlp
         );
 
     ~FiltersStorage (
@@ -114,9 +115,10 @@ private:
         );
 
 private:
-    RTL_AVL_TABLE    m_Tree;
-    EX_PUSH_LOCK     m_AccessLock;
-    LONG             m_FilterIdCounter;
-    LONG             m_Flags;
-    FilterBoxList*   m_BoxList;
+    ProcessHelper*  m_ProcessHelper;
+    RTL_AVL_TABLE   m_Tree;
+    EX_PUSH_LOCK    m_AccessLock;
+    LONG            m_FilterIdCounter;
+    LONG            m_Flags;
+    FilterBoxList*  m_BoxList;
 };

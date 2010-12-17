@@ -24,11 +24,11 @@ TARGETLIBS= \
 		$(TARGET_LIBS_DIR)\fltsystem.lib \
 		$(TARGET_LIBS_DIR)\filemgr.lib \
 		$(TARGET_LIBS_DIR)\channel.lib \
+		$(TARGET_LIBS_DIR)\processhelper.lib \
 		$(TARGET_LIBS_DIR)\osspec.lib 
 
 SOURCES= \
 		main.cpp \
 		security.cpp \
 		excludes.cpp \
-		proclist.cpp \
 		accessch.rc

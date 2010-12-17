@@ -1112,6 +1112,8 @@ main (
             }
         }
 
+        Sleep ( 2000 ); /// \todo - use event to synchronize - wait thread's ready state
+
         Nc_Command( &Comm, ntfcom_Activate );
 
         // just wait

@@ -49,7 +49,3 @@ private:
     LIST_ENTRY          m_List;
     LONG                m_RefCount;
 };
-
-FilteringSystem*
-GetFltSystem (
-    );

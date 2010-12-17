@@ -758,19 +758,31 @@ __checkReturn
 NTSTATUS
 FileMgrInit (
     __in PDRIVER_OBJECT DriverObject,
-    __in _tpOnOnload UnloadCb
+    __in _tpOnOnload UnloadCb,
+    __in FilteringSystem* FltSystem
     )
 {
-    gFileMgr.m_FltSystem = GetFltSystem();
-    ASSERT( gFileMgr.m_FltSystem );
+    ASSERT( FltSystem );
+
+    NTSTATUS status = FltSystem->AddRef();
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
 
     gFileMgr.m_UnloadCb = UnloadCb;
+    gFileMgr.m_FltSystem = FltSystem;
 
-    NTSTATUS status = FltRegisterFilter (
+    status = FltRegisterFilter (
         DriverObject,
         (PFLT_REGISTRATION) &filterRegistration,
         &gFileMgr.m_FileFilter
         );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        FltSystem->Release();
+    }
 
     return status;
 }

@@ -21,8 +21,12 @@ typedef struct _FiltersItem
 //////////////////////////////////////////////////////////////////////////
 
 FiltersStorage::FiltersStorage (
+    __in ProcessHelper* ProcessHlp
     )
 {
+    ASSERT( ProcessHlp );
+    m_ProcessHelper = ProcessHlp;
+
     FltInitializePushLock( &m_AccessLock );
 
     RtlInitializeGenericTableAvl (
@@ -37,13 +41,13 @@ FiltersStorage::FiltersStorage (
     m_FilterIdCounter = 0;
     m_BoxList = NULL;
 
-    RegisterExitProcessCb( ExitProcessCb, this );
+    m_ProcessHelper->RegisterExitProcessCb( ExitProcessCb, this );
 }
 
 FiltersStorage::~FiltersStorage (
     )
 {
-    UnregisterExitProcessCb( ExitProcessCb );
+    m_ProcessHelper->UnregisterExitProcessCb( ExitProcessCb );
 
     DeleteAllFilters();
     delete m_BoxList;

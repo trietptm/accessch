@@ -71,9 +71,6 @@
     <ClCompile Include="..\..\main\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\main\proclist.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\main\security.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -107,6 +104,9 @@
     <ClCompile Include="..\..\memmgr\memmgr.cpp">
       <Filter>Source Files\Memmgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\main\processhelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fltsystem\fltbox.h">
@@ -136,13 +136,7 @@
     <ClInclude Include="..\..\inc\osspec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\processinfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\security.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\main\proclist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\main\ver.h">
@@ -177,6 +171,9 @@
     </ClInclude>
     <ClInclude Include="..\..\filemgr\volumeflt.h">
       <Filter>Source Files\FileMgr\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\processhelper.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

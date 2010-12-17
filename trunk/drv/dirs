@@ -4,4 +4,5 @@ DIRS= \
 	osspec \
 	filemgr \
 	channel \
+	processhelper  \
 	main
