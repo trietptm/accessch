@@ -40,6 +40,9 @@
     <Filter Include="Source Files\Osspec">
       <UniqueIdentifier>{0a5f8446-9431-4d2d-b389-1ebd8903306e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ProcessHelper">
+      <UniqueIdentifier>{4b9d4463-60d0-4666-aa3b-6e124c305c95}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\main\accessch.rc">
@@ -104,8 +107,8 @@
     <ClCompile Include="..\..\memmgr\memmgr.cpp">
       <Filter>Source Files\Memmgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\main\processhelper.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\processhelper\processhelper.cpp">
+      <Filter>Source Files\ProcessHelper</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
