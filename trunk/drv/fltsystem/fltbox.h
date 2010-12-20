@@ -63,6 +63,11 @@ public:
         __deref_out_opt PFilterBox* FltBox
         );
 
+    __checkReturn
+    NTSTATUS
+    ReleaseBox (
+        );
+
     FilterBox*
     LookupBox (
         __in LPGUID Guid

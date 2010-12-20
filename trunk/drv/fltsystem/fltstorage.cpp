@@ -252,6 +252,19 @@ FiltersStorage::CreateBoxUnsafe (
     return status;
 }
 
+__checkReturn
+NTSTATUS
+FiltersStorage::ReleaseBoxUnsafe (
+    __in LPGUID Guid,
+    )
+{
+    ASSERT( Guid );
+
+    NTSTATUS status = m_BoxList->ReleaseBox( Guid );
+
+    return Status;
+}
+
 void
 FiltersStorage::DeleteAllFilters (
     )
