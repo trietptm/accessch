@@ -27,6 +27,7 @@ public:
     ~ProcessHelper (
         );
 
+    /// \todo перевести на наследование от базового IInterface с AddRef\Release функциями
     NTSTATUS
     AddRef (
         );

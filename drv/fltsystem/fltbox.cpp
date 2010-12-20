@@ -64,6 +64,13 @@ FilterBox::Release (
     )
 {
     LONG refcount = InterlockedDecrement( &m_RefCount );
+
+    if ( refcount < 0 )
+    {
+        ASSERT( FALSE );
+        /// \todo CRASH!!!
+    }
+
     if ( !refcount )
     {
         /// \todo фоновое удаление
@@ -270,6 +277,22 @@ FilterBoxList::GetOrCreateBox (
     }
     
     return status;
+}
+
+__checkReturn
+NTSTATUS
+FilterBoxList::ReleaseBox (
+    )
+{
+    FilterBox* box = LookupBoxp( Guid );
+    if ( !box )
+    {
+        return STATUS_NOT_FOUND;
+    }
+
+    box->Release();
+
+    return STATUS_SUCCESS;
 }
 
 FilterBox*

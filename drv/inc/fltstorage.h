@@ -61,6 +61,12 @@ public:
         __out PULONG FilterId
         );
   
+    __checkReturn
+    NTSTATUS
+    ReleaseBoxUnsafe (
+        __in LPGUID Guid,
+        );
+
     void
     DeleteAllFilters (
         );
