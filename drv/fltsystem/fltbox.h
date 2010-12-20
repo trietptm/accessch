@@ -66,7 +66,8 @@ public:
     __checkReturn
     NTSTATUS
     ReleaseBox (
-        );
+        __in LPGUID Guid
+    );
 
     FilterBox*
     LookupBox (

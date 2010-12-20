@@ -264,13 +264,12 @@ ProceedChainBox (
 }
 
 __checkReturn
-    NTSTATUS
-    ReleaseChainBox (
+NTSTATUS
+ReleaseChainBox (
     __in FiltersStorage* FltStorage,
     __in PCHAIN_ENTRY pEntry
     )
 {
-    NTSTATUS status = STATUS_UNSUCCESSFUL;
     PFLTBOX pBox = pEntry[0].m_Box;
 
     NTSTATUS status = FltStorage->ReleaseBoxUnsafe (

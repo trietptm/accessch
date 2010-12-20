@@ -282,6 +282,7 @@ FilterBoxList::GetOrCreateBox (
 __checkReturn
 NTSTATUS
 FilterBoxList::ReleaseBox (
+    __in LPGUID Guid
     )
 {
     FilterBox* box = LookupBoxp( Guid );

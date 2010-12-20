@@ -64,7 +64,7 @@ public:
     __checkReturn
     NTSTATUS
     ReleaseBoxUnsafe (
-        __in LPGUID Guid,
+        __in LPGUID Guid
         );
 
     void
