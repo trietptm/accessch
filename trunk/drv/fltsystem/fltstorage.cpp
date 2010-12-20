@@ -255,14 +255,14 @@ FiltersStorage::CreateBoxUnsafe (
 __checkReturn
 NTSTATUS
 FiltersStorage::ReleaseBoxUnsafe (
-    __in LPGUID Guid,
+    __in LPGUID Guid
     )
 {
     ASSERT( Guid );
 
     NTSTATUS status = m_BoxList->ReleaseBox( Guid );
 
-    return Status;
+    return status;
 }
 
 void
