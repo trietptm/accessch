@@ -196,6 +196,21 @@ typedef struct _FILTERS_CHAIN
 } FILTERS_CHAIN, *PFILTERS_CHAIN;
 // end filters structures
 
+// io support
+typedef enum IoSupport
+{
+    _iosup_none         = 0x000,
+    _iosup_fileid       = 0x001,
+    _iosup_map          = 0x002
+};
+
+typedef struct _IO_SUPPORT
+{
+    ULONG               m_Flags;    // IoSupport
+    ULONG               m_NameLenght;
+    WCHAR               m_Name[1];
+} IO_SUPPORT, *PIO_SUPPORT;
+
 #include <poppack.h>
 
 #endif // __accesscheck_h 
