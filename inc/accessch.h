@@ -102,7 +102,7 @@ typedef enum _NOTIFY_ID
     ntfcom_Pause         = 010,
     ntfcom_Activate      = 011,
     ntfcom_FiltersChain  = 050,
-    ntfcom_IOSupport     = 060,
+    ntfcom_IoSupport     = 060,
     
     // object's commands
     ntfcom_PrepareIO     = 100 // result struct
@@ -208,9 +208,17 @@ typedef enum IoSupport
 typedef struct _IO_SUPPORT
 {
     ULONG               m_Flags;    // IoSupport
-    ULONG               m_NameLenght;
+    ULONG               m_NameLengthCb;
     WCHAR               m_Name[1];
 } IO_SUPPORT, *PIO_SUPPORT;
+
+typedef struct _IO_SUPPORT_RESULT
+{
+    ULONG               m_FlagsReflect; // IoSupport
+    ULONG               m_Pseudo;
+    LARGE_INTEGER       m_FileId;
+    NC_IOPREPARE        m_IoSection;
+} IO_SUPPORT_RESULT, *PIO_SUPPORT_RESULT;
 
 #include <poppack.h>
 

@@ -110,6 +110,9 @@
     <ClCompile Include="..\..\processhelper\processhelper.cpp">
       <Filter>Source Files\ProcessHelper</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\filemgr\iosupport.cpp">
+      <Filter>Source Files\FileMgr\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fltsystem\fltbox.h">
@@ -176,6 +179,9 @@
       <Filter>Source Files\FileMgr\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\processhelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\iosupport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

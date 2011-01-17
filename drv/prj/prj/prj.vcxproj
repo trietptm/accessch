@@ -60,6 +60,7 @@
     <ClCompile Include="..\..\filemgr\fileflt.cpp" />
     <ClCompile Include="..\..\filemgr\filehlp.cpp" />
     <ClCompile Include="..\..\filemgr\filemgr.cpp" />
+    <ClCompile Include="..\..\filemgr\iosupport.cpp" />
     <ClCompile Include="..\..\filemgr\volhlp.cpp" />
     <ClCompile Include="..\..\filemgr\volumeflt.cpp" />
     <ClCompile Include="..\..\fltsystem\fltbox.cpp" />
@@ -93,6 +94,7 @@
     <ClInclude Include="..\..\inc\fltevents.h" />
     <ClInclude Include="..\..\inc\fltstorage.h" />
     <ClInclude Include="..\..\inc\fltsystem.h" />
+    <ClInclude Include="..\..\inc\iosupport.h" />
     <ClInclude Include="..\..\inc\memmgr.h" />
     <ClInclude Include="..\..\inc\osspec.h" />
     <ClInclude Include="..\..\inc\processhelper.h" />
