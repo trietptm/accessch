@@ -113,11 +113,11 @@ EventData::EventData (
 
 };
 
-EventData::~EventData()
+EventData::~EventData (
+    )
 {
 
 }
-
 ULONG
 EventData::GetInterceptorId (
     )
