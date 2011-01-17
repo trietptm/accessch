@@ -22,4 +22,5 @@ SOURCES= \
 	fileflt.cpp \
 	filehlp.cpp \
 	volumeflt.cpp \
-	volhlp.cpp
+	volhlp.cpp \
+	iosupport.cpp

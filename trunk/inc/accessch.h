@@ -98,13 +98,14 @@ typedef struct _MESSAGE_DATA
 typedef enum _NOTIFY_ID
 {
     // common commands
-    ntfcom_Connect       = 0001,
-    ntfcom_Pause         = 00010,
-    ntfcom_Activate      = 00011,
-    ntfcom_FiltersChain  = 0050,
+    ntfcom_Connect       = 001,
+    ntfcom_Pause         = 010,
+    ntfcom_Activate      = 011,
+    ntfcom_FiltersChain  = 050,
+    ntfcom_IOSupport     = 060,
     
     // object's commands
-    ntfcom_PrepareIO     = 0100 // result struct
+    ntfcom_PrepareIO     = 100 // result struct
 } NOTIFY_ID;
 
 typedef struct _NOTIFY_COMMAND
