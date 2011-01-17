@@ -3,6 +3,7 @@
 #include "../../inc/accessch.h"
 
 #include "../inc/filemgr.h"
+#include "../inc/iosupport.h"
 #include "../inc/excludes.h"
 
 #include "commport.h"
@@ -333,6 +334,44 @@ ProceedChain (
 
 __checkReturn
 NTSTATUS
+CopyDataToUserBuffer (
+    __in PVOID OutputBuffer,
+    __in ULONG OutputBufferSize,
+    __in PVOID pSource,
+    __in ULONG SourceLen,
+    __out PULONG ReturnOutputBufferLength
+    )
+{
+    NTSTATUS status = STATUS_BUFFER_TOO_SMALL;
+
+    *ReturnOutputBufferLength = 0;
+    if ( !OutputBuffer )
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if ( OutputBufferSize < SourceLen )
+    {
+        return STATUS_BUFFER_TOO_SMALL;
+    }
+
+    __try
+    {
+        RtlCopyMemory( OutputBuffer, pSource, SourceLen );
+        *ReturnOutputBufferLength = SourceLen;
+        status = STATUS_SUCCESS;
+    }
+
+    __except ( EXCEPTION_EXECUTE_HANDLER )
+    {
+        status = GetExceptionCode();
+    }
+
+    return status;
+}
+
+__checkReturn
+NTSTATUS
 PortMessageNotify (
     __in PVOID ConnectionCookie,
     __in_bcount_opt(InputBufferSize) PVOID InputBuffer,
@@ -360,6 +399,7 @@ PortMessageNotify (
     __try
     {
         ASSERT( pPortContext != NULL );
+
         if (
             !pPortContext
             ||
@@ -446,13 +486,56 @@ PortMessageNotify (
                     &FilterId
                     );
 
-                if ( NT_SUCCESS( status ) )
+                if ( NT_SUCCESS( status ) && OutputBuffer )
                 {
-                    if ( OutputBuffer && OutputBufferSize == sizeof( ULONG ) )
+                    status = CopyDataToUserBuffer (
+                        OutputBuffer,
+                        OutputBufferSize,
+                        &FilterId,
+                        sizeof( FilterId ),
+                        ReturnOutputBufferLength
+                        );
+                }
+            }
+            break;
+        
+        case ntfcom_IOSupport:
+            if ( !InputBuffer || InputBufferSize <= sizeof( IO_SUPPORT ) )
+            {
+                status = STATUS_INVALID_PARAMETER;
+            }
+            else
+            {
+                PVOID pOut = NULL;
+                ULONG out_size = 0;
+                PIO_SUPPORT pIoCommand = ( PIO_SUPPORT ) InputBuffer;
+                
+                status = IoSupportCommand (
+                    pIoCommand,
+                    InputBufferSize,
+                    &pOut,
+                    &out_size
+                    );
+
+                if ( NT_SUCCESS( status ) && pOut )
+                {
+                    status = CopyDataToUserBuffer (
+                        OutputBuffer,
+                        OutputBufferSize,
+                        pOut,
+                        out_size,
+                        ReturnOutputBufferLength
+                        );
+
+                    if ( !NT_SUCCESS( status ) )
                     {
-                        *(PULONG) OutputBuffer = FilterId;
-                        *ReturnOutputBufferLength = sizeof( ULONG );
+                        IoSupportCleanup( pOut );
                     }
+                }
+
+                if ( pOut )
+                {
+                    FREE_POOL( pOut );
                 }
             }
             break;
@@ -662,7 +745,7 @@ PortAskUser (
 
     ASSERT( ARGUMENT_PRESENT( ParamsMask ) );
 
-    // \todo fill result verdict
+    /// \todo fill result verdict
     UNREFERENCED_PARAMETER( Verdict );
 
     __try
