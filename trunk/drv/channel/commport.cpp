@@ -499,43 +499,38 @@ PortMessageNotify (
             }
             break;
         
-        case ntfcom_IOSupport:
+        case ntfcom_IoSupport:
             if ( !InputBuffer || InputBufferSize <= sizeof( IO_SUPPORT ) )
             {
                 status = STATUS_INVALID_PARAMETER;
             }
             else
             {
-                PVOID pOut = NULL;
-                ULONG out_size = 0;
+                IO_SUPPORT_RESULT ioResult;
+                ULONG ioResultSize = 0;
                 PIO_SUPPORT pIoCommand = ( PIO_SUPPORT ) InputBuffer;
                 
                 status = IoSupportCommand (
                     pIoCommand,
                     InputBufferSize,
-                    &pOut,
-                    &out_size
+                    &ioResult,
+                    &ioResultSize
                     );
 
-                if ( NT_SUCCESS( status ) && pOut )
+                if ( NT_SUCCESS( status ) )
                 {
                     status = CopyDataToUserBuffer (
                         OutputBuffer,
                         OutputBufferSize,
-                        pOut,
-                        out_size,
+                        &ioResult,
+                        ioResultSize,
                         ReturnOutputBufferLength
                         );
 
                     if ( !NT_SUCCESS( status ) )
                     {
-                        IoSupportCleanup( pOut );
+                        IoSupportCleanup( &ioResult );
                     }
-                }
-
-                if ( pOut )
-                {
-                    FREE_POOL( pOut );
                 }
             }
             break;
