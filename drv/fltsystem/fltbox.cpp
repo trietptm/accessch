@@ -3,6 +3,8 @@
 #include "fltchecks.h"
 #include "fltbox.h"
 
+#include "fltbox.tmh"
+
 ULONG FilterBox::m_AllocTag = 'bfSA';
 
 typedef struct _BoxFilterItem

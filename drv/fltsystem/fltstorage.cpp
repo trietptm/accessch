@@ -3,6 +3,8 @@
 #include "../inc/fltstorage.h"
 #include "fltfilters.h"
 
+#include "fltstorage.tmh"
+
 ULONG FiltersStorage::m_AllocTag = 'sfSA';
 
 #define _FT_FLAGS_PAUSED 0x000

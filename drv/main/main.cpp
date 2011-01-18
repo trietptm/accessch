@@ -15,7 +15,6 @@
 
 #include "../../inc/accessch.h"
 
-#include "../inc/trace.h"
 #include "main.tmh"
 
 typedef struct _Globals

@@ -3,6 +3,8 @@
 #include "fltfilters.h"
 #include "fltchecks.h"
 
+#include "fltfilters.tmh"
+
 ULONG Filters::m_AllocTag = 'ifSA';
 
 struct FilterEntry

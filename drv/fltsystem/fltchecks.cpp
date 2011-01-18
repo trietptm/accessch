@@ -3,6 +3,8 @@
 #include "fltbox.h"
 #include "fltchecks.h"
 
+#include "fltchecks.tmh"
+
 ULONG ParamCheckEntry::m_AllocTag = 'ecSA';
 
 ParamCheckEntry::ParamCheckEntry (
