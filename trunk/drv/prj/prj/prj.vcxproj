@@ -277,7 +277,7 @@
     <NMakeOutput>prj.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api</IncludePath>
-    <NMakeBuildCommandLine>..\..\!build.cmd fre WLH x64 $(ProjectDir)..\..</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>..\..\!build.cmd fre WIN7 x64 $(ProjectDir)..\..</NMakeBuildCommandLine>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>

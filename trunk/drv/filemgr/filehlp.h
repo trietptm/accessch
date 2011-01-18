@@ -73,4 +73,11 @@ GenerateStreamHandleContext (
     __deref_out_opt PStreamHandleContext* StreamHandleCtx
     );
 
+__checkReturn
+NTSTATUS
+QueryFileId (
+    __in PFILE_OBJECT FileObject,
+    __out PLARGE_INTEGER FileId
+    );
+
 #endif // __filehlp_h

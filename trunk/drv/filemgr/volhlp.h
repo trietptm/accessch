@@ -26,5 +26,14 @@ FillVolumeProperties (
      __in PCFLT_RELATED_OBJECTS FltObjects,
     __in PVolumeContext VolumeCtx
     );
+
+__checkReturn
+__drv_maxIRQL( APC_LEVEL )
+NTSTATUS
+GetInstanceFromFileObject (
+    __in PFLT_FILTER FltFilter,
+    __in PFILE_OBJECT FileObject,
+    __out PFLT_INSTANCE *RetInstance
+    );
     
 #endif // __volhlp_h

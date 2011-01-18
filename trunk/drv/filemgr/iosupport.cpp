@@ -5,6 +5,7 @@
 
 #include "../inc/filemgr.h"
 #include "filestructs.h"
+#include "filehlp.h"
 
 __checkReturn
 NTSTATUS
@@ -23,16 +24,18 @@ IoSupportCommand (
         return STATUS_INVALID_PARAMETER_1;
     }
 
-    UNREFERENCED_PARAMETER( IoSupportResult );
-    UNREFERENCED_PARAMETER( IoResultSize );
+    RtlZeroMemory( IoSupportResult, sizeof( IO_SUPPORT_RESULT ) );
+    *IoResultSize = sizeof( IO_SUPPORT_RESULT );
 
     UNICODE_STRING us;
 
     RtlInitEmptyUnicodeString (
         &us,
         IoCommand->m_Name,
-        IoCommand->m_NameLengthCb
+        (USHORT) IoCommand->m_NameLengthCb
         );
+
+    us.Length = us.MaximumLength;
 
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
@@ -72,13 +75,17 @@ IoSupportCommand (
     {
         return status;
     }
+
+    status = QueryFileId( pFo, &IoSupportResult->m_FileId );
+    if ( NT_SUCCESS( status ) )
+    {
+        SetFlag( IoSupportResult->m_FlagsReflect, _iosup_fileid );
+    }
             
     ObDereferenceObject( pFo );
     FltClose( hFile );
 
-    IoSupportResult->m_FlagsReflect = IoCommand->m_Flags;
-
-    return status;
+    return STATUS_SUCCESS;
 }
 
 void

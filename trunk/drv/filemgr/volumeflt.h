@@ -39,7 +39,7 @@ public:
 private:
     HANDLE                  m_RequestorPid;
     PCFLT_RELATED_OBJECTS   m_FltObjects;
-    PInstanceContext       m_InstanceCtx;
+    PInstanceContext        m_InstanceCtx;
     PVolumeContext          m_VolumeCtx;
 };
 

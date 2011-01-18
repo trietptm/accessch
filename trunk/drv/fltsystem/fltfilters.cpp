@@ -191,6 +191,11 @@ Filters::GetVerdict (
     __out PARAMS_MASK *ParamsMask
     )
 {
+    if ( !m_FiltersCount )
+    {
+        return VERDICT_NOT_FILTERED;
+    }
+
     VERDICT verdict = VERDICT_NOT_FILTERED;
 
     NTSTATUS status;

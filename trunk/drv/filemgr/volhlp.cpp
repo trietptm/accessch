@@ -342,3 +342,53 @@ FillVolumeProperties (
 
     return status;
 }
+
+__checkReturn
+__drv_maxIRQL( APC_LEVEL )
+NTSTATUS
+GetInstanceFromFileObject (
+    __in PFLT_FILTER FltFilter,
+    __in PFILE_OBJECT FileObject,
+    __out PFLT_INSTANCE *RetInstance
+    )
+{
+    PFLT_VOLUME volume = NULL;
+    PVolumeContext volumeCtx = NULL;
+
+    NTSTATUS status = FltGetVolumeFromFileObject (
+        FltFilter,
+        FileObject,
+        &volume
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    ASSERT( volume != NULL );
+
+    status = FltGetVolumeContext (
+        FltFilter,
+        volume,
+        (PFLT_CONTEXT*) &volumeCtx
+        );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        ASSERT( volumeCtx->m_Instance );
+
+        status = FltObjectReference( volumeCtx->m_Instance );
+
+        if ( NT_SUCCESS( status ) )
+        {
+            *RetInstance = volumeCtx->m_Instance;
+        }
+
+        FltReleaseContext( volumeCtx );
+    }
+
+    FltObjectDereference( volume );
+
+    return status;
+}
