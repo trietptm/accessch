@@ -16,7 +16,6 @@ TARGETLIBS= \
 		$(TARGETLIBS) \
 		$(IFSKIT_LIB_PATH)\ntstrsafe.lib
 
-
 SOURCES= \
 	fltsystem.cpp \
 	fltstorage.cpp \
@@ -24,3 +23,5 @@ SOURCES= \
 	fltevents.cpp \
 	fltbox.cpp \
 	fltchecks.cpp
+
+RUN_WPP= $(SOURCES) -km -func:DoTraceLevelMessage(LEVEL,FLAGS,MSG,...) -scan:../inc/trace.h

@@ -5,6 +5,8 @@
 #include "../../inc/accessch.h"
 #include "fltbox.h"
 
+#include "fltsystem.tmh"
+
 ULONG FilteringSystem::m_AllocTag = 'sfSA';
 
 typedef struct _FiltersStorageItem

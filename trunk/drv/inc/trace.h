@@ -1,3 +1,5 @@
+#pragma once
+
 #define WPP_CONTROL_GUIDS \
     WPP_DEFINE_CONTROL_GUID(CtlGuid,(CFC1EC35, 85CC, 4DB9, AFF1, 8442957D549F),  \
         WPP_DEFINE_BIT(FLAG_CORE)       \

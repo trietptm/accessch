@@ -2,6 +2,8 @@
 #include "../inc/memmgr.h"
 #include "../inc/fltevents.h"
 
+#include "fltevents.tmh"
+
 ULONG Aggregation::m_AllocTag = 'gaSA';
 
 Aggregation::Aggregation (
