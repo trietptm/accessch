@@ -8,6 +8,8 @@
 #include "filehlp.h"
 #include "security.h"
 
+#include "volhlp.h"
+
 //! \todo FILE_OPEN_NO_RECALL
 
 #ifndef GUID_ECP_PREFETCH_OPEN
@@ -15,6 +17,9 @@
 DEFINE_GUID( GUID_ECP_PREFETCH_OPEN, 0xe1777b21, 0x847e, 0x4837, 0xaa, 
     0x45, 0x64, 0x16, 0x1d, 0x28, 0x6, 0x55 );
 #endif // GUID_ECP_PREFETCH_OPEN
+
+#define FILE_INDEX_SEQUENCE_NUMBER_MASK     0xFFFF000000000000
+#define FILE_INDEX_NUMBER_MASK			    (~FILE_INDEX_SEQUENCE_NUMBER_MASK)
 
 
 DriverOperationId
@@ -156,6 +161,56 @@ ReleaseContext (
 
     FltReleaseContext( *Context );
     *Context = NULL;
+}
+
+// bug in RDPDR - will fixed in longhorn
+// status = FltQueryInformationFile ( FltObjects->Instance, FltObjects->FileObject, &BasicInfo,
+//  sizeof(BasicInfo), FileBasicInformation, &LengthReturned );
+
+__checkReturn
+__drv_maxIRQL( PASSIVE_LEVEL )
+NTSTATUS
+QueryInformationFilep (
+    __in PFLT_INSTANCE Instance,
+    __in PFILE_OBJECT FileObject,
+    __out_bcount_part( Length, *LengthReturned ) PVOID FileInformation,
+    __in ULONG Length,
+    __in FILE_INFORMATION_CLASS FileInformationClass,
+    __out_opt PULONG LengthReturned
+    )
+{
+    PFLT_CALLBACK_DATA data;
+    NTSTATUS status;
+
+    PAGED_CODE();
+
+    ASSERT( KeGetCurrentIrql() < APC_LEVEL );
+
+    status = FltAllocateCallbackData( Instance, FileObject, &data );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return status;
+    }
+
+    data->Iopb->MajorFunction = IRP_MJ_QUERY_INFORMATION;
+    data->Iopb->Parameters.QueryFileInformation.FileInformationClass = FileInformationClass;
+    data->Iopb->Parameters.QueryFileInformation.Length = Length;
+    data->Iopb->Parameters.QueryFileInformation.InfoBuffer = FileInformation;
+    data->Iopb->IrpFlags = IRP_SYNCHRONOUS_API;
+
+    FltPerformSynchronousIo( data );
+
+    status = data->IoStatus.Status;
+
+    if ( NT_SUCCESS( status ) && ARGUMENT_PRESENT( LengthReturned ) )
+    {
+        *LengthReturned = ( ULONG )data->IoStatus.Information;
+    }
+
+    FltFreeCallbackData( data );
+
+    return status;
 }
 
 __checkReturn
@@ -399,3 +454,60 @@ GenerateStreamHandleContext (
     return status;
 }
 
+__checkReturn
+NTSTATUS
+QueryFileId (
+    __in PFILE_OBJECT FileObject,
+    __out PLARGE_INTEGER FileId
+    )
+{
+    ASSERT( ARGUMENT_PRESENT( FileObject ) );
+    ASSERT( ARGUMENT_PRESENT( FileId ) );
+
+    PFLT_INSTANCE pInstance = NULL;
+    
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+    __try
+    {
+        status = GetInstanceFromFileObject (
+            gFileMgr.m_FileFilter,
+            FileObject,
+            &pInstance
+            );
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            pInstance = NULL;
+            __leave;
+        }
+
+        FILE_INTERNAL_INFORMATION fileinfo;
+
+        status = QueryInformationFilep (
+            pInstance,
+            FileObject,
+            &fileinfo,
+            sizeof( fileinfo ),
+            FileInternalInformation,
+            NULL
+            );
+
+        if ( !NT_SUCCESS( status ) )
+        {
+            __leave;
+        }
+
+        //*FileId = fileinfo.IndexNumber;
+        FileId->QuadPart = fileinfo.IndexNumber.QuadPart & FILE_INDEX_NUMBER_MASK;
+    }
+    __finally
+    {
+        if ( pInstance )
+        {
+            FltObjectDereference( pInstance );
+        }
+    }
+
+    return status;
+}

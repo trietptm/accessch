@@ -508,7 +508,7 @@ PortMessageNotify (
             {
                 IO_SUPPORT_RESULT ioResult;
                 ULONG ioResultSize = 0;
-                PIO_SUPPORT pIoCommand = ( PIO_SUPPORT ) InputBuffer;
+                PIO_SUPPORT pIoCommand = ( PIO_SUPPORT ) pCommand->m_Data;
                 
                 status = IoSupportCommand (
                     pIoCommand,
