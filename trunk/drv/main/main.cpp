@@ -15,6 +15,9 @@
 
 #include "../../inc/accessch.h"
 
+#include "../inc/trace.h"
+#include "main.tmh"
+
 typedef struct _Globals
 {
     PDRIVER_OBJECT          m_FilterDriverObject;
@@ -38,9 +41,15 @@ NTAPI
 DriverUnload (
     )
 {
+    DoTraceMessage( FLAG_CORE, "DriverUnload..." );
+
     ChannelDestroyPort();
     FREE_OBJECT( GlobalData.m_FilteringSystem );
     FREE_OBJECT( GlobalData.m_ProcessHelper );
+
+    DoTraceMessage( FLAG_CORE, "DriverUnload complete" );
+
+    WPP_CLEANUP( GlobalData.m_FilterDriverObject->DeviceObject );
 }
 
 NTSTATUS
@@ -52,6 +61,9 @@ DriverEntry (
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
     UNREFERENCED_PARAMETER( RegistryPath );
+    WPP_INIT_TRACING( DriverObject, RegistryPath );
+
+    DoTraceMessage( FLAG_CORE, "DriverEntry" );
 
     RtlZeroMemory( &GlobalData, sizeof( GlobalData) );
 
