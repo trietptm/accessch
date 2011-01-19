@@ -99,6 +99,7 @@
     <ClInclude Include="..\..\inc\osspec.h" />
     <ClInclude Include="..\..\inc\processhelper.h" />
     <ClInclude Include="..\..\inc\security.h" />
+    <ClInclude Include="..\..\inc\trace.h" />
     <ClInclude Include="..\..\main\ver.h" />
   </ItemGroup>
   <ItemGroup>

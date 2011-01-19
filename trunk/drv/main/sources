@@ -33,4 +33,4 @@ SOURCES= \
         excludes.cpp \
         accessch.rc
 
-RUN_WPP= $(SOURCES) -km -func:DoTraceLevelMessage(LEVEL,FLAGS,MSG,...) -scan:../inc/trace.h
+RUN_WPP= $(SOURCES) -km -func:DoTraceEx(LEVEL,FLAGS,MSG,...) -scan:../inc/trace.h
