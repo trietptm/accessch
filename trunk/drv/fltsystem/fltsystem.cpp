@@ -18,6 +18,8 @@ typedef struct _FiltersStorageItem
 FilteringSystem::FilteringSystem (
     )
 {
+    DoTraceEx( TRACE_LEVEL_ALWAYS, TB_FILTERS, "init" );
+
     FltInitializePushLock( &m_AccessLock );
     InitializeListHead( &m_List );
     m_RefCount = 0;
@@ -26,6 +28,7 @@ FilteringSystem::FilteringSystem (
 FilteringSystem::~FilteringSystem (
     )
 {
+    DoTraceEx( TRACE_LEVEL_ALWAYS, TB_FILTERS, "done" );
     ASSERT( !m_RefCount );
 }
 
@@ -51,6 +54,8 @@ FilteringSystem::Attach (
     __in FiltersStorage* FltStorage
     )
 {
+    DoTraceEx( TRACE_LEVEL_IMPORTANT, TB_FILTERS, "Attaching %p", FltStorage );
+
     PFiltersStorageItem pItem = ( PFiltersStorageItem ) ExAllocatePoolWithTag (
         PagedPool,
         sizeof( FiltersStorageItem ),
@@ -76,6 +81,9 @@ FilteringSystem::Detach (
     __in FiltersStorage* FltStorage
     )
 {
+
+    DoTraceEx( TRACE_LEVEL_IMPORTANT, TB_FILTERS, "detaching %p", FltStorage );
+
     PFiltersStorageItem pItem = NULL;
 
     FltAcquirePushLockExclusive( &m_AccessLock );
@@ -126,6 +134,17 @@ FilteringSystem::FilterEvent (
 {
     PHANDLE phProcess = NULL;
     ULONG hProcessSize;
+
+    DoTraceEx (
+        TRACE_LEVEL_INFORMATION,
+        TB_FILTERS,
+        "processing: %p (%d)%d:%d:%d",
+        Event,
+        Event->GetOperationType(),
+        Event->GetInterceptorId(),
+        Event->GetOperationId(),
+        Event->GetMinor()
+        );
     
     NTSTATUS status = Event->QueryParameter (
         PARAMETER_REQUESTOR_PROCESS_ID,
@@ -177,6 +196,15 @@ FilteringSystem::FilterEvent (
     }
 
     FltReleasePushLock( &m_AccessLock );
+
+     DoTraceEx (
+        TRACE_LEVEL_INFORMATION,
+        TB_FILTERS,
+        "%p result 0x%x, mask 0x%x",
+        Event,
+        *Verdict,
+        *ParamsMask
+        );
 
     return statusRet;
 }
