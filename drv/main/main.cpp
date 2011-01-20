@@ -40,13 +40,13 @@ NTAPI
 DriverUnload (
     )
 {
-    DoTraceEx( TRACE_LEVEL_ALWAYS, TB_CORE, "DriverUnload..." );
+    DoTraceEx( TRACE_LEVEL_CRITICAL, TB_CORE, "DriverUnload..." );
 
     ChannelDestroyPort();
     FREE_OBJECT( GlobalData.m_FilteringSystem );
     FREE_OBJECT( GlobalData.m_ProcessHelper );
 
-    DoTraceEx( TRACE_LEVEL_ALWAYS, TB_CORE, "DriverUnload complete" );
+    DoTraceEx( TRACE_LEVEL_CRITICAL, TB_CORE, "DriverUnload complete" );
 
     WPP_CLEANUP( GlobalData.m_FilterDriverObject->DeviceObject );
 }
@@ -62,7 +62,7 @@ DriverEntry (
     UNREFERENCED_PARAMETER( RegistryPath );
     WPP_INIT_TRACING( DriverObject, RegistryPath );
 
-    DoTraceEx( TRACE_LEVEL_ALWAYS, TB_CORE, "DriverEntry..." );
+    DoTraceEx( TRACE_LEVEL_CRITICAL, TB_CORE, "DriverEntry..." );
 
     RtlZeroMemory( &GlobalData, sizeof( GlobalData) );
 
@@ -129,7 +129,7 @@ DriverEntry (
     }
     __finally
     {
-        DoTraceEx( TRACE_LEVEL_ALWAYS, TB_CORE, "DriverEntry result %!STATUS!", status );
+        DoTraceEx( TRACE_LEVEL_CRITICAL, TB_CORE, "DriverEntry result %!STATUS!", status );
 
         if ( !NT_SUCCESS( status ) )
         {

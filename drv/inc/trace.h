@@ -1,11 +1,5 @@
 #pragma once
 
-#define TRACE_LEVEL_NONE            0   // Tracing is not on
-#define TRACE_LEVEL_ALWAYS          1   //
-#define TRACE_LEVEL_IMPORTANT       2   //
-#define TRACE_LEVEL_INFORMATION     3   //
-#define TRACE_LEVEL_VERBOSE         4   //
-
 #define WPP_CONTROL_GUIDS \
     WPP_DEFINE_CONTROL_GUID(CtlGuid,(CFC1EC35, 85CC, 4DB9, AFF1, 8442957D549F),  \
         WPP_DEFINE_BIT(TB_CORE)       \
