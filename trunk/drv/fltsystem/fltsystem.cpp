@@ -18,7 +18,7 @@ typedef struct _FiltersStorageItem
 FilteringSystem::FilteringSystem (
     )
 {
-    DoTraceEx( TRACE_LEVEL_ALWAYS, TB_FILTERS, "init" );
+    DoTraceEx( TRACE_LEVEL_CRITICAL, TB_FILTERS, "init" );
 
     FltInitializePushLock( &m_AccessLock );
     InitializeListHead( &m_List );
@@ -28,7 +28,7 @@ FilteringSystem::FilteringSystem (
 FilteringSystem::~FilteringSystem (
     )
 {
-    DoTraceEx( TRACE_LEVEL_ALWAYS, TB_FILTERS, "done" );
+    DoTraceEx( TRACE_LEVEL_CRITICAL, TB_FILTERS, "done" );
     ASSERT( !m_RefCount );
 }
 
@@ -54,7 +54,7 @@ FilteringSystem::Attach (
     __in FiltersStorage* FltStorage
     )
 {
-    DoTraceEx( TRACE_LEVEL_IMPORTANT, TB_FILTERS, "Attaching %p", FltStorage );
+    DoTraceEx( TRACE_LEVEL_WARNING, TB_FILTERS, "Attaching %p", FltStorage );
 
     PFiltersStorageItem pItem = ( PFiltersStorageItem ) ExAllocatePoolWithTag (
         PagedPool,
@@ -82,7 +82,7 @@ FilteringSystem::Detach (
     )
 {
 
-    DoTraceEx( TRACE_LEVEL_IMPORTANT, TB_FILTERS, "detaching %p", FltStorage );
+    DoTraceEx( TRACE_LEVEL_WARNING, TB_FILTERS, "detaching %p", FltStorage );
 
     PFiltersStorageItem pItem = NULL;
 
@@ -200,7 +200,7 @@ FilteringSystem::FilterEvent (
      DoTraceEx (
         TRACE_LEVEL_INFORMATION,
         TB_FILTERS,
-        "%p result 0x%x, mask 0x%x",
+        "%p result 0x%x, mask 0x%I64x",
         Event,
         *Verdict,
         *ParamsMask
