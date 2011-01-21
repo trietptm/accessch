@@ -11,6 +11,8 @@
 #include "fileflt.h"
 #include "security.h"
 
+#include "fileflt.tmh"
+
 FileInterceptorContext::FileInterceptorContext (
     __in PFLT_CALLBACK_DATA Data,
     __in PCFLT_RELATED_OBJECTS FltObjects,
@@ -244,6 +246,7 @@ FileInterceptorContext::QueryParameter (
             {
                 break;
             }
+
         }
 
         if ( !m_FileNameInfo )
@@ -252,6 +255,13 @@ FileInterceptorContext::QueryParameter (
             status = STATUS_UNSUCCESSFUL;
             break;
         }
+
+        DoTraceEx (
+            TRACE_LEVEL_INFORMATION,
+            TB_FILEMGR,
+            "query PARAMETER_FILE_NAME: '%wZ'",
+            &m_FileNameInfo->Name
+            );
 
         *Data = m_FileNameInfo->Name.Buffer;
         *DataSize = m_FileNameInfo->Name.Length;
@@ -454,6 +464,17 @@ FileInterceptorContext::QueryParameter (
         status = STATUS_NOT_FOUND;
 
         break;
+    }
+
+    if ( !NT_SUCCESS( status ))
+    {
+        DoTraceEx (
+            TRACE_LEVEL_WARNING,
+            TB_FILEMGR,
+            "query %d failed %!STATUS!",
+            ParameterId,
+            status
+            );
     }
 
     return status;
