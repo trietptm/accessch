@@ -114,7 +114,7 @@ SecurityGetSid (
 
         if ( Data )
         {
-            pAccessToken = PsReferenceImpersonationToken (
+            pAccessToken = PsReferenceImpersonationToken(
                 Data->Thread,
                 &CopyOnOpen,
                 &EffectiveOnly,
@@ -123,7 +123,7 @@ SecurityGetSid (
 
             if ( !pAccessToken )
             {
-                pAccessToken = PsReferencePrimaryToken (
+                pAccessToken = PsReferencePrimaryToken(
                     FltGetRequestorProcess( Data )
                     );
             }
@@ -139,7 +139,7 @@ SecurityGetSid (
             __leave;
         }
 
-        status = SeQueryInformationToken (
+        status = SeQueryInformationToken(
             pAccessToken,
             TokenUser,
             (PVOID*) &pTokenUser
@@ -194,7 +194,7 @@ Security_CaptureContext (
     SecurityQos.ContextTrackingMode = SECURITY_DYNAMIC_TRACKING;
     SecurityQos.EffectiveOnly = FALSE;
 
-    NTSTATUS status = SeCreateClientSecurity (
+    NTSTATUS status = SeCreateClientSecurity(
         OrigTh,
         &SecurityQos,
         FALSE,

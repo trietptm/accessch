@@ -803,7 +803,7 @@ FileMgrInit (
     gFileMgr.m_UnloadCb = UnloadCb;
     gFileMgr.m_FltSystem = FltSystem;
 
-    status = FltRegisterFilter (
+    status = FltRegisterFilter(
         DriverObject,
         (PFLT_REGISTRATION) &filterRegistration,
         &gFileMgr.m_FileFilter
