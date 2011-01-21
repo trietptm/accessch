@@ -3,6 +3,8 @@
 #include "../inc/filemgr.h"
 #include "commport.h" 
 
+#include "channel.tmh" 
+
 PortGlobals gPort = { 0 };
 
 __checkReturn
@@ -83,6 +85,27 @@ ChannelAskUser (
         ParamsMask,
         Verdict
         );
+
+    if ( NT_SUCCESS( status ) )
+    {
+        DoTraceEx (
+            TRACE_LEVEL_INFORMATION,
+            TB_CHANNEL,
+            "processing: %p verdict 0x%x",
+            Event,
+            *Verdict
+            );
+    }
+    else
+    {
+        DoTraceEx (
+            TRACE_LEVEL_INFORMATION,
+            TB_CHANNEL,
+            "processing: %p error %!STATUS!",
+            Event,
+            status
+            );
+    }
 
     return status;
 }
