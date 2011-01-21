@@ -436,7 +436,7 @@ FileInterceptorContext::QueryParameter (
         }
 
         *Data = &m_Data->IoStatus.Information;
-        *DataSize = sizeof( m_Data->IoStatus.Information );
+        *DataSize = sizeof (ULONG); // sizeof( m_Data->IoStatus.Information ); 32-64 bit size mismatch
 
         break;
 

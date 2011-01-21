@@ -43,6 +43,9 @@ DriverUnload (
     DoTraceEx( TRACE_LEVEL_CRITICAL, TB_CORE, "DriverUnload..." );
 
     ChannelDestroyPort();
+
+    FileMgrUnregister();
+   
     FREE_OBJECT( GlobalData.m_FilteringSystem );
     FREE_OBJECT( GlobalData.m_ProcessHelper );
 

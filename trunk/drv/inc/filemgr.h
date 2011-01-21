@@ -17,6 +17,10 @@ NTSTATUS
 FileMgrStart (
     );
 
+void
+FileMgrUnregister (
+    );
+
 PFLT_FILTER
 FileMgrGetFltFilter (
     );
