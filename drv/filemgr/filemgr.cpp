@@ -60,6 +60,14 @@ PreCleanup (
     __out PVOID *CompletionContext
     );
 
+FLT_PREOP_CALLBACK_STATUS
+FLTAPI
+PreWrite (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __out PVOID *CompletionContext
+    );
+
 FLT_POSTOP_CALLBACK_STATUS
 FLTAPI
 PostWrite (
@@ -90,7 +98,7 @@ const FLT_CONTEXT_REGISTRATION ContextRegistration[] = {
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
     { IRP_MJ_CREATE,            0,          PreCreate,      PostCreate },
     { IRP_MJ_CLEANUP,           0,          PreCleanup,     NULL },
-    { IRP_MJ_WRITE,             _NO_PAGING, NULL,           PostWrite },
+    { IRP_MJ_WRITE,             _NO_PAGING, PreWrite,       PostWrite },
     { IRP_MJ_OPERATION_END}
 };
 
@@ -126,15 +134,20 @@ Unload (
         //return STATUS_FLT_DO_NOT_DETACH;
     }
     
-    gFileMgr.m_FltSystem->Release();
-    gFileMgr.m_FltSystem = NULL;
-
     gFileMgr.m_UnloadCb();
 
+    return STATUS_SUCCESS;
+}
+
+void
+FileMgrUnregister (
+    )
+{
     FltUnregisterFilter( gFileMgr.m_FileFilter );
     gFileMgr.m_FileFilter = NULL;
 
-    return STATUS_SUCCESS;
+    gFileMgr.m_FltSystem->Release();
+    gFileMgr.m_FltSystem = NULL;
 }
 
 void
@@ -666,17 +679,11 @@ PreCleanup (
 
 __checkReturn
 BOOLEAN
-IsSkipPostWrite (
+IsSkipPreWrite (
     __in PFLT_CALLBACK_DATA Data,
-    __in PCFLT_RELATED_OBJECTS FltObjects,
-    __in FLT_POST_OPERATION_FLAGS Flags
+    __in PCFLT_RELATED_OBJECTS FltObjects
     )
 {
-    if ( FlagOn( Flags, FLTFL_POST_OPERATION_DRAINING ) )
-    {
-        return TRUE;
-    }
-
     if ( !FltObjects->Instance )
     {
         return TRUE;
@@ -692,12 +699,38 @@ IsSkipPostWrite (
         return TRUE;
     }
 
-    if ( !Data->IoStatus.Information )
+    return FALSE;
+}
+
+FLT_PREOP_CALLBACK_STATUS
+FLTAPI
+PreWrite (
+    __inout PFLT_CALLBACK_DATA Data,
+    __in PCFLT_RELATED_OBJECTS FltObjects,
+    __out PVOID *CompletionContext
+    )
+{
+    if ( IsSkipPreWrite( Data, FltObjects ) )
     {
-        return TRUE;
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
 
-    return FALSE;
+    PStreamContext pStreamContext = NULL;
+
+    NTSTATUS status = GenerateStreamContext(
+        FileMgrGetFltFilter(),
+        FltObjects,
+        &pStreamContext
+        );
+
+    if ( !NT_SUCCESS( status ) )
+    {
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }
+
+    *CompletionContext = pStreamContext;
+
+    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 }
 
 __checkReturn
@@ -710,47 +743,44 @@ PostWrite (
     __in FLT_POST_OPERATION_FLAGS Flags
     )
 {
-    UNREFERENCED_PARAMETER( CompletionContext );
+    FLT_POSTOP_CALLBACK_STATUS fltStatus = FLT_POSTOP_FINISHED_PROCESSING;
+    PStreamContext pStreamContext = (PStreamContext) CompletionContext;
 
-    if ( !NT_SUCCESS( Data->IoStatus.Status ) )
-    {
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-    
-    if ( IsSkipPostWrite( Data, FltObjects, Flags ) )
-    {
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    if ( FlagOn( Data->Iopb->IrpFlags, IRP_PAGING_IO ) )
-    {
-        //! \todo обработка MM файлов
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
-    PStreamContext pStreamContext = NULL;
+    ASSERT( pStreamContext );
 
     __try
     {
-        NTSTATUS status = GenerateStreamContext (
-            gFileMgr.m_FileFilter,
-            FltObjects,
-            &pStreamContext
-            );
-
-        if ( NT_SUCCESS( status ) )
+        if ( FlagOn( Flags, FLTFL_POST_OPERATION_DRAINING ) )
         {
-            InterlockedIncrement( &pStreamContext->m_WriteCount );
-            InterlockedAnd( &pStreamContext->m_Flags, ~_STREAM_FLAGS_CASHE1 );
-            InterlockedOr( &pStreamContext->m_Flags, _STREAM_FLAGS_MODIFIED );
+            __leave;
         }
+
+        if ( !NT_SUCCESS( Data->IoStatus.Status ) )
+        {
+            __leave;
+        }
+
+        if ( !Data->IoStatus.Information )
+        {
+            __leave;
+        }
+
+        if ( FlagOn( Data->Iopb->IrpFlags, IRP_PAGING_IO ) )
+        {
+            //! \todo обработка MM файлов
+            __leave;
+        }
+
+        InterlockedIncrement( &pStreamContext->m_WriteCount );
+        InterlockedAnd( &pStreamContext->m_Flags, ~_STREAM_FLAGS_CASHE1 );
+        InterlockedOr( &pStreamContext->m_Flags, _STREAM_FLAGS_MODIFIED );
     }
     __finally
     {
         ReleaseContext( (PFLT_CONTEXT*) &pStreamContext );
     }
 
-    return FLT_POSTOP_FINISHED_PROCESSING;
+    return fltStatus;
 }
 
 //////////////////////////////////////////////////////////////////////////

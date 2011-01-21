@@ -211,6 +211,7 @@ CheckGeneric (
             != 
             pCheck->m_DataSize / pCheck->m_Count )
         {
+            __debugbreak();
             break;
         }
         
@@ -238,6 +239,7 @@ CheckGeneric (
             !=
             pCheck->m_DataSize / pCheck->m_Count )
         {
+            __debugbreak();
             break;
         }
 
