@@ -24,13 +24,13 @@ GetPreviousModeOffset (
         return STATUS_UNSUCCESSFUL;
     }
 
-    if ( *( ( USHORT* )( &( ( char* ) ExGetPreviousMode )[ MOVE_OFFSET ] ) )
+    if ( *( (USHORT*)( &( (char*) ExGetPreviousMode )[ MOVE_OFFSET ] ) )
         != (USHORT) 0x808A ) // mov al,[eax+0xXX]
     {
         return STATUS_UNSUCCESSFUL;
     }
 
-    gPreviousModeOffset = ( ULONG )( *( ( USHORT* )( & ( 
+    gPreviousModeOffset = (ULONG)( *( (USHORT*)( & ( 
         ( char* ) ExGetPreviousMode ) [ MOVE_OFFSET + 2 ] ) ) );
 
 #endif // ( NTDDI_VERSION < NTDDI_WIN6 )
@@ -61,7 +61,7 @@ SetPreviousMode (
 #else
     
     UNREFERENCED_PARAMETER( OperationMode );
-    MODE prevmode = ( MODE ) ExGetPreviousMode();
+    MODE prevmode = (MODE) ExGetPreviousMode();
     
     return prevmode;
 

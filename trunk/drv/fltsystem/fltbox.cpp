@@ -37,7 +37,7 @@ FilterBox::~FilterBox (
     PLIST_ENTRY Flink = m_Items.Flink;
     while ( Flink != &m_Items )
     {
-        pEntry = CONTAINING_RECORD (
+        pEntry = CONTAINING_RECORD(
             Flink,
             BoxFilterItem,
             m_List
@@ -103,7 +103,7 @@ FilterBox::AddParams (
 
     __try
     {
-        fltitem = ( PBoxFilterItem ) ExAllocatePoolWithTag (
+        fltitem = ( PBoxFilterItem ) ExAllocatePoolWithTag(
             PagedPool,
             sizeof( BoxFilterItem ) + Params->m_Data.m_Size,
             BoxFilterItem::m_AllocTag
@@ -137,7 +137,7 @@ FilterBox::AddParams (
         fltitem->m_Param->Generic.m_Parameter = Params->m_ParameterId;
         fltitem->m_Param->Generic.m_Operation = Params->m_Operation;
     
-        status = fltitem->m_Param->Attach (
+        status = fltitem->m_Param->Attach(
             Params->m_Data.m_Size,
             ParamsCount,
             Params->m_Data.m_Data
@@ -184,7 +184,7 @@ FilterBox::MatchEvent (
     PLIST_ENTRY Flink = m_Items.Flink;
     while ( Flink != &m_Items )
     {
-        pEntry = CONTAINING_RECORD (
+        pEntry = CONTAINING_RECORD(
             Flink,
             BoxFilterItem,
             m_List
@@ -233,7 +233,7 @@ FilterBoxList::~FilterBoxList (
     PLIST_ENTRY Flink = m_List.Flink;
     while ( Flink != &m_List )
     {
-        pEntry = CONTAINING_RECORD (
+        pEntry = CONTAINING_RECORD(
             Flink,
             FilterBox,
             m_List
@@ -321,7 +321,7 @@ FilterBoxList::CreateNewp (
 {
     ASSERT( Guid );
 
-    FilterBox* pFltBox = ( FilterBox* ) ExAllocatePoolWithTag (
+    FilterBox* pFltBox = ( FilterBox* ) ExAllocatePoolWithTag(
         PagedPool,
         sizeof( FilterBox ),
         FilterBox::m_AllocTag
@@ -357,7 +357,7 @@ FilterBoxList::LookupBoxp (
     PLIST_ENTRY Flink = m_List.Flink;
     while ( Flink != &m_List )
     {
-        pEntry = CONTAINING_RECORD (
+        pEntry = CONTAINING_RECORD(
             Flink,
             FilterBox,
             m_List

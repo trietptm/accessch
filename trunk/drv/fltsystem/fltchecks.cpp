@@ -50,7 +50,7 @@ ParamCheckEntry::Attach (
     __in PUCHAR Data
     )
 {
-     Generic.m_CheckData = ( PFltCheckData ) ExAllocatePoolWithTag (
+     Generic.m_CheckData = (PFltCheckData) ExAllocatePoolWithTag(
         PagedPool,
         sizeof( FltCheckData ) + DataSize,
         m_AllocTag
@@ -63,7 +63,8 @@ ParamCheckEntry::Attach (
 
     Generic.m_CheckData->m_DataSize = DataSize;
     Generic.m_CheckData->m_Count = Count;
-    RtlCopyMemory (
+    
+    RtlCopyMemory(
         Generic.m_CheckData->m_Data,
         Data,
         DataSize
@@ -181,7 +182,7 @@ CheckGeneric (
 {
     PVOID pData;
     ULONG datasize;
-    NTSTATUS status = Event->QueryParameter (
+    NTSTATUS status = Event->QueryParameter(
         Entry->Generic.m_Parameter,
         &pData,
         &datasize
@@ -217,7 +218,7 @@ CheckGeneric (
         
         for ( item = 0; item < pCheck->m_Count; item++ )
         {
-            if ( datasize == RtlCompareMemory (
+            if ( datasize == RtlCompareMemory(
                 ptr,
                 pData,
                 datasize
@@ -275,7 +276,7 @@ CheckGeneric (
 
             if ( NT_SUCCESS( status ) )
             {
-                status = CheckMask (
+                status = CheckMask(
                     ( PWCHAR ) pCheck->m_Data,
                     ( PWCHAR ) Add2Ptr( pCheck->m_Data, pCheck->m_DataSize - sizeof( WCHAR ) ),
                     ( PWCHAR ) usdest.Buffer,
@@ -302,7 +303,7 @@ CheckContainer (
     __in EventData *Event
     )
 {
-    NTSTATUS status = Entry->Container.m_Box->MatchEvent (
+    NTSTATUS status = Entry->Container.m_Box->MatchEvent(
         Event,
         Entry->Container.m_Affecting
         );

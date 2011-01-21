@@ -63,7 +63,8 @@ Aggregation::Allocate (
     }
 
     ULONG size = sizeof( AggregationItem ) * ItemsCount;
-    m_Items = (PAggregationItem) ExAllocatePoolWithTag (
+    
+    m_Items = (PAggregationItem) ExAllocatePoolWithTag(
         PagedPool,
         size,
         m_AllocTag

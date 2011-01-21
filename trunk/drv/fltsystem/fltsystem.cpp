@@ -56,7 +56,7 @@ FilteringSystem::Attach (
 {
     DoTraceEx( TRACE_LEVEL_WARNING, TB_FILTERS, "Attaching %p", FltStorage );
 
-    PFiltersStorageItem pItem = ( PFiltersStorageItem ) ExAllocatePoolWithTag (
+    PFiltersStorageItem pItem = (PFiltersStorageItem) ExAllocatePoolWithTag(
         PagedPool,
         sizeof( FiltersStorageItem ),
         FilteringSystem::m_AllocTag
@@ -135,7 +135,7 @@ FilteringSystem::FilterEvent (
     PHANDLE phProcess = NULL;
     ULONG hProcessSize;
 
-    DoTraceEx (
+    DoTraceEx(
         TRACE_LEVEL_INFORMATION,
         TB_FILTERS,
         "processing: %p (%d)%d:%d:%d",
@@ -146,9 +146,9 @@ FilteringSystem::FilterEvent (
         Event->GetMinor()
         );
     
-    NTSTATUS status = Event->QueryParameter (
+    NTSTATUS status = Event->QueryParameter(
         PARAMETER_REQUESTOR_PROCESS_ID,
-        ( PVOID*) &phProcess,
+        (PVOID*) &phProcess,
         &hProcessSize
         );
 
@@ -179,7 +179,7 @@ FilteringSystem::FilterEvent (
             pItem = CONTAINING_RECORD( Flink, FiltersStorageItem, m_List );
             Flink = Flink->Flink;
 
-            status = pItem->m_Item->FilterEvent (
+            status = pItem->m_Item->FilterEvent(
                 Event,
                 Verdict,
                 ParamsMask
@@ -197,7 +197,7 @@ FilteringSystem::FilterEvent (
 
     FltReleasePushLock( &m_AccessLock );
 
-     DoTraceEx (
+     DoTraceEx(
         TRACE_LEVEL_INFORMATION,
         TB_FILTERS,
         "%p result 0x%x, mask 0x%I64x",

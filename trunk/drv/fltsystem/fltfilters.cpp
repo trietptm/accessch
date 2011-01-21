@@ -26,7 +26,7 @@ Filters::Filters (
     ExInitializeRundownProtection( &m_Ref );
     FltInitializePushLock( &m_AccessLock );
     
-    RtlInitializeBitMap (
+    RtlInitializeBitMap(
         &m_GroupsMap,
         m_GroupsMapBuffer,
         NumberOfBits
@@ -35,7 +35,7 @@ Filters::Filters (
     RtlClearAllBits( &m_GroupsMap );
     m_GroupCount = 0;
 
-    RtlInitializeBitMap (
+    RtlInitializeBitMap(
         &m_ActiveFilters,
         m_ActiveFiltersBuffer,
         NumberOfBits
@@ -62,7 +62,7 @@ Filters::~Filters (
         PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
         while ( Flink != &m_ParamsCheckList )
         {
-            pEntry = CONTAINING_RECORD (
+            pEntry = CONTAINING_RECORD(
                 Flink,
                 ParamCheckEntry,
                 m_List
@@ -131,7 +131,7 @@ Filters::CheckParamsList (
     PLIST_ENTRY Flink = m_ParamsCheckList.Flink;
     while ( Flink != &m_ParamsCheckList )
     {
-        ParamCheckEntry* pEntry = CONTAINING_RECORD (
+        ParamCheckEntry* pEntry = CONTAINING_RECORD(
             Flink,
             ParamCheckEntry,
             m_List
@@ -205,7 +205,7 @@ Filters::GetVerdict (
     RTL_BITMAP filtersbitmap;
     ULONG mapbuffer[ BitMapBufferSizeInUlong ] = { 0 };
 
-    RtlInitializeBitMap (
+    RtlInitializeBitMap(
         &filtersbitmap,
         mapbuffer,
         NumberOfBits
@@ -276,7 +276,7 @@ Filters::GetVerdict (
                 continue;
             }
 
-            status = Event->m_Aggregator.PlaceValue (
+            status = Event->m_Aggregator.PlaceValue(
                 groupcount,
                 pFilter->m_FilterId,
                 pFilter->m_Verdict
@@ -327,7 +327,7 @@ Filters::TryToFindExisting (
         
         while ( Flink != &m_ParamsCheckList )
         {
-            ParamCheckEntry* pEntry = CONTAINING_RECORD (
+            ParamCheckEntry* pEntry = CONTAINING_RECORD(
                 Flink,
                 ParamCheckEntry,
                 m_List
@@ -342,7 +342,7 @@ Filters::TryToFindExisting (
                 ||
                 pEntry->Generic.m_CheckData->m_DataSize != ParamEntry->m_Data.m_Size
                 ||
-                pEntry->Generic.m_CheckData->m_DataSize != RtlCompareMemory (
+                pEntry->Generic.m_CheckData->m_DataSize != RtlCompareMemory(
                     pEntry->Generic.m_CheckData->m_Data,
                     ParamEntry->m_Data.m_Data,
                     pEntry->Generic.m_CheckData->m_DataSize
@@ -355,7 +355,7 @@ Filters::TryToFindExisting (
             // the same ParamEntry, attach to existing
 
             PULONG pPostListTmp = pEntry->m_FilterPosList;
-            pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
+            pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag(
                 PagedPool,
                 sizeof( PosListItemType ) * ( pEntry->m_PosCount + 1 ),
                 m_AllocTag
@@ -369,7 +369,7 @@ Filters::TryToFindExisting (
                 __leave;
             }
 
-            RtlCopyMemory (
+            RtlCopyMemory(
                 pEntry->m_FilterPosList,
                 pPostListTmp,
                 pEntry->m_PosCount * sizeof( PosListItemType )
@@ -420,7 +420,7 @@ Filters::AddParameterWithFilterPos (
 
     __try
     {
-        pEntry = (ParamCheckEntry*) ExAllocatePoolWithTag (
+        pEntry = (ParamCheckEntry*) ExAllocatePoolWithTag(
             PagedPool,
             sizeof( ParamCheckEntry ) + ParamEntry->m_Data.m_Size, // byte m_Data
             m_AllocTag
@@ -438,7 +438,7 @@ Filters::AddParameterWithFilterPos (
         pEntry->m_Flags = ParamEntry->m_Flags;
         pEntry->m_PosCount = 1;
 
-        pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag (
+        pEntry->m_FilterPosList = (PosListItemType*) ExAllocatePoolWithTag(
             PagedPool,
             sizeof( PosListItemType ),
             m_AllocTag
@@ -483,7 +483,7 @@ Filters::AddParameterWithFilterPos (
             }
 
             ULONG sizecb = ParamEntry->m_Data.m_Box->m_BitCount / 8;
-            pEntry->Container.m_Affecting = ( PRTL_BITMAP ) ExAllocatePoolWithTag (
+            pEntry->Container.m_Affecting = ( PRTL_BITMAP ) ExAllocatePoolWithTag(
                 PagedPool,
                 sizeof( RTL_BITMAP ) + sizecb,
                 m_AllocTag
@@ -496,13 +496,13 @@ Filters::AddParameterWithFilterPos (
                 __leave;
             }
 
-            RtlInitializeBitMap (
+            RtlInitializeBitMap(
                 pEntry->Container.m_Affecting,
                 (PULONG) Add2Ptr( pEntry->Container.m_Affecting, sizeof( RTL_BITMAP ) ),
                 ParamEntry->m_Data.m_Box->m_BitCount
                 );
 
-            RtlCopyMemory (
+            RtlCopyMemory(
                 pEntry->Container.m_Affecting->Buffer,
                 &ParamEntry->m_Data.m_Box->m_BitMask[0],
                 sizecb
@@ -515,7 +515,7 @@ Filters::AddParameterWithFilterPos (
             pEntry->Generic.m_Operation = ParamEntry->m_Operation;
             pEntry->Generic.m_Parameter = ParamEntry->m_ParameterId;
             
-            status = pEntry->Attach (
+            status = pEntry->Attach(
                 ParamEntry->m_Data.m_Size,
                 ParamEntry->m_Data.m_Count,
                 ParamEntry->m_Data.m_Data
@@ -557,7 +557,7 @@ Filters::DeleteParamsByFilterPosUnsafe (
 
     while ( Flink != &m_ParamsCheckList )
     {
-        ParamCheckEntry* pEntry = CONTAINING_RECORD (
+        ParamCheckEntry* pEntry = CONTAINING_RECORD(
             Flink,
             ParamCheckEntry,
             m_List
@@ -586,7 +586,7 @@ Filters::DeleteParamsByFilterPosUnsafe (
                 continue;
             }
            
-            PosListItemType* pTmp = (PosListItemType*) ExAllocatePoolWithTag (
+            PosListItemType* pTmp = (PosListItemType*) ExAllocatePoolWithTag(
                 PagedPool,
                 sizeof( PosListItemType ) * pEntry->m_PosCount - foundcount,
                 m_AllocTag
@@ -639,7 +639,7 @@ Filters::MoveFilterPosInParams (
 
     while ( Flink != &m_ParamsCheckList )
     {
-        ParamCheckEntry* pEntry = CONTAINING_RECORD (
+        ParamCheckEntry* pEntry = CONTAINING_RECORD(
             Flink,
             ParamCheckEntry,
             m_List
@@ -674,7 +674,7 @@ Filters::AddParamsUnsafe (
     {
         ASSERT( params->m_Data.m_Count );
 
-        ParamCheckEntry* pEntry = AddParameterWithFilterPos (
+        ParamCheckEntry* pEntry = AddParameterWithFilterPos(
             params,
             Position,
             BoxList
@@ -687,7 +687,7 @@ Filters::AddParamsUnsafe (
             break;
         }
 
-        params = ( PFltParam ) Add2Ptr (
+        params = ( PFltParam ) Add2Ptr(
             params,
             sizeof( FltParam ) + params->m_Data.m_Size
             );
@@ -702,7 +702,7 @@ Filters::GetFilterPosUnsafe (
     PULONG Position
     )
 {
-    FilterEntry* pFiltersArray = (FilterEntry*) ExAllocatePoolWithTag (
+    FilterEntry* pFiltersArray = (FilterEntry*) ExAllocatePoolWithTag(
         PagedPool,
         sizeof( FilterEntry ) * ( m_FiltersCount + 1 ),
         m_AllocTag
@@ -765,7 +765,7 @@ Filters::AddFilter (
 
         FilterEntry* pEntry = &m_FiltersArray[ position ];
 
-        status = AddParamsUnsafe (
+        status = AddParamsUnsafe(
             position,
             ParamsCount,
             Params,
@@ -839,7 +839,7 @@ Filters::CleanupByProcess (
         
         if ( m_FiltersCount > 1 )
         {
-            pFiltersArrayNew = ( FilterEntry* ) ExAllocatePoolWithTag (
+            pFiltersArrayNew = ( FilterEntry* ) ExAllocatePoolWithTag(
                 PagedPool,
                 sizeof( FilterEntry ) * ( m_FiltersCount - 1 ),
                 m_AllocTag

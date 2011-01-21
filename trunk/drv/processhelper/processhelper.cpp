@@ -71,7 +71,7 @@ ProcessHelper::ProcessHelper (
 
     FltInitializePushLock( &m_TreeAccessLock );
 
-    RtlInitializeGenericTableAvl (
+    RtlInitializeGenericTableAvl(
         &m_Tree,
         ProcessHelper::Compare,
         ProcessHelper::Allocate,
@@ -83,7 +83,7 @@ ProcessHelper::ProcessHelper (
     InitializeListHead( &m_ExitProcessCbList );
 
 #if ( NTDDI_VERSION < NTDDI_WIN7 )
-    PsSetCreateProcessNotifyRoutineEx (
+    PsSetCreateProcessNotifyRoutineEx(
         (PCREATE_PROCESS_NOTIFY_ROUTINE_EX) CreateProcessNotifyExCb,
         FALSE
         );
@@ -96,7 +96,7 @@ ProcessHelper::~ProcessHelper (
     )
 {
 #if ( NTDDI_VERSION < NTDDI_WIN7 )
-    PsSetCreateProcessNotifyRoutineEx (
+    PsSetCreateProcessNotifyRoutineEx(
         (PCREATE_PROCESS_NOTIFY_ROUTINE_EX) CreateProcessNotifyExCb,
         TRUE
         );
@@ -108,7 +108,7 @@ ProcessHelper::~ProcessHelper (
     PProcessItem pItem = NULL;
     do 
     {
-        pItem = (PProcessItem) RtlEnumerateGenericTableAvl (
+        pItem = (PProcessItem) RtlEnumerateGenericTableAvl(
             &m_Tree,
             TRUE
             );
@@ -137,7 +137,7 @@ ProcessHelper::RegisterExitProcessCb (
 {
     ASSERT( CbFunc );
 
-    PExitProcessCbList pItem = ( PExitProcessCbList ) ExAllocatePoolWithTag (
+    PExitProcessCbList pItem = (PExitProcessCbList) ExAllocatePoolWithTag(
         PagedPool,
         sizeof( ExitProcessCbList ),
         m_AllocTag
@@ -242,11 +242,7 @@ ProcessHelper::Allocate (
 {
     UNREFERENCED_PARAMETER( Table );
 
-    PVOID ptr = ExAllocatePoolWithTag (
-        PagedPool,
-        ByteSize,
-        m_AllocTag
-        );
+    PVOID ptr = ExAllocatePoolWithTag( PagedPool, ByteSize, m_AllocTag );
 
     return ptr;
 }
@@ -272,8 +268,8 @@ ProcessHelper::CreateProcessNotifyExCb (
     __in_opt PVOID CreateInfo
     )
 {
-    PEPROCESS process =  ( PEPROCESS ) Process;
-    PPS_CREATE_NOTIFY_INFO createInfo = ( PPS_CREATE_NOTIFY_INFO ) CreateInfo;
+    PEPROCESS process =  (PEPROCESS) Process;
+    PPS_CREATE_NOTIFY_INFO createInfo = (PPS_CREATE_NOTIFY_INFO) CreateInfo;
 
     if ( createInfo )
     {
@@ -306,7 +302,7 @@ NTSTATUS
 ProcessHelper::AddRef (
     )
 {
-    InterlockedIncrement ( &m_RefCount );
+    InterlockedIncrement( &m_RefCount );
 
     return STATUS_SUCCESS;
 }
@@ -315,7 +311,7 @@ void
 ProcessHelper::Release (
     )
 {
-    InterlockedDecrement ( &m_RefCount );
+    InterlockedDecrement( &m_RefCount );
 }
 
 __checkReturn
@@ -334,7 +330,7 @@ ProcessHelper::RegisterProcessItem (
 
     FltAcquirePushLockExclusive( &m_TreeAccessLock );
 
-    PProcessItem pItem = (PProcessItem) RtlInsertElementGenericTableAvl (
+    PProcessItem pItem = (PProcessItem) RtlInsertElementGenericTableAvl(
         &m_Tree,
         &item,
         sizeof( item ),
@@ -348,7 +344,7 @@ ProcessHelper::RegisterProcessItem (
 #pragma warning( push )
 #pragma warning( disable:28197 ) // m_Info will be freed in UnregisterProcess
 
-            pItem->m_Info = (ProcessInfo*) ExAllocatePoolWithTag (
+            pItem->m_Info = (ProcessInfo*) ExAllocatePoolWithTag(
                 PagedPool,
                 sizeof( ProcessInfo ),
                 m_AllocTag
@@ -364,7 +360,7 @@ ProcessHelper::RegisterProcessItem (
             }
             else
             {
-                RtlDeleteElementGenericTableAvl ( &m_Tree, pItem );
+                RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
             }
         }
         else
@@ -428,7 +424,7 @@ ProcessHelper::UnregisterProcessItem (
 
     FltAcquirePushLockExclusive( &m_TreeAccessLock );
 
-    PProcessItem pItem = ( PProcessItem) RtlLookupElementGenericTableAvl (
+    PProcessItem pItem = (PProcessItem) RtlLookupElementGenericTableAvl(
         &m_Tree,
         &item
         );
@@ -436,7 +432,7 @@ ProcessHelper::UnregisterProcessItem (
     if ( pItem )
     {
         pInfo = pItem->m_Info;
-        RtlDeleteElementGenericTableAvl ( &m_Tree, pItem );
+        RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
     }
 
     FltReleasePushLock( &m_TreeAccessLock );

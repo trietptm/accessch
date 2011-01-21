@@ -168,7 +168,7 @@ ContextCleanup (
         {
             PStreamContext pStreamContext = (PStreamContext) Pool;
             ReleaseContext( (PFLT_CONTEXT*) &pStreamContext->m_InstanceCtx );
-            ASSERT ( pStreamContext );
+            ASSERT( pStreamContext );
         }
         break;
 
@@ -253,7 +253,7 @@ InstanceSetup (
 
     ASSERT( FltObjects->Filter == gFileMgr.m_FileFilter );
 
-    if (FLT_FSTYPE_RAW == VolumeFilesystemType)
+    if ( FLT_FSTYPE_RAW == VolumeFilesystemType)
     {
         return STATUS_FLT_DO_NOT_ATTACH;
     }
@@ -265,7 +265,7 @@ InstanceSetup (
 
     __try
     {
-        status = FltAllocateContext (
+        status = FltAllocateContext(
             gFileMgr.m_FileFilter,
             FLT_INSTANCE_CONTEXT,
             sizeof( InstanceContext ),
@@ -281,7 +281,7 @@ InstanceSetup (
 
         RtlZeroMemory( pInstanceCtx, sizeof( InstanceContext ) );
 
-        status = FltAllocateContext (
+        status = FltAllocateContext(
             gFileMgr.m_FileFilter,
             FLT_VOLUME_CONTEXT,
             sizeof( VolumeContext ),
@@ -312,7 +312,7 @@ InstanceSetup (
         VERDICT Verdict = VERDICT_NOT_FILTERED;
         if ( gFileMgr.m_FltSystem->IsFiltersExist() )
         {
-            VolumeInterceptorContext event (
+            VolumeInterceptorContext event(
                 FltObjects,
                 pInstanceCtx,
                 pVolumeContext,
@@ -323,7 +323,7 @@ InstanceSetup (
                 );
 
             PARAMS_MASK params2user;
-            status = gFileMgr.m_FltSystem->FilterEvent (
+            status = gFileMgr.m_FltSystem->FilterEvent(
                 &event,
                 &Verdict,
                 &params2user
@@ -338,7 +338,7 @@ InstanceSetup (
             }
         }
 
-        status = FltSetInstanceContext (
+        status = FltSetInstanceContext(
             FltObjects->Instance,
             FLT_SET_CONTEXT_KEEP_IF_EXISTS,
             pInstanceCtx,
@@ -346,7 +346,7 @@ InstanceSetup (
             );
 
         pVolumeContext->m_Instance = FltObjects->Instance;
-        status = FltSetVolumeContext (
+        status = FltSetVolumeContext(
             FltObjects->Volume,
             FLT_SET_CONTEXT_KEEP_IF_EXISTS,
             pVolumeContext,
@@ -375,7 +375,7 @@ PreCreate (
     // check access by user filename
     __try
     {
-        if (FlagOn( Data->Iopb->OperationFlags, SL_OPEN_PAGING_FILE ) )
+        if ( FlagOn( Data->Iopb->OperationFlags, SL_OPEN_PAGING_FILE ) )
         {
             __leave;
         }
@@ -397,7 +397,7 @@ PreCreate (
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
 
-        FileInterceptorContext event (
+        FileInterceptorContext event(
             Data,
             FltObjects,
             NULL,
@@ -408,7 +408,7 @@ PreCreate (
             );
 
         PARAMS_MASK params2user;
-        NTSTATUS status = gFileMgr.m_FltSystem->FilterEvent (
+        NTSTATUS status = gFileMgr.m_FltSystem->FilterEvent(
             &event,
             &Verdict,
             &params2user
@@ -503,7 +503,7 @@ PostCreate (
             __leave;
         }
 
-        status = GenerateStreamHandleContext (
+        status = GenerateStreamHandleContext(
             gFileMgr.m_FileFilter,
             FltObjects,
             &pStreamHandleContext
@@ -518,10 +518,7 @@ PostCreate (
 
         if ( IsPrefetchEcpPresent( gFileMgr.m_FileFilter, Data ) )
         {
-            SetFlag (
-                pStreamHandleContext->m_Flags,
-                _STREAM_H_FLAGS_ECPPREF
-                );
+            SetFlag( pStreamHandleContext->m_Flags, _STREAM_H_FLAGS_ECPPREF );
 
             __leave;
         }
@@ -532,7 +529,7 @@ PostCreate (
         }
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext event (
+        FileInterceptorContext event(
             Data,
             FltObjects,
             pStreamHandleContext->m_StreamCtx,
@@ -543,7 +540,7 @@ PostCreate (
             );
 
         PARAMS_MASK params2user;
-        status = gFileMgr.m_FltSystem->FilterEvent (
+        status = gFileMgr.m_FltSystem->FilterEvent(
             &event,
             &Verdict,
             &params2user
@@ -572,10 +569,7 @@ PostCreate (
                 }
                 else
                 {
-                    FltCancelFileOpen (
-                        FltObjects->Instance,
-                        FltObjects->FileObject
-                        );
+                    FltCancelFileOpen( FltObjects->Instance, FltObjects->FileObject );
                 }
             }
             else
@@ -613,10 +607,7 @@ PreCleanup (
     
     __try
     {
-        status = GetStreamHandleContext (
-            FltObjects,
-            &pStreamHandleContext
-            );
+        status = GetStreamHandleContext( FltObjects, &pStreamHandleContext );
 
         if ( !NT_SUCCESS( status ) )
         {
@@ -636,7 +627,7 @@ PreCleanup (
         }
 
         VERDICT Verdict = VERDICT_NOT_FILTERED;
-        FileInterceptorContext event (
+        FileInterceptorContext event(
             Data,
             FltObjects,
             pStreamHandleContext->m_StreamCtx,
@@ -647,7 +638,7 @@ PreCleanup (
             );
 
         PARAMS_MASK params2user;
-        status = gFileMgr.m_FltSystem->FilterEvent (
+        status = gFileMgr.m_FltSystem->FilterEvent(
             &event,
             &Verdict,
             &params2user
