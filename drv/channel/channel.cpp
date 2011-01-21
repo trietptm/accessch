@@ -40,7 +40,7 @@ ChannelInitPort (
     ExWaitForRundownProtectionRelease( &gPort.m_RefClientPort );
     ExRundownCompleted( &gPort.m_RefClientPort );
 
-    status = PortCreate (
+    status = PortCreate(
         FileMgrGetFltFilter(),
         &gPort.m_Port
         );
@@ -80,7 +80,7 @@ ChannelAskUser (
     __inout VERDICT* Verdict
     )
 {
-    NTSTATUS status = PortAskUser (
+    NTSTATUS status = PortAskUser(
         Event,
         ParamsMask,
         Verdict
@@ -88,7 +88,7 @@ ChannelAskUser (
 
     if ( NT_SUCCESS( status ) )
     {
-        DoTraceEx (
+        DoTraceEx(
             TRACE_LEVEL_INFORMATION,
             TB_CHANNEL,
             "processing: %p verdict 0x%x",
@@ -98,7 +98,7 @@ ChannelAskUser (
     }
     else
     {
-        DoTraceEx (
+        DoTraceEx(
             TRACE_LEVEL_INFORMATION,
             TB_CHANNEL,
             "processing: %p error %!STATUS!",

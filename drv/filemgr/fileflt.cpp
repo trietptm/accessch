@@ -39,11 +39,14 @@ FileInterceptorContext::FileInterceptorContext (
         if ( !FlagOn( m_StreamFlagsTemp, _STREAM_FLAGS_DIRECTORY ) )
         {
             BOOLEAN isMarkedForDelete;
-            if ( NT_SUCCESS ( FileIsMarkedForDelete  (
+            
+            NTSTATUS status = FileIsMarkedForDelete(
                 m_FltObjects->Instance,
                 m_FltObjects->FileObject,
                 &isMarkedForDelete
-                ) ) )
+                );
+
+            if ( NT_SUCCESS( status ) )
             {
                 if ( isMarkedForDelete )
                 {
@@ -115,7 +118,7 @@ FileInterceptorContext::CheckAccessToVolumeContext (
         return STATUS_SUCCESS;
     }
 
-    NTSTATUS status = FltGetVolumeContext (
+    NTSTATUS status = FltGetVolumeContext(
         gFileMgr.m_FileFilter,
         m_FltObjects->Volume, 
         (PFLT_CONTEXT*) &m_VolumeCtx
@@ -148,7 +151,7 @@ FileInterceptorContext::CreateSectionForData (
 
     OBJECT_ATTRIBUTES oa;
 
-    InitializeObjectAttributes (
+    InitializeObjectAttributes(
         &oa,
         NULL,
         OBJ_KERNEL_HANDLE,
@@ -163,7 +166,7 @@ FileInterceptorContext::CreateSectionForData (
         SetPreviousMode( KernelMode );
     }
 
-    NTSTATUS status = FsRtlCreateSectionForDataScan (
+    NTSTATUS status = FsRtlCreateSectionForDataScan(
         &m_Section,
         &m_SectionObject,
         Size,
@@ -185,7 +188,7 @@ FileInterceptorContext::CreateSectionForData (
     {
         if ( IsKernelHandle( m_Section ) )
         {
-            status = ObOpenObjectByPointer (
+            status = ObOpenObjectByPointer(
                 m_SectionObject,
                 0,
                 NULL,
@@ -236,7 +239,7 @@ FileInterceptorContext::QueryParameter (
     case PARAMETER_FILE_NAME:
         if ( !m_FileNameInfo )
         {
-            status = QueryFileNameInfo (
+            status = QueryFileNameInfo(
                 m_Data,
                 m_PreCreate,
                 &m_FileNameInfo
@@ -256,7 +259,7 @@ FileInterceptorContext::QueryParameter (
             break;
         }
 
-        DoTraceEx (
+        DoTraceEx(
             TRACE_LEVEL_INFORMATION,
             TB_FILEMGR,
             "query PARAMETER_FILE_NAME: '%wZ'",
@@ -271,7 +274,7 @@ FileInterceptorContext::QueryParameter (
     case PARAMETER_VOLUME_NAME:
         if ( !m_FileNameInfo )
         {
-            status = QueryFileNameInfo (
+            status = QueryFileNameInfo(
                 m_Data,
                 m_PreCreate,
                 &m_FileNameInfo
@@ -299,7 +302,7 @@ FileInterceptorContext::QueryParameter (
     case PARAMETER_REQUESTOR_PROCESS_ID:
         if ( !m_RequestorProcessId )
         {
-            m_RequestorProcessId = UlongToHandle ( 
+            m_RequestorProcessId = UlongToHandle( 
                 FltGetRequestorProcessId( m_Data )
                 );
         }
@@ -436,7 +439,7 @@ FileInterceptorContext::QueryParameter (
         }
 
         *Data = &m_Data->IoStatus.Information;
-        *DataSize = sizeof (ULONG); // sizeof( m_Data->IoStatus.Information ); 32-64 bit size mismatch
+        *DataSize = sizeof( ULONG ); // sizeof( m_Data->IoStatus.Information ); 32-64 bit size mismatch
 
         break;
 
@@ -468,7 +471,7 @@ FileInterceptorContext::QueryParameter (
 
     if ( !NT_SUCCESS( status ))
     {
-        DoTraceEx (
+        DoTraceEx(
             TRACE_LEVEL_WARNING,
             TB_FILEMGR,
             "query %d failed %!STATUS!",

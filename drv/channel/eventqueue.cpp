@@ -34,7 +34,7 @@ QueuedItem::Add (
     ASSERT( ARGUMENT_PRESENT( Event ) );
     ASSERT( ARGUMENT_PRESENT( Item ) );
 
-    QueuedItem *pItem = (QueuedItem*) ExAllocatePoolWithTag (
+    QueuedItem *pItem = (QueuedItem*) ExAllocatePoolWithTag(
         PagedPool,
         sizeof( QueuedItem ),
         m_AllocTag

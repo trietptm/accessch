@@ -31,7 +31,7 @@ FiltersStorage::FiltersStorage (
 
     FltInitializePushLock( &m_AccessLock );
 
-    RtlInitializeGenericTableAvl (
+    RtlInitializeGenericTableAvl(
         &m_Tree,
         FiltersStorage::Compare,
         FiltersStorage::Allocate,
@@ -63,7 +63,7 @@ FiltersStorage::ExitProcessCb (
     PVOID Opaque
     )
 {
-    FiltersStorage* pThis = ( FiltersStorage* ) Opaque;
+    FiltersStorage* pThis = (FiltersStorage*) Opaque;
     pThis->CleanupFiltersByPidp( ProcessId );
 }
 
@@ -79,11 +79,11 @@ FiltersStorage::Compare (
 
     RTL_GENERIC_COMPARE_RESULTS result;
 
-    PFiltersItem Struct1 = ( PFiltersItem ) FirstStruct;
-    PFiltersItem Struct2 = ( PFiltersItem ) SecondStruct;
+    PFiltersItem Struct1 = (PFiltersItem) FirstStruct;
+    PFiltersItem Struct2 = (PFiltersItem) SecondStruct;
     ULONG comparesize = FIELD_OFFSET( FiltersItem, m_Filters );
-
-    int ires = memcmp (
+    
+    int ires = RtlCompareMemory(
         Struct1,
         Struct2,
         comparesize
@@ -120,7 +120,7 @@ FiltersStorage::Allocate (
 {
     UNREFERENCED_PARAMETER( Table );
 
-    PVOID ptr = ExAllocatePoolWithTag (
+    PVOID ptr = ExAllocatePoolWithTag(
         PagedPool,
         ByteSize,
         m_AllocTag
@@ -194,7 +194,7 @@ FiltersStorage::AddFilterUnsafe (
 
     ULONG filterId = GetNextFilterid();
 
-    status = pFilters->AddFilter (
+    status = pFilters->AddFilter(
         GroupId,
         Verdict,
         ProcessId,
@@ -277,7 +277,7 @@ FiltersStorage::DeleteAllFilters (
 
     do 
     {
-        pItem = ( PFiltersItem ) RtlEnumerateGenericTableAvl (
+        pItem = (PFiltersItem) RtlEnumerateGenericTableAvl(
             &m_Tree,
             TRUE
             );
@@ -327,7 +327,7 @@ FiltersStorage::CleanupFiltersByPidp (
     
     FltAcquirePushLockExclusive( &m_AccessLock );
 
-    pItem = ( PFiltersItem ) RtlEnumerateGenericTableAvl (
+    pItem = (PFiltersItem) RtlEnumerateGenericTableAvl(
         &m_Tree,
         TRUE
         );
@@ -343,14 +343,14 @@ FiltersStorage::CleanupFiltersByPidp (
 
             RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
 
-            pItem = ( PFiltersItem ) RtlEnumerateGenericTableAvl (
+            pItem = (PFiltersItem) RtlEnumerateGenericTableAvl(
                 &m_Tree,
                 TRUE
                 );
         }
         else
         {
-            pItem = ( PFiltersItem ) RtlEnumerateGenericTableAvl (
+            pItem = (PFiltersItem) RtlEnumerateGenericTableAvl(
                 &m_Tree,
                 FALSE
                 );
@@ -407,7 +407,7 @@ FiltersStorage::FilterEvent (
     __in PPARAMS_MASK ParamsMask
     )
 {
-    Filters* pFilters = GetFiltersByp (
+    Filters* pFilters = GetFiltersByp(
         Event->GetInterceptorId(),
         Event->GetOperationId(),
         Event->GetMinor(),
@@ -419,7 +419,7 @@ FiltersStorage::FilterEvent (
         return STATUS_NOT_FOUND;
     }
 
-    *Verdict = pFilters->GetVerdict (
+    *Verdict = pFilters->GetVerdict(
         Event,
         ParamsMask
         );
@@ -448,7 +448,7 @@ FiltersStorage::GetFiltersByp (
 
     FltAcquirePushLockShared( &m_AccessLock );
 
-    PFiltersItem pItem = ( PFiltersItem ) RtlLookupElementGenericTableAvl (
+    PFiltersItem pItem = (PFiltersItem) RtlLookupElementGenericTableAvl(
         &m_Tree,
         &item
         );
@@ -487,7 +487,7 @@ FiltersStorage::GetOrCreateFiltersByUnsafep (
     
     BOOLEAN newElement = FALSE;
     
-    PFiltersItem pItem = ( PFiltersItem ) RtlInsertElementGenericTableAvl (
+    PFiltersItem pItem = (PFiltersItem) RtlInsertElementGenericTableAvl(
         &m_Tree,
         &item,
         sizeof( item ),
@@ -502,10 +502,7 @@ FiltersStorage::GetOrCreateFiltersByUnsafep (
         {
             __debugbreak(); //nct
 
-            RtlDeleteElementGenericTableAvl (
-                &m_Tree,
-                &item
-                );
+            RtlDeleteElementGenericTableAvl( &m_Tree, &item );
             
             pItem = NULL;
         }

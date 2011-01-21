@@ -63,7 +63,7 @@ IsPrefetchEcpPresent (
     if ( NT_SUCCESS( status ) && EcpList )
     {
         // Check if the prefetch ECP is specified.
-        status = FltFindExtraCreateParameter (
+        status = FltFindExtraCreateParameter(
             Filter,
             EcpList,
             &GUID_ECP_PREFETCH_OPEN,
@@ -108,7 +108,7 @@ QueryFileNameInfo (
             | FLT_FILE_NAME_QUERY_ALWAYS_ALLOW_CACHE_LOOKUP;
     }
 
-    NTSTATUS status = FltGetFileNameInformation (
+    NTSTATUS status = FltGetFileNameInformation(
         Data,
         QueryNameFlags,
         FileNameInfo
@@ -164,7 +164,7 @@ ReleaseContext (
 }
 
 // bug in RDPDR - will fixed in longhorn
-// status = FltQueryInformationFile ( FltObjects->Instance, FltObjects->FileObject, &BasicInfo,
+// status = FltQueryInformationFile( FltObjects->Instance, FltObjects->FileObject, &BasicInfo,
 //  sizeof(BasicInfo), FileBasicInformation, &LengthReturned );
 
 __checkReturn
@@ -225,7 +225,7 @@ IsDirectoryImp (
 
     if ( NtBuildNumber >= 6001 )
     {
-        status = FltIsDirectory (
+        status = FltIsDirectory(
             FileObject,
             Instance,
             IsDirectory
@@ -234,7 +234,7 @@ IsDirectoryImp (
     else
     {
         FILE_STANDARD_INFORMATION fsi = {};
-        status = FltQueryInformationFile (
+        status = FltQueryInformationFile(
             Instance,
             FileObject,
             &fsi,
@@ -263,7 +263,7 @@ FileIsMarkedForDelete  (
     ASSERT( IsMarked );
 
     FILE_STANDARD_INFORMATION fsi = {};
-    NTSTATUS status = FltQueryInformationFile (
+    NTSTATUS status = FltQueryInformationFile(
         Instance,
         FileObject,
         &fsi,
@@ -298,7 +298,7 @@ GenerateStreamContext (
         return STATUS_NOT_SUPPORTED;
     }
 
-    status = FltGetStreamContext (
+    status = FltGetStreamContext(
         FltObjects->Instance,
         FltObjects->FileObject,
         (PFLT_CONTEXT*) StreamCtx
@@ -311,7 +311,7 @@ GenerateStreamContext (
         return status;
     }
 
-    status = FltAllocateContext (
+    status = FltAllocateContext(
         Filter,
         FLT_STREAM_CONTEXT,
         sizeof( StreamContext ),
@@ -326,7 +326,7 @@ GenerateStreamContext (
 
     RtlZeroMemory( *StreamCtx, sizeof( StreamContext ) );
 
-    status = FltGetInstanceContext (
+    status = FltGetInstanceContext(
         FltObjects->Instance,
         (PFLT_CONTEXT *) &InstanceCtx
         );
@@ -338,7 +338,7 @@ GenerateStreamContext (
 
     BOOLEAN bIsDirectory;
 
-    status = IsDirectoryImp (
+    status = IsDirectoryImp(
         FltObjects->Instance,
         FltObjects->FileObject,
         &bIsDirectory
@@ -348,14 +348,11 @@ GenerateStreamContext (
     {
         if ( bIsDirectory )
         {
-            InterlockedOr (
-                &(*StreamCtx)->m_Flags,
-                _STREAM_FLAGS_DIRECTORY
-                );
+            InterlockedOr( &(*StreamCtx)->m_Flags, _STREAM_FLAGS_DIRECTORY );
         }
     }
 
-    status = FltSetStreamContext (
+    status = FltSetStreamContext(
         FltObjects->Instance,
         FltObjects->FileObject,
         FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
@@ -382,7 +379,7 @@ __checkReturn
     __deref_out_opt PStreamHandleContext* StreamHandleCtx
     )
 {
-    NTSTATUS status = FltGetStreamHandleContext (
+    NTSTATUS status = FltGetStreamHandleContext(
         FltObjects->Instance,
         FltObjects->FileObject,
         (PFLT_CONTEXT*) StreamHandleCtx
@@ -399,7 +396,7 @@ GenerateStreamHandleContext (
     __deref_out_opt PStreamHandleContext* StreamHandleCtx
     )
 {
-    NTSTATUS status = GetStreamHandleContext (
+    NTSTATUS status = GetStreamHandleContext(
         FltObjects,
         StreamHandleCtx
         );
@@ -420,7 +417,7 @@ GenerateStreamHandleContext (
         return status;
     }
 
-    status = FltAllocateContext (
+    status = FltAllocateContext(
         Filter,
         FLT_STREAMHANDLE_CONTEXT,
         sizeof( StreamHandleContext ),
@@ -439,7 +436,7 @@ GenerateStreamHandleContext (
 
     pStreamHandleContext->m_StreamCtx = pStreamContext;
 
-    FltSetStreamHandleContext (
+    FltSetStreamHandleContext(
         FltObjects->Instance,
         FltObjects->FileObject,
         FLT_SET_CONTEXT_REPLACE_IF_EXISTS,
@@ -470,7 +467,7 @@ QueryFileId (
 
     __try
     {
-        status = GetInstanceFromFileObject (
+        status = GetInstanceFromFileObject(
             gFileMgr.m_FileFilter,
             FileObject,
             &pInstance
@@ -484,7 +481,7 @@ QueryFileId (
 
         FILE_INTERNAL_INFORMATION fileinfo;
 
-        status = QueryInformationFilep (
+        status = QueryInformationFilep(
             pInstance,
             FileObject,
             &fileinfo,

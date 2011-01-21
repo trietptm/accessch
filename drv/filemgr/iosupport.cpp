@@ -29,7 +29,7 @@ IoSupportCommand (
 
     UNICODE_STRING us;
 
-    RtlInitEmptyUnicodeString (
+    RtlInitEmptyUnicodeString(
         &us,
         IoCommand->m_Name,
         (USHORT) IoCommand->m_NameLengthCb
@@ -52,7 +52,7 @@ IoSupportCommand (
 
     IO_STATUS_BLOCK iosb;
 
-    status = FltCreateFileEx2 (
+    status = FltCreateFileEx2(
         gFileMgr.m_FileFilter,
         NULL,
         &hFile,

@@ -7,11 +7,7 @@ void* _cdecl operator new (
     ULONG Tag
     )
 {
-    void* ptr = ExAllocatePoolWithTag (
-        PoolType,
-        size,
-        Tag
-        );
+    void* ptr = ExAllocatePoolWithTag( PoolType, size, Tag );
 
     return ptr; 
 }
@@ -29,11 +25,7 @@ void* _cdecl operator new[] (
     ULONG Tag
     )
 {
-    void* ptr = ExAllocatePoolWithTag (
-        PoolType,
-        size,
-        Tag
-        );
+    void* ptr = ExAllocatePoolWithTag( PoolType, size, Tag );
 
     return ptr; 
 }

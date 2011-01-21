@@ -35,7 +35,7 @@ PortCreate (
         OBJECT_ATTRIBUTES oa;
 
         RtlInitUnicodeString( &usName, ACCESSCH_PORT_NAME );
-        InitializeObjectAttributes (
+        InitializeObjectAttributes(
             &oa,
             &usName,
             OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
@@ -43,7 +43,7 @@ PortCreate (
             sd
             );
 
-        status = FltCreateCommunicationPort (
+        status = FltCreateCommunicationPort(
             Filter,
             Port,
             &oa,
@@ -90,7 +90,7 @@ PortConnect (
             __leave;
         }
 
-        pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag (
+        pPortContext = (PPORT_CONTEXT) ExAllocatePoolWithTag(
             NonPagedPool,
             sizeof( PORT_CONTEXT ),
             'cpSA'
@@ -114,7 +114,7 @@ PortConnect (
         pPortContext->m_pFltStorage = new (
             PagedPool,
             FiltersStorage::m_AllocTag
-            ) FiltersStorage ( gPort.m_ProcessHelper );
+            ) FiltersStorage( gPort.m_ProcessHelper );
 
         if ( !pPortContext->m_pFltStorage )
         {
@@ -194,7 +194,7 @@ PortPostEmptyMessages (
     {
         LARGE_INTEGER timeout = { 1, 0 };
         
-        FltSendMessage (
+        FltSendMessage(
             FileMgrGetFltFilter(),
             &pPort,
             NULL,
@@ -216,7 +216,7 @@ ProceedChainGeneric (
     __out PULONG FilterId
     )
 {
-    NTSTATUS status = FltStorage->AddFilterUnsafe (
+    NTSTATUS status = FltStorage->AddFilterUnsafe(
         Entry->m_Filter->m_Interceptor,
         Entry->m_Filter->m_OperationId,
         Entry->m_Filter->m_FunctionMi,
@@ -248,7 +248,7 @@ ProceedChainBox (
     switch ( pBox->m_Operation )
     {
     case _fltbox_add:
-        status = FltStorage->CreateBoxUnsafe (
+        status = FltStorage->CreateBoxUnsafe(
             &pBox->m_Guid,
             pBox->Items.m_ParamsCount,
             pBox->Items.m_Params,
@@ -273,7 +273,7 @@ ReleaseChainBox (
 {
     PFLTBOX pBox = pEntry[0].m_Box;
 
-    NTSTATUS status = FltStorage->ReleaseBoxUnsafe (
+    NTSTATUS status = FltStorage->ReleaseBoxUnsafe(
         &pBox->m_Guid
         );
     
@@ -437,7 +437,7 @@ PortMessageNotify (
             status = STATUS_INVALID_PARAMETER;
             if ( OutputBuffer && OutputBufferSize >= sizeof(NC_IOPREPARE) )
             {
-                status = QueuedItem::Lookup (
+                status = QueuedItem::Lookup(
                     pCommand->m_EventId,
                     &pItem
                     );
@@ -456,7 +456,7 @@ PortMessageNotify (
                 NC_IOPREPARE prepare;
                 ULONG preparesize = sizeof( prepare );
 
-                status = pEvent->ObjectRequest (
+                status = pEvent->ObjectRequest(
                     ntfcom_PrepareIO,
                     &prepare,
                     &preparesize
@@ -473,14 +473,11 @@ PortMessageNotify (
         case  ntfcom_FiltersChain:
             {
                 PFILTERS_CHAIN pChain = (PFILTERS_CHAIN) pCommand->m_Data;
-                ULONG size = InputBufferSize - FIELD_OFFSET (
-                    NOTIFY_COMMAND,
-                    m_Data
-                    );
+                ULONG size = InputBufferSize - FIELD_OFFSET( NOTIFY_COMMAND, m_Data );
 
                 ULONG FilterId;
 
-                status = ProceedChain (
+                status = ProceedChain(
                     pPortContext->m_pFltStorage,
                     pChain,
                     &FilterId
@@ -488,7 +485,7 @@ PortMessageNotify (
 
                 if ( NT_SUCCESS( status ) && OutputBuffer )
                 {
-                    status = CopyDataToUserBuffer (
+                    status = CopyDataToUserBuffer(
                         OutputBuffer,
                         OutputBufferSize,
                         &FilterId,
@@ -510,7 +507,7 @@ PortMessageNotify (
                 ULONG ioResultSize = 0;
                 PIO_SUPPORT pIoCommand = ( PIO_SUPPORT ) pCommand->m_Data;
                 
-                status = IoSupportCommand (
+                status = IoSupportCommand(
                     pIoCommand,
                     InputBufferSize,
                     &ioResult,
@@ -519,7 +516,7 @@ PortMessageNotify (
 
                 if ( NT_SUCCESS( status ) )
                 {
-                    status = CopyDataToUserBuffer (
+                    status = CopyDataToUserBuffer(
                         OutputBuffer,
                         OutputBufferSize,
                         &ioResult,
@@ -629,9 +626,7 @@ PortAllocateMessage (
             }
 
             params2user++;
-            messageSize += FIELD_OFFSET (
-                EVENT_PARAMETER, Value.m_Data
-                ) + datasize;
+            messageSize += FIELD_OFFSET( EVENT_PARAMETER, Value.m_Data ) + datasize;
         }
     }
 
@@ -648,7 +643,7 @@ PortAllocateMessage (
         return STATUS_NOT_SUPPORTED;
     }
 
-    pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag (
+    pMsg = (PMESSAGE_DATA) ExAllocatePoolWithTag(
         PagedPool,
         messageSize,
         'gmSA'
@@ -661,10 +656,10 @@ PortAllocateMessage (
 
     pMsg->m_EventId = QueuedItem->GetId();
     
-    pMsg->m_InterceptorId = ( Interceptors ) Event->GetInterceptorId();
-    pMsg->m_OperationId = ( DriverOperationId ) Event->GetOperationId();
+    pMsg->m_InterceptorId = (Interceptors) Event->GetInterceptorId();
+    pMsg->m_OperationId = (DriverOperationId) Event->GetOperationId();
     pMsg->m_FuncionMi = Event->GetMinor();
-    pMsg->m_OperationType = ( OperationPoint ) Event->GetOperationType();
+    pMsg->m_OperationType = (OperationPoint) Event->GetOperationType();
 
     pMsg->m_ParametersCount = params2user;
     
@@ -674,18 +669,18 @@ PortAllocateMessage (
     {
         if ( FlagOn( ParamsMask, (PARAMS_MASK) 1 << cou ) )
         {
-            status = Event->QueryParameter (
+            status = Event->QueryParameter(
                 (Parameters) cou,
                 &data,
                 &datasize
                 );
 
-            ASSERT( NT_SUCCESS ( status ) );
+            ASSERT( NT_SUCCESS( status ) );
             parameter->Value.m_Id = (Parameters) cou;
             parameter->Value.m_Size = datasize;
             RtlCopyMemory( parameter->Value.m_Data, data, datasize );
 
-            parameter = (PEVENT_PARAMETER) Add2Ptr (
+            parameter = (PEVENT_PARAMETER) Add2Ptr(
                 parameter,
                 FIELD_OFFSET( EVENT_PARAMETER, Value.m_Data ) + datasize
                 );
@@ -700,10 +695,7 @@ PortAllocateMessage (
         parameter->Aggregator.m_FilterId = Event->m_Aggregator.GetFilterId( cou );
         parameter->Aggregator.m_Verdict = Event->m_Aggregator.GetVerdict( cou );
 
-        parameter = (PEVENT_PARAMETER) Add2Ptr (
-            parameter,
-            sizeof( EVENT_PARAMETER)
-            );
+        parameter = (PEVENT_PARAMETER) Add2Ptr( parameter, sizeof( EVENT_PARAMETER) );
     }
 
     *Message = pMsg;
@@ -764,7 +756,7 @@ PortAskUser (
             __leave;
         }
 
-        status = PortAllocateMessage (
+        status = PortAllocateMessage(
             Event,
             pQueuedItem,
             &pMessage,
@@ -778,7 +770,7 @@ PortAskUser (
             __leave;
         }
 
-        status = FltSendMessage (
+        status = FltSendMessage(
             FileMgrGetFltFilter(),
             &pPort,
             pMessage,

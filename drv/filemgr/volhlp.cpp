@@ -15,7 +15,7 @@ QueryDeviceProperty (
     PVOID pBuffer = NULL;
     ULONG BufferSize = 0;
 
-    status = IoGetDeviceProperty (
+    status = IoGetDeviceProperty(
         Device,
         DevProperty,
         BufferSize,
@@ -37,7 +37,7 @@ QueryDeviceProperty (
             return STATUS_INSUFFICIENT_RESOURCES;
         }
 
-        status = IoGetDeviceProperty (
+        status = IoGetDeviceProperty(
             Device,
             DevProperty,
             BufferSize,
@@ -70,7 +70,7 @@ GetRemovableProperty (
     PVOID pBuffer = NULL;
     ULONG PropertySize;
 
-    NTSTATUS status = QueryDeviceProperty (
+    NTSTATUS status = QueryDeviceProperty(
         Device,
         DevicePropertyRemovalPolicy,
         &pBuffer,
@@ -79,8 +79,7 @@ GetRemovableProperty (
 
     if ( NT_SUCCESS( status ) )
     {
-        PDEVICE_REMOVAL_POLICY pRemovalPolicy =
-            (PDEVICE_REMOVAL_POLICY) pBuffer;
+        PDEVICE_REMOVAL_POLICY pRemovalPolicy = (PDEVICE_REMOVAL_POLICY) pBuffer;
         
         VolumeCtx->m_RemovablePolicy = *pRemovalPolicy;
 
@@ -118,7 +117,7 @@ GetMediaSerialNumber (
 
         KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
-        Irp = IoBuildDeviceIoControlRequest (
+        Irp = IoBuildDeviceIoControlRequest(
             IOCTL_STORAGE_GET_MEDIA_SERIAL_NUMBER,
             Device,
             (PVOID) &GET_MEDIA_SERIAL_NUMBER_GUID,
@@ -140,7 +139,7 @@ GetMediaSerialNumber (
 
         if ( STATUS_PENDING == status )
         {
-            KeWaitForSingleObject (
+            KeWaitForSingleObject(
                 &Event,
                 Executive,
                 KernelMode,
@@ -169,7 +168,7 @@ GetMediaSerialNumber (
             __leave;
         }
 
-        DeviceId->Buffer = (PWCH) ExAllocatePoolWithTag (
+        DeviceId->Buffer = (PWCH) ExAllocatePoolWithTag(
             PagedPool,
             pDeviceInfo->IdLenght,
             'bdSA'
@@ -181,11 +180,12 @@ GetMediaSerialNumber (
             __leave;
         }
 
-        RtlCopyMemory (
+        RtlCopyMemory(
             DeviceId->Buffer,
             Add2Ptr( pDeviceInfo, pDeviceInfo->IdOffset),
             pDeviceInfo->IdLenght
             );
+
         DeviceId->Length = (USHORT) pDeviceInfo->IdLenght;
         DeviceId->MaximumLength = (USHORT) pDeviceInfo->IdLenght;
     }
@@ -231,7 +231,7 @@ GetDeviceInfo (
 
         KeInitializeEvent( &Event, NotificationEvent, FALSE );
 
-        Irp = IoBuildDeviceIoControlRequest (
+        Irp = IoBuildDeviceIoControlRequest(
             IOCTL_STORAGE_QUERY_PROPERTY,
             Device,
             &PropQuery,
@@ -253,7 +253,7 @@ GetDeviceInfo (
 
         if ( STATUS_PENDING == status )
         {
-            KeWaitForSingleObject (
+            KeWaitForSingleObject(
                 &Event,
                 Executive,
                 KernelMode,
@@ -275,8 +275,7 @@ GetDeviceInfo (
             __leave;
         }
 
-        PSTORAGE_DEVICE_DESCRIPTOR pDesc = 
-            (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer;
+        PSTORAGE_DEVICE_DESCRIPTOR pDesc = (PSTORAGE_DEVICE_DESCRIPTOR) QueryBuffer;
         
         VolumeCtx->m_BusType = pDesc->BusType;
     }
@@ -355,7 +354,7 @@ GetInstanceFromFileObject (
     PFLT_VOLUME volume = NULL;
     PVolumeContext volumeCtx = NULL;
 
-    NTSTATUS status = FltGetVolumeFromFileObject (
+    NTSTATUS status = FltGetVolumeFromFileObject(
         FltFilter,
         FileObject,
         &volume
@@ -368,7 +367,7 @@ GetInstanceFromFileObject (
 
     ASSERT( volume != NULL );
 
-    status = FltGetVolumeContext (
+    status = FltGetVolumeContext(
         FltFilter,
         volume,
         (PFLT_CONTEXT*) &volumeCtx
