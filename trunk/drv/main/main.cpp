@@ -112,7 +112,7 @@ DriverEntry (
             __leave;
         }
 
-        status = ChannelInitPort (
+        status = ChannelInitPort(
             GlobalData.m_ProcessHelper,
             GlobalData.m_FilteringSystem
             );
