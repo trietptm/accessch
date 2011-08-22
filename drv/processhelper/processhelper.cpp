@@ -16,6 +16,7 @@ public:
     ~ProcessInfo (
         )
     {
+        ExWaitForRundownProtectionRelease( &m_Ref );
         ExRundownCompleted( &m_Ref );
     }
 
@@ -38,13 +39,6 @@ public:
         ExReleaseRundownProtection( &m_Ref );
     }
 
-    void
-    WaitForRelease (
-        )
-    {
-        ExWaitForRundownProtectionRelease( &m_Ref );
-    }
-    
 private:
     EX_RUNDOWN_REF m_Ref;
 };
@@ -106,7 +100,7 @@ ProcessHelper::~ProcessHelper (
 
     // not necessary synchronize queue and items
     PProcessItem pItem = NULL;
-    do 
+    do
     {
         pItem = (PProcessItem) RtlEnumerateGenericTableAvl(
             &m_Tree,
@@ -122,7 +116,6 @@ ProcessHelper::~ProcessHelper (
 
             RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
         }
-
     } while ( pItem );
 
     ASSERT( IsListEmpty( &m_ExitProcessCbList ) );
@@ -162,7 +155,7 @@ ProcessHelper::RegisterExitProcessCb (
 }
 
 void
-ProcessHelper::UnregisterExitProcessCb ( 
+ProcessHelper::UnregisterExitProcessCb (
     __in _tpProcessExitCb CbFunc
     )
 {
@@ -171,7 +164,7 @@ ProcessHelper::UnregisterExitProcessCb (
     PExitProcessCbList pItem = NULL;
 
     FltAcquirePushLockExclusive( &m_CbAccessLock );
-    
+
     if ( !IsListEmpty( &m_ExitProcessCbList ) )
     {
         PLIST_ENTRY Flink;
@@ -186,10 +179,10 @@ ProcessHelper::UnregisterExitProcessCb (
             if ( pItem->m_Cb == CbFunc )
             {
                 RemoveEntryList( &pItem->m_List );
-                
+
                 break;
             }
-            
+
             pItem = NULL;
         }
     }
@@ -398,7 +391,7 @@ ProcessHelper::UnregisterProcessItem (
             if ( !NT_SUCCESS( status ) )
             {
                 pItemCb = NULL;
-                
+
                 continue;
             }
 
@@ -440,7 +433,6 @@ ProcessHelper::UnregisterProcessItem (
     /// \todo move to service thread to release current thread
     if ( pInfo )
     {
-        pInfo->WaitForRelease();
         pInfo->ProcessInfo::~ProcessInfo();
         FREE_POOL( pInfo );
     }
