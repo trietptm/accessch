@@ -16,7 +16,7 @@ typedef struct _FiltersItem
     ULONG       m_Operation;
     ULONG       m_Minor;
     ULONG       m_OperationType;
-    
+
     Filters*    m_Filters;
 } FiltersItem, *PFiltersItem;
 
@@ -79,36 +79,34 @@ FiltersStorage::Compare (
 
     RTL_GENERIC_COMPARE_RESULTS result;
 
-    PFiltersItem Struct1 = (PFiltersItem) FirstStruct;
-    PFiltersItem Struct2 = (PFiltersItem) SecondStruct;
-    ULONG comparesize = FIELD_OFFSET( FiltersItem, m_Filters );
-    
-    int ires = RtlCompareMemory(
-        Struct1,
-        Struct2,
-        comparesize
-        );
+    PFiltersItem struct1 = (PFiltersItem) FirstStruct;
+    PFiltersItem struct2 = (PFiltersItem) SecondStruct;
 
-    switch ( ires )
-    {
-    case 0:
-        result = GenericEqual;
-        break;
+    if ( struct1->m_Interceptor > struct2->m_Interceptor )
+        return GenericGreaterThan;
 
-    case 1:
-        result = GenericGreaterThan;
-        break;
+    if ( struct1->m_Interceptor < struct2->m_Interceptor )
+        return GenericLessThan;
 
-    case -1:
-        result = GenericLessThan;
-        break;
+    if ( struct1->m_Operation > struct2->m_Operation )
+        return GenericGreaterThan;
 
-    default:
-        __debugbreak();
-        break;
-    }
+    if ( struct1->m_Operation < struct2->m_Operation )
+        return GenericLessThan;
 
-    return result;
+    if ( struct1->m_Minor > struct2->m_Minor )
+        return GenericGreaterThan;
+
+    if ( struct1->m_Minor < struct2->m_Minor )
+        return GenericLessThan;
+
+    if ( struct1->m_OperationType > struct2->m_OperationType )
+        return GenericGreaterThan;
+
+    if ( struct1->m_OperationType < struct2->m_OperationType )
+        return GenericLessThan;
+
+    return GenericEqual;
 }
 
 PVOID
@@ -125,7 +123,7 @@ FiltersStorage::Allocate (
         ByteSize,
         m_AllocTag
         );
-    
+
     return ptr;
 }
 
@@ -174,7 +172,7 @@ FiltersStorage::AddFilterUnsafe (
 {
     ASSERT( FilterId );
     NTSTATUS status = CreateBoxControlp();
-    
+
     if ( !NT_SUCCESS( status ) )
     {
         return status;
@@ -275,7 +273,7 @@ FiltersStorage::DeleteAllFilters (
 
     FltAcquirePushLockExclusive( &m_AccessLock );
 
-    do 
+    do
     {
         pItem = (PFiltersItem) RtlEnumerateGenericTableAvl(
             &m_Tree,
@@ -289,7 +287,6 @@ FiltersStorage::DeleteAllFilters (
 
             RtlDeleteElementGenericTableAvl( &m_Tree, pItem );
         }
-
     } while ( pItem );
 
     m_FilterIdCounter = 0;
@@ -324,7 +321,7 @@ FiltersStorage::CleanupFiltersByPidp (
     UNREFERENCED_PARAMETER( ProcessId );
 
     PFiltersItem pItem;
-    
+
     FltAcquirePushLockExclusive( &m_AccessLock );
 
     pItem = (PFiltersItem) RtlEnumerateGenericTableAvl(
@@ -462,7 +459,6 @@ FiltersStorage::GetFiltersByp (
         {
             pFilters = NULL;
         }
-
     }
 
     FltReleasePushLock( &m_AccessLock );
@@ -484,16 +480,16 @@ FiltersStorage::GetOrCreateFiltersByUnsafep (
     item.m_Operation = Operation;
     item.m_Minor = Minor;
     item.m_OperationType = OperationType;
-    
+
     BOOLEAN newElement = FALSE;
-    
+
     PFiltersItem pItem = (PFiltersItem) RtlInsertElementGenericTableAvl(
         &m_Tree,
         &item,
         sizeof( item ),
         &newElement
         );
-    
+
     if ( pItem && newElement )
     {
         pItem->m_Filters = new( PagedPool, m_AllocTag ) Filters;
@@ -503,7 +499,7 @@ FiltersStorage::GetOrCreateFiltersByUnsafep (
             __debugbreak(); //nct
 
             RtlDeleteElementGenericTableAvl( &m_Tree, &item );
-            
+
             pItem = NULL;
         }
     }
